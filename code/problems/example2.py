@@ -31,13 +31,14 @@ Ru = 0.1*np.eye(action_dim_per_robot)
 
 # state and action lim 
 pos_lim = 2 # m 
-rad_lim = np.pi # rad 
+rad_lim = 2*np.pi # rad 
 vel_lim = 2  # m / s
 omega_lim = 2*np.pi / 10 # rad / s 
 acc_lim = 1.0 # m / s^2
 
 # other constants
-g = 0.98 # m / s^2
+# g = 0.98 # m / s^2
+g = 3.0
 
 
 class Example2(POSG):
@@ -105,6 +106,14 @@ class Example2(POSG):
 			sdot[state_shift+5,0] = a[action_shift+1,0]
 			sdot[state_shift+6,0] = a[action_shift+2,0]
 		s_tp1 = s + sdot * self.dt 
+
+		# wrap angles 
+		for robot in range(num_robots):
+			state_shift = robot * state_dim_per_robot
+			s_tp1[state_shift+3,0] = s_tp1[state_shift+3,0] % (2*np.pi)
+			s_tp1[state_shift+4,0] = s_tp1[state_shift+4,0] % (2*np.pi)
+			s_tp1[state_shift+5,0] = s_tp1[state_shift+5,0] % (2*np.pi)
+
 		return s_tp1 
 
 
@@ -139,7 +148,7 @@ class Example2(POSG):
 		for robot in range(num_robots):
 			state_idxs = robot * state_dim_per_robot + np.arange(state_dim_per_robot)
 			ax.plot(states[:,state_idxs[0]].squeeze(), states[:,state_idxs[1]].squeeze(), states[:,state_idxs[2]].squeeze(), color=colors[robot])
-			ax.scatter(states[0,state_idxs[0]], states[0,state_idxs[1]], states[0,state_idxs[2]], color=colors[robot])
+			# ax.scatter(states[0,state_idxs[0]], states[0,state_idxs[1]], states[0,state_idxs[2]], color=colors[robot])
 			ax.scatter(states[-1,state_idxs[0]], states[-1,state_idxs[1]], states[-1,state_idxs[2]], color=colors[robot])
 
 		lims = self.S.lims

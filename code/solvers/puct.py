@@ -14,7 +14,7 @@ class PUCT(Solver):
 	def __init__(self):
 		super(PUCT, self).__init__()
 		self.search_depth = 10
-		self.number_simulations = 10000
+		self.number_simulations = 50000
 		self.C_pw = 2.0 
 		self.alpha_pw = 0.5
 		self.C_exp = 1.0
