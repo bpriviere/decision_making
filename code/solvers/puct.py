@@ -14,7 +14,7 @@ class PUCT(Solver):
 	def __init__(self):
 		super(PUCT, self).__init__()
 		self.search_depth = 10
-		self.number_simulations = 1000
+		self.number_simulations = 10000
 		self.C_pw = 2.0 
 		self.alpha_pw = 0.5
 		self.C_exp = 1.0
@@ -22,15 +22,15 @@ class PUCT(Solver):
 
 
 	def policy(self,problem,root_state):
-		return self.search(problem,root_state,vis_on=True)
-		# return self.search(problem,root_state)
+		# return self.search(problem,root_state,vis_on=True)
+		return self.search(problem,root_state)
 
 
-	def select_node(self,root_node,problem):
+	def select_node(self,root_node,problem,robot):
 		curr_node = root_node 
 		while not problem.is_terminal(curr_node.state):
 			if self.is_expanded(curr_node):
-				curr_node = self.best_child(curr_node)
+				curr_node = self.best_child(curr_node,robot)
 			else: 
 				return curr_node 
 		return curr_node
@@ -39,7 +39,7 @@ class PUCT(Solver):
 	def expand_node(self,parent_node,problem):
 		action = problem.A.sample()
 		next_state = problem.step(parent_node.state,action)
-		child_node = Node(next_state,parent_node)
+		child_node = Node(next_state,parent_node,problem.num_robots)
 		parent_node.add_child(child_node,action)
 		return child_node
 
@@ -49,13 +49,13 @@ class PUCT(Solver):
 		return len(curr_node.children) > max_children 
 
 
-	def best_child(self,curr_node):
+	def best_child(self,curr_node,robot):
 		best_c = None
 		best_value = 0
 		for child in curr_node.children: 
 			if child.num_visits == 0: 
 				return child
-			value = child.total_value / child.num_visits + \
+			value = child.total_value[robot] / child.num_visits + \
 				self.C_exp * np.sqrt((child.num_visits ** self.alpha_exp)/curr_node.num_visits)
 			if value > best_value: 
 				best_value = value 
@@ -107,11 +107,12 @@ class PUCT(Solver):
 			return None
 
 		# init tree 
-		root_node = Node(root_state,None)
+		root_node = Node(root_state,None,problem.num_robots)
 
 		# search 
 		for t in range(number_simulations):
-			parent_node = self.select_node(root_node,problem)
+			robot = t % problem.num_robots
+			parent_node = self.select_node(root_node,problem,robot)
 			child_node = self.expand_node(parent_node,problem)
 			value = self.default_policy(child_node,problem,search_depth)
 			self.backup(child_node,value)
@@ -123,10 +124,6 @@ class PUCT(Solver):
 		# return most visited root action 
 		most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
 		best_action = root_node.edges[most_visited_child]
-
-		# return most valued child
-		# most_valued_child = root_node.children[np.argmax([c.total_value for c in root_node.children])]
-		# best_action = root_node.edges[most_valued_child]
 
 		return best_action 
 
@@ -148,11 +145,11 @@ class PUCT(Solver):
 
 class Node: 
 
-	def __init__(self,state,parent):
+	def __init__(self,state,parent,num_robots):
 		self.state = state 
 		self.parent = parent 
 		self.num_visits = 0 
-		self.total_value = 0 
+		self.total_value = np.zeros(num_robots) 
 		self.children = []
 		self.edges = dict()
 

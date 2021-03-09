@@ -4,6 +4,8 @@ import numpy as np
 import os, subprocess
 import math
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
+from matplotlib import cm	
 from matplotlib.backends.backend_pdf import PdfPages 
 from PyPDF2 import PdfFileMerger
 
@@ -41,15 +43,12 @@ def open_figs(filename):
 
 
 def merge_figs(pdfs,result_fn):
-
 	merger = PdfFileMerger()
-
 	# write new one 
 	for pdf in pdfs:
 	    merger.append(pdf)
 	merger.write(result_fn)
 	merger.close()
-
 	# delete old files 
 	for pdf in pdfs: 
 		os.remove(pdf)
@@ -59,59 +58,116 @@ def make_fig():
 	return plt.subplots()
 
 
+def make_3d_fig():
+	from mpl_toolkits.mplot3d import Axes3D
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection='3d')
+	return fig,ax 
+
+
+def get_n_colors(n,cmap=None):
+	colors = []
+	cm_subsection = np.linspace(0, 1, n)
+	if cmap is None:
+		cmap = cm.tab20
+	colors = [ cmap(x) for x in cm_subsection]
+	return colors
+
+
 def plot_sim_result(sim_result):
 	times = sim_result["times"] # nt, 
 	states = sim_result["states"] # nt x state_dim
 	actions = sim_result["actions"] # nt-1 x action_dim
 	rewards = sim_result["rewards"] # nt-1,  
+	problem = sim_result["instance"]["problem"] 
+	problem = problem.__dict__ 
 
-	state_dim = np.shape(states)[1]
+	num_robots = problem["num_robots"]
+	state_dim_per_robot = int(np.shape(states)[1] / num_robots)
 	action_dim = np.shape(actions)[1]
+	state_lims = problem["state_lims"]
+	action_lims = problem["action_lims"]
 
-	ncols = np.max((state_dim,action_dim))
+	ncols = np.max((state_dim_per_robot,action_dim))
 
 	# plot trajectories (over time)
-	fig,axs = plt.subplots(nrows=3,ncols=ncols)
+	fig,axs = plt.subplots(nrows=int(num_robots+2),ncols=int(ncols))
 	# state 
-	for i_state in range(state_dim):
-		axs[0,i_state].plot(times,states[:,i_state])
-	axs[0,0].set_ylabel("States")
+	for i_robot in range(num_robots):
+		for i_state in range(state_dim_per_robot):
+			idx = i_state + state_dim_per_robot * i_robot 
+			axs[i_robot,i_state].plot(times,states[:,idx])
+			axs[i_robot,i_state].set_ylim((state_lims[idx,0],state_lims[idx,1]))
+		axs[i_robot,0].set_ylabel("Robot State {}".format(i_robot))
 
 	# action
 	for i_action in range(action_dim):
-		axs[1,i_action].plot(times[1:],actions[:,i_action])
-	axs[1,0].set_ylabel("Actions")
+		axs[num_robots,i_action].plot(times[1:],actions[:,i_action])
+		axs[num_robots,i_action].set_ylim((action_lims[i_action,0],action_lims[i_action,1]))
+	axs[num_robots,0].set_ylabel("Actions")
 
 	# reward 
-	axs[2,0].plot(times[1:],rewards)
-	axs[2,0].set_ylabel("Rewards")
+	axs[num_robots+1,0].plot(times[1:],rewards)
+	axs[num_robots+1,0].set_ylabel("Rewards")
 
-	fig.tight_layout()
+	# fig.tight_layout()
 
 
 def plot_tree_state(problem,tree_state):
 	# tree state : nd array in [num_nodes x state_dim + 1]
 
-	fig,ax = plt.subplots()
-	position_idxs = np.arange(2)
-	segments = []
-	nodes = [] 
-	for i_row,row in enumerate(tree_state):
-		parentIdx = int(row[-1])
-		nodes.append(row[position_idxs])
-		if parentIdx >= 0:
-			segments.append([row[position_idxs], tree_state[parentIdx][position_idxs]])
+	position_idxs = problem.position_idx
 
-	ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
-	nodes = np.array(nodes)
+	if len(position_idxs) == 2: 
+		fig,ax = plt.subplots()
+		segments = []
+		nodes = [] 
+		for i_row,row in enumerate(tree_state):
+			parentIdx = int(row[-1])
+			nodes.append(row[position_idxs])
+			if parentIdx >= 0:
+				segments.append([row[position_idxs], tree_state[parentIdx][position_idxs]])
 
-	ax.add_collection(ln_coll)
-	# ax.plot(nodes[:,0],nodes[:,1],'.')
-	ax.scatter(nodes[0,0],nodes[0,1])
+		ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
+		nodes = np.array(nodes)
 
-	lims = problem.S.lims
-	ax.set_xlim((lims[0,0],lims[0,1]))
-	ax.set_ylim((lims[1,0],lims[1,1]))
+		ax.add_collection(ln_coll)
+		ax.scatter(nodes[0,0],nodes[0,1])
+
+		lims = problem.S.lims
+		ax.set_xlim((lims[0,0],lims[0,1]))
+		ax.set_ylim((lims[1,0],lims[1,1]))
+
+	elif len(position_idxs) == 3: 
+		
+		num_robots = problem.num_robots
+		state_dim_per_robot = int(problem.state_dim / num_robots)
+
+		fig,ax = make_3d_fig()
+		segments = [[] for _ in range(num_robots)]
+		nodes = [[] for _ in range(num_robots)]
+		for i_row,row in enumerate(tree_state):
+			parentIdx = int(row[-1])
+
+			for robot in range(num_robots):
+				robot_state_idx = robot * state_dim_per_robot + np.arange(state_dim_per_robot)
+				robot_position_idx = robot_state_idx[position_idxs]
+				nodes[robot].append(row[robot_position_idx])
+				if parentIdx >= 0:
+					segments[robot].append([row[robot_position_idx], tree_state[parentIdx][robot_position_idx]])
+
+		for robot in range(num_robots):
+			ln_coll = Line3DCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
+			ax.add_collection(ln_coll)
+
+		lims = problem.S.lims
+		ax.set_xlim((lims[0,0],lims[0,1]))
+		ax.set_ylim((lims[1,0],lims[1,1]))
+		ax.set_zlim((lims[2,0],lims[2,1]))
+
+
+	else: 
+		print('tree plot dimension not supported')
 	
 	# save_figs('../current/tree.pdf')
 	# open_figs('../current/tree.pdf')

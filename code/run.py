@@ -16,6 +16,10 @@ def make_instance(param):
 		from problems.example1 import Example1
 		problem = Example1()
 
+	elif param.problem_name == "example2":
+		from problems.example2 import Example2
+		problem = Example2()
+
 	if param.solver_name == "Empty": 
 		from solvers.empty import Empty
 		solver = Empty()
@@ -32,14 +36,10 @@ def make_instance(param):
 		from solvers.puct import PUCT
 		solver = PUCT()
 
-	elif param.solver_name == "GPUCT": 
-		from solvers.game_puct import PUCT
-		solver = PUCT()
-
 	instance["param"] = param 
 	instance["problem"] = problem 
 	instance["solver"] = solver 
-	instance["initial_state"] = problem.S.sample() 
+	instance["initial_state"] = problem.initialize() 
 
 	return instance 
 
@@ -83,6 +83,9 @@ def run_instance(instance):
 			curr_state = next_state
 
 	print('completed sim.')
+
+	if True: 
+		problem.render(np.array(states))
 
 	sim_result = dict()
 	sim_result["param"] = param.to_dict() 

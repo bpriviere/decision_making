@@ -24,7 +24,7 @@ class Cube(Space):
 		self.lims = lims
 		self.df_lim = 10 
 
-	def sample(self):
+	def sample(self,damp=0.0):
 		# output: 
 		# 	- nd array [dim x 1]
 		s = np.zeros((self.dim,1))
@@ -32,9 +32,9 @@ class Cube(Space):
 			if np.any(self.lims[i,:] > 1000):
 				s[i] = 2*self.df_lim*np.random.uniform() - self.df_lim
 			else: 
-				s[i] = self.lims[i,0] + np.random.uniform()*\
+				s[i] = self.lims[i,0] + np.random.uniform(damp,1-damp)*\
 					(self.lims[i,1] - self.lims[i,0])
 		return s 
 
 	def contains(self,s):
-		return (s > self.lims[:,0]).all() and (s < self.lims[:,1]).all()
+		return (s[:,0] > self.lims[:,0]).all() and (s[:,0] < self.lims[:,1]).all()

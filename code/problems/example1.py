@@ -6,12 +6,14 @@ import numpy as np
 from problems.problem import LQR
 from problems.types.space import Cube
 
-state_dim = 2 
-action_dim = 2 
 t0 = 0 
-tf = 10 
+tf = 1 
 dt = 0.1
 times = np.arange(t0,tf,dt)
+
+state_dim = 2 
+action_dim = 2 
+position_idx = np.arange(2)
 
 # dynamics
 Fc = np.zeros((state_dim,state_dim))
@@ -22,22 +24,33 @@ Q = np.eye(state_dim)
 Ru = np.eye(action_dim)
 
 # state and action lim 
-pos_lim = 20
+pos_lim = 10
 action_lim = 5
 
 
 class Example1(LQR):
 
+
 	def __init__(self): 
-		super(Example1,self).__init__(F,B,Q,Ru)
 		self.dt = dt
 		self.times = times 
+		self.position_idx = position_idx
+		S = self.make_S()
+		A = self.make_A()
+		super(Example1,self).__init__(F,B,Q,Ru,S,A)
+
 
 	def is_terminal(self,state):
 		return not self.is_valid(state)
 
+
 	def is_valid(self,state):
 		return self.S.contains(state)
+
+
+	def initialize(self):
+		return self.S.sample() 
+		
 
 	def normalized_reward(self,s,a):
 		# needs to be in [0,1]
@@ -47,18 +60,22 @@ class Example1(LQR):
 		reward = np.clip(reward,r_min,r_max)
 		return (reward - r_min) / (r_max - r_min)
 
+
 	def make_S(self):
-		state_lims = np.zeros((self.state_dim,2))
-		for i_s in range(self.state_dim):
+		state_lims = np.zeros((state_dim,2))
+		for i_s in range(state_dim):
 			state_lims[i_s,0] = -pos_lim
 			state_lims[i_s,1] =  pos_lim 			
 		return Cube(state_lims)
 
+
 	def make_A(self):
-		action_lims = np.zeros((self.action_dim,2))
-		for i_a in range(self.action_dim):
+		action_lims = np.zeros((action_dim,2))
+		for i_a in range(action_dim):
 			action_lims[i_a,0] = -action_lim
 			action_lims[i_a,1] =  action_lim
 		return Cube(action_lims)		
 
 
+	def render(self,states):
+		pass 

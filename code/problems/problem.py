@@ -2,9 +2,6 @@
 # standard 
 import numpy as np 
 
-# custom
-from problems.types.space import Cube
-
 class Problem: 
 
 	def __init__(self):
@@ -13,14 +10,20 @@ class Problem:
 	def reward(self,state,action):
 		exit("reward needs to be overwritten")
 
+	def normalized_reward(self,state,action): 
+		exit("normalized_reward needs to be overwritten")		
+
 	def step(self,state,action):
 		exit("step needs to be overwritten")
 
-	def render(self,state):
+	def render(self,states):
 		exit("render needs to be overwritten")
 
 	def is_terminal(self,state):
 		exit("is_terminal needs to be overwritten")
+
+	def initialize(self):
+		exit("initialize needs to be overwritten")		
 
 
 class MDP(Problem):
@@ -38,23 +41,25 @@ class MDP(Problem):
 		self.T = T
 		self.gamma = gamma
 		self.num_robots = 1
+		self.state_dim = S.dim
+		self.state_lims = S.lims
+		self.action_dim = A.dim 
+		self.action_lims = A.lims
 		super(MDP, self).__init__()
 
 
 class LQR(MDP):
 	
-	def __init__(self,F,B,Q,Ru):
+	def __init__(self,F,B,Q,Ru,S,A):
 		self.F = F 
 		self.B = B 
 		self.Q = Q 
 		self.Ru = Ru 
-		self.state_dim,self.action_dim = np.shape(B)
-		S = self.make_S() 
-		A = self.make_A() # action space 
 		R = self.reward 
 		T = None
 		gamma = 1
 		super(LQR, self).__init__(S,A,R,T,gamma)
+
 
 	def step(self,s,a):
 		# input: 
@@ -64,6 +69,7 @@ class LQR(MDP):
 		# 	- numpy float [state_dim x 1]
 		s_tp1 = np.dot(self.F,s) + np.dot(self.B,a)
 		return s_tp1 
+
 
 	def reward(self,s,a):
 		# output:
@@ -89,7 +95,7 @@ class POMDP(Problem):
 
 class POSG(Problem):
 
-	def __init__(self,param,S,A,O,Z,R,T,b0,gamma,I):
+	def __init__(self,S,A,O,Z,R,T,b0,gamma,I):
 		# input: 
 		# 	- S: state space for each agent, dict of space objects 
 		# 	- A: action space for each agent, dict of space objects
@@ -98,5 +104,18 @@ class POSG(Problem):
 		# 	- R: reward function for each agent, dict of functions, r_i = R_i(s,a)
 		# 	- T: transition function for each agent, dict of functions, P(s_{t+1} | s_t,a_t) = T
 		# 	- I: index set of robots 
+		self.S = S 
+		self.A = A
+		self.O = O
+		self.Z = Z 
+		self.reward = R
+		self.T = T
+		self.b0 = b0 
+		self.gamma = gamma	
+		self.I = I 
+		self.state_dim = S.dim
+		self.state_lims = S.lims
+		self.action_dim = A.dim 
+		self.action_lims = A.lims		
 		self.num_robots = len(I)
 		super(POSG, self).__init__()
