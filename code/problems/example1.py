@@ -7,17 +7,24 @@ from problems.problem import LQR
 from problems.types.space import Cube
 
 t0 = 0 
-tf = 1 
+tf = 10
 dt = 0.1
 times = np.arange(t0,tf,dt)
 
-state_dim = 2 
-action_dim = 2 
-position_idx = np.arange(2)
-
 # dynamics
-Fc = np.zeros((state_dim,state_dim))
-Bc = np.eye(state_dim)
+m = 1
+name = "double_integrator"
+if name == "single_integrator":
+	Fc = np.zeros((state_dim,state_dim)) 
+	Bc = np.eye(state_dim)
+	position_idx = np.arange(2)
+	velocity_idx = [] 
+elif name == "double_integrator":
+	Fc = np.array(((0,0,1,0),(0,0,0,1),(0,0,0,0),(0,0,0,0))) 
+	Bc = 1/m * np.array(((0,0),(0,0),(1,0),(0,1)))
+	position_idx = np.arange(2)
+	velocity_idx = np.arange(2) + 2
+state_dim,action_dim = Bc.shape
 F = np.eye(state_dim) +  Fc * dt 
 B = Bc * dt
 Q = np.eye(state_dim)
@@ -25,6 +32,7 @@ Ru = np.eye(action_dim)
 
 # state and action lim 
 pos_lim = 10
+vel_lim = 5
 action_lim = 5
 
 
@@ -39,6 +47,9 @@ class Example1(LQR):
 		A = self.make_A()
 		super(Example1,self).__init__(F,B,Q,Ru,S,A)
 
+		# learning 
+		self.policy_encoding_dim = state_dim
+		self.value_encoding_dim = state_dim
 
 	def is_terminal(self,state):
 		return not self.is_valid(state)
@@ -63,9 +74,12 @@ class Example1(LQR):
 
 	def make_S(self):
 		state_lims = np.zeros((state_dim,2))
-		for i_s in range(state_dim):
+		for i_s in position_idx:
 			state_lims[i_s,0] = -pos_lim
 			state_lims[i_s,1] =  pos_lim 			
+		for i_s in velocity_idx:
+			state_lims[i_s,0] = -vel_lim
+			state_lims[i_s,1] =  vel_lim					
 		return Cube(state_lims)
 
 
@@ -79,3 +93,11 @@ class Example1(LQR):
 
 	def render(self,states):
 		pass 
+
+
+	# learning 
+	def policy_encoding(self,state,robot):
+		return state 
+
+	def value_encoding(self,state):
+		return state 

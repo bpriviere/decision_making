@@ -34,9 +34,8 @@ def make_instance(param):
 
 	elif param.solver_name == "PUCT": 
 		from solvers.puct import PUCT
-		solver = PUCT()
+		solver = PUCT(vis_on=param.tree_vis_on)
 
-	instance["param"] = param 
 	instance["problem"] = problem 
 	instance["solver"] = solver 
 	instance["initial_state"] = problem.initialize() 
@@ -44,7 +43,7 @@ def make_instance(param):
 	return instance 
 
 
-def run_instance(instance):
+def run_instance(instance,verbose=True):
 	# input: 
 	#	- 
 	# outputs:
@@ -52,11 +51,12 @@ def run_instance(instance):
 
 	times, states, actions, observations, rewards = [],[],[],[],[]
 
-	print('   running sim with... \n\t{} \n\t{} \n\t{}'.format(\
-		instance["problem"],
-		instance["solver"],
-		instance["initial_state"]
-		))
+	if verbose:
+		print('   running sim with... \n\t{} \n\t{} \n\t{}'.format(\
+			instance["problem"],
+			instance["solver"],
+			instance["initial_state"]
+			))
 
 	problem = instance["problem"] 
 	solver = instance["solver"] 
@@ -65,7 +65,8 @@ def run_instance(instance):
 	states.append(curr_state)
 	times.append(problem.times[0])
 	for step,time in enumerate(problem.times[1:]):
-		print('\t\t t = {}/{}'.format(step,len(problem.times)))
+
+		if verbose: print('\t\t t = {}/{}'.format(step,len(problem.times)))
 		
 		action = solver.policy(problem,curr_state)
 		reward = problem.reward(curr_state,action)
@@ -82,13 +83,10 @@ def run_instance(instance):
 		else: 
 			curr_state = next_state
 
-	print('completed sim.')
-
-	if True: 
-		problem.render(np.array(states))
+	if verbose:	print('completed sim.')
+	if verbose: problem.render(np.array(states))
 
 	sim_result = dict()
-	sim_result["param"] = param.to_dict() 
 	sim_result["instance"] = instance
 	sim_result["times"] = times 
 	sim_result["states"] = np.array(states)
@@ -108,11 +106,11 @@ if __name__ == '__main__':
 	# run instance 
 	sim_result = run_instance(instance)
 
-	# save/load results 
-	# todo 
+	# save/load results
+	# todo
 
 	# plotting 
 	print('plotting results...')
 	plotter.plot_sim_result(sim_result)
-	plotter.save_figs(param.curr_plot_fn)
-	plotter.open_figs(param.curr_plot_fn)
+	plotter.save_figs("../current/plots/run.pdf")
+	plotter.open_figs("../current/plots/run.pdf")
