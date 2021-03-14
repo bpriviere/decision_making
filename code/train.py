@@ -6,6 +6,7 @@ import random
 import pickle 
 import tempfile
 import itertools
+import time 
 import os
 import multiprocessing as mp
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -91,7 +92,7 @@ def worker_sps(fn,seed,problem,num_states,policy_oracle,value_oracle):
 
 
 def make_self_play_states(problem,num_states,policy_oracle,value_oracle):
-		
+	start_time = time.time()
 	print('making self play states...')
 	ncpu = mp.cpu_count() - 1
 	num_states_per_pool = int(num_states/ncpu)
@@ -119,7 +120,7 @@ def make_self_play_states(problem,num_states,policy_oracle,value_oracle):
 				problem.render(states)
 				plot_count += 1 
 		os.remove(path)
-	print('completed self play states.')
+	print('completed self play states in {}s.'.format(time.time()-start_time))
 	return self_play_states
 
 
@@ -149,6 +150,7 @@ def worker_edp(fn,problem,robot,states,policy_oracle,value_oracle):
 
 
 def make_expert_demonstration_pi(problem,robot,states,policy_oracle,value_oracle):
+	start_time = time.time()
 	print('making expert demonstration pi...')
 	ncpu = mp.cpu_count() - 1
 	num_states_per_pool = int(len(states)/ncpu)
@@ -179,7 +181,7 @@ def make_expert_demonstration_pi(problem,robot,states,policy_oracle,value_oracle
 		problem.policy_encoding_dim,action_dim_per_robot,robot=robot)
 	plotter.plot_policy_dataset(problem,train_dataset,test_dataset)
 	plotter.save_figs("../current/models/dataset_policy_l{}_i{}.pdf".format(l,robot))
-	print('expert demonstration pi completed.')	
+	print('expert demonstration pi completed in {}s.'.format(time.time()-start_time))	
 	return train_dataset, test_dataset
 
 
@@ -212,6 +214,7 @@ def worker_edv(fn,problem,states,policy_oracle):
 
 
 def make_expert_demonstration_v(problem,states,policy_oracle):
+	start_time = time.time()
 	print('making expert demonstration v...')
 	ncpu = mp.cpu_count() - 1
 	num_states_per_pool = int(len(states)/ncpu)
@@ -242,7 +245,7 @@ def make_expert_demonstration_v(problem,states,policy_oracle):
 		problem.value_encoding_dim,1)
 	plotter.plot_value_dataset(problem,train_dataset,test_dataset)
 	plotter.save_figs("../current/models/dataset_value_l{}.pdf".format(l))
-	print('expert demonstration v completed.')
+	print('expert demonstration v completed in {}s.'.format(time.time()-start_time))
 	return train_dataset, test_dataset
 
 
@@ -257,6 +260,7 @@ def calculate_value(problem,sim_result):
 
 
 def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
+	start_time = time.time()
 	print('training model...')
 
 	# device = "cpu"
@@ -291,7 +295,7 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 			model.to(device)
 	plotter.plot_loss(losses)
 	plotter.save_figs("../current/models/losses_{}_l{}_i{}.pdf".format(oracle_name,l,robot))
-	print('training model completed.')
+	print('training model completed in {}s.'.format(time.time()-start_time))
 	return 
 
 
@@ -334,7 +338,8 @@ if __name__ == '__main__':
 
 	# training 
 	for l in range(L):
-		print('learning iteration: {}/{}'.format(l,L))
+		start_time = time.time()
+		print('learning iteration: {}/{}...'.format(l,L))
 
 		if l == 0:
 			policy_oracle = [None for _ in range(problem.num_robots)]
@@ -356,4 +361,5 @@ if __name__ == '__main__':
 		states_v = make_self_play_states(problem,num_D_v,policy_oracle,value_oracle)
 		train_dataset_v, test_dataset_v = make_expert_demonstration_v(problem,states_v,policy_oracle)
 		train_model(problem,train_dataset_v,test_dataset_v,l,"value") 
+		print('complete learning iteration: {}/{} in {}s'.format(l,L,time.time()-start_time))
 
