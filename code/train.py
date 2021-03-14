@@ -4,6 +4,10 @@ import numpy as np
 import torch 
 import random 
 import pickle 
+import tempfile
+import itertools
+import os
+import multiprocessing as mp
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.nn import MSELoss
 
@@ -17,16 +21,16 @@ from learning.policy_network import PolicyNetwork
 from learning.value_network import ValueNetwork
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
-L = 2 
-num_D_pi = 10
-num_D_v = 10 
-num_simulations_expert = 10
-num_simulations_learner = 10
+L = 10
+num_D_pi = 10000
+num_D_v = 10000
+num_self_play_plots = 10
+num_simulations_expert = 10000
+num_simulations_learner = 1000
 learning_rate = 0.001
-num_epochs = 10
-batch_size = 2
+num_epochs = 300
+batch_size = 512
 train_test_split = 0.8
-
 
 class Dataset(torch.utils.data.Dataset):
 	
@@ -50,7 +54,27 @@ class Dataset(torch.utils.data.Dataset):
 		self.target_torch = self.target_torch.to(device)
 
 
-def make_self_play_states(problem,num_states,policy_oracle,value_oracle):
+# def make_self_play_states(problem,num_states,policy_oracle,value_oracle):
+# 	self_play_states = [] 
+# 	while len(self_play_states) < num_states: 
+# 		instance = dict()
+# 		instance["problem"] = problem 
+# 		instance["initial_state"] = problem.initialize() 
+# 		instance["solver"] = PUCT(\
+# 			policy_oracle=policy_oracle,
+# 			value_oracle=value_oracle,
+# 			number_simulations=num_simulations_learner)
+# 		sim_result = run_instance(instance,verbose=False)
+# 		self_play_states.extend(sim_result["states"])
+# 	return self_play_states
+
+
+def worker_sps_wrapper(arg):
+	return worker_sps(*arg)
+
+
+def worker_sps(fn,seed,problem,num_states,policy_oracle,value_oracle):
+	np.random.seed(seed)
 	self_play_states = [] 
 	while len(self_play_states) < num_states: 
 		instance = dict()
@@ -61,11 +85,49 @@ def make_self_play_states(problem,num_states,policy_oracle,value_oracle):
 			value_oracle=value_oracle,
 			number_simulations=num_simulations_learner)
 		sim_result = run_instance(instance,verbose=False)
-		self_play_states.extend(sim_result["states"])
+		self_play_states.append(sim_result["states"])
+	np.save(fn,np.array(self_play_states))	
 	return self_play_states
 
 
-def make_expert_demonstration_pi(problem,robot,states,policy_oracle,value_oracle):
+def make_self_play_states(problem,num_states,policy_oracle,value_oracle):
+		
+	print('making self play states...')
+	ncpu = mp.cpu_count() - 1
+	num_states_per_pool = int(num_states/ncpu)
+
+	paths = []
+	seeds = [] 
+	for i in range(ncpu):
+		_, path = tempfile.mkstemp()
+		paths.append(path + '.npy')
+		seeds.append(i)
+
+	with mp.Pool(ncpu) as pool:
+		args = list(zip(paths, seeds, itertools.repeat(problem), itertools.repeat(num_states_per_pool), \
+			itertools.repeat(policy_oracle), itertools.repeat(value_oracle) ))
+		for _ in pool.imap_unordered(worker_sps_wrapper, args):
+			pass
+
+	self_play_states = []
+	plot_count = 0 
+	for path in paths: 
+		self_play_states_i = list(np.load(path))
+		for states in self_play_states_i:
+			self_play_states.extend(states)
+			if plot_count < num_self_play_plots:
+				problem.render(states)
+				plot_count += 1 
+		os.remove(path)
+	print('completed self play states.')
+	return self_play_states
+
+
+def worker_edp_wrapper(arg):
+	return worker_edp(*arg)
+
+
+def worker_edp(fn,problem,robot,states,policy_oracle,value_oracle):
 	datapoints = []
 	solver = PUCT(\
 		policy_oracle=policy_oracle,
@@ -82,14 +144,42 @@ def make_expert_demonstration_pi(problem,robot,states,policy_oracle,value_oracle
 			target = np.average(robot_actions, weights=num_visits, axis=0)
 			datapoint = np.append(encoding,target)
 			datapoints.append(datapoint)
-	random.shuffle(datapoints)
+	np.save(fn,np.array(datapoints))	
+	return datapoints
+
+
+def make_expert_demonstration_pi(problem,robot,states,policy_oracle,value_oracle):
+	print('making expert demonstration pi...')
+	ncpu = mp.cpu_count() - 1
+	num_states_per_pool = int(len(states)/ncpu)
+
+	paths = []
+	split_states = []
+	for i in range(ncpu):
+		_, path = tempfile.mkstemp()
+		paths.append(path + '.npy')
+		split_states.append(states[i*num_states_per_pool:(i+1)*num_states_per_pool])
+
+	with mp.Pool(ncpu) as pool:
+		args = list(zip(paths, itertools.repeat(problem), itertools.repeat(robot), split_states, \
+			itertools.repeat(policy_oracle), itertools.repeat(value_oracle) ))
+		for _ in pool.imap_unordered(worker_edp_wrapper, args):
+			pass
+
+	datapoints = []
+	for path in paths: 
+		datapoints.extend(list(np.load(path)))
+		os.remove(path)
+
 	split = int(len(datapoints)*train_test_split)
+	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
 	train_dataset = datapoints_to_dataset(datapoints[0:split],"train_policy",\
 		problem.policy_encoding_dim,action_dim_per_robot,robot=robot)
 	test_dataset = datapoints_to_dataset(datapoints[split:],"test_policy",\
 		problem.policy_encoding_dim,action_dim_per_robot,robot=robot)
 	plotter.plot_policy_dataset(problem,train_dataset,test_dataset)
-	plotter.save_figs("../current/models/policy_dataset_l{}_i{}.pdf".format(l,robot))
+	plotter.save_figs("../current/models/dataset_policy_l{}_i{}.pdf".format(l,robot))
+	print('expert demonstration pi completed.')	
 	return train_dataset, test_dataset
 
 
@@ -101,7 +191,11 @@ def datapoints_to_dataset(datapoints,oracle_name,encoding_dim,target_dim,robot=0
 	return dataset
 
 
-def make_expert_demonstration_v(problem,states,policy_oracle):
+def worker_edv_wrapper(args):
+	return worker_edv(*args)
+
+
+def worker_edv(fn,problem,states,policy_oracle):
 	datapoints = []
 	for state in states: 
 		instance = dict()
@@ -113,6 +207,33 @@ def make_expert_demonstration_v(problem,states,policy_oracle):
 		encoding = problem.value_encoding(state).squeeze()
 		datapoint = np.append(encoding,value)		
 		datapoints.append(datapoint)
+	np.save(fn,np.array(datapoints))	
+	return datapoints
+
+
+def make_expert_demonstration_v(problem,states,policy_oracle):
+	print('making expert demonstration v...')
+	ncpu = mp.cpu_count() - 1
+	num_states_per_pool = int(len(states)/ncpu)
+
+	paths = []
+	split_states = []
+	for i in range(ncpu):
+		_, path = tempfile.mkstemp()
+		paths.append(path + '.npy')
+		split_states.append(states[i*num_states_per_pool:(i+1)*num_states_per_pool])
+
+	with mp.Pool(ncpu) as pool:
+		args = list(zip(paths, itertools.repeat(problem), split_states, \
+			itertools.repeat(policy_oracle) ))
+		for _ in pool.imap_unordered(worker_edv_wrapper, args):
+			pass
+
+	datapoints = []
+	for path in paths: 
+		datapoints.extend(list(np.load(path)))
+		os.remove(path)
+
 	random.shuffle(datapoints) 
 	split = int(len(datapoints)*train_test_split)
 	train_dataset = datapoints_to_dataset(datapoints[0:split],"train_value",\
@@ -120,12 +241,13 @@ def make_expert_demonstration_v(problem,states,policy_oracle):
 	test_dataset = datapoints_to_dataset(datapoints[split:],"test_value",\
 		problem.value_encoding_dim,1)
 	plotter.plot_value_dataset(problem,train_dataset,test_dataset)
-	plotter.save_figs("../current/models/value_dataset_l{}.pdf".format(l))
+	plotter.save_figs("../current/models/dataset_value_l{}.pdf".format(l))
+	print('expert demonstration v completed.')
 	return train_dataset, test_dataset
 
 
 def calculate_value(problem,sim_result):
-	value = np.zeros((1))
+	value = np.zeros((problem.num_robots))
 	states = sim_result["states"]
 	actions = sim_result["actions"]
 	for step,(state,action) in enumerate(zip(states,actions)):
@@ -135,15 +257,16 @@ def calculate_value(problem,sim_result):
 
 
 def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
+	print('training model...')
 
 	# device = "cpu"
 	device = "cuda"
 	model_fn = get_oracle_fn(oracle_name,l,robot=robot)
 
 	if oracle_name == "policy":
-		model = PolicyNetwork(problem,oracle_name,device=device)
+		model = PolicyNetwork(problem,device=device)
 	elif oracle_name == "value":
-		model = ValueNetwork(problem,oracle_name,device=device)
+		model = ValueNetwork(problem,device=device)
 	model.to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
@@ -168,6 +291,8 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 			model.to(device)
 	plotter.plot_loss(losses)
 	plotter.save_figs("../current/models/losses_{}_l{}_i{}.pdf".format(oracle_name,l,robot))
+	print('training model completed.')
+	return 
 
 
 def train(model,optimizer,loader):
@@ -213,6 +338,7 @@ if __name__ == '__main__':
 
 		if l == 0:
 			policy_oracle = [None for _ in range(problem.num_robots)]
+			# policy_oracle = None 
 			value_oracle = None 
 		else: 
 			policy_oracle = [get_oracle_fn("policy",l-1,robot=i) for i in range(problem.num_robots)]

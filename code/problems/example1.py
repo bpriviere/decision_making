@@ -5,6 +5,7 @@ import numpy as np
 # custom 
 from problems.problem import LQR
 from problems.types.space import Cube
+import plotter 
 
 t0 = 0 
 tf = 10
@@ -51,6 +52,7 @@ class Example1(LQR):
 		self.policy_encoding_dim = state_dim
 		self.value_encoding_dim = state_dim
 
+
 	def is_terminal(self,state):
 		return not self.is_valid(state)
 
@@ -92,8 +94,15 @@ class Example1(LQR):
 
 
 	def render(self,states):
-		pass 
+		states = np.array(states)
+		state_lims = self.S.lims
 
+		fig,ax = plotter.make_fig() 
+		ax.plot(states[:,0],states[:,1])
+		ax.plot(states[0,0],states[0,1],'o')
+		ax.plot(states[-1,0],states[-1,1],'s')
+		ax.set_xlim([state_lims[0,0],state_lims[0,1]])
+		ax.set_ylim([state_lims[1,0],state_lims[1,1]])
 
 	# learning 
 	def policy_encoding(self,state,robot):

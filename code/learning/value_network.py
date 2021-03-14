@@ -7,15 +7,11 @@ from learning.feedforward import FeedForward
 
 class ValueNetwork(torch.nn.Module):
 
-	def __init__(self,problem,oracle_name,device="cpu",path=None):
+	def __init__(self,problem,device="cpu",path=None):
 		super(ValueNetwork, self).__init__()
 
-		if oracle_name == "policy":
-			self.encoding_dim = problem.policy_encoding_dim
-			self.output_dim = 2*problem.action_dim 
-		elif oracle_name == "value": 
-			self.encoding_dim = problem.value_encoding_dim
-			self.output_dim = 2*1
+		self.encoding_dim = problem.value_encoding_dim
+		self.output_dim = 2*problem.num_robots
 
 		self.state_dim = problem.state_dim 
 		self.action_dim = problem.action_dim 

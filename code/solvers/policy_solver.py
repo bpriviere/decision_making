@@ -12,7 +12,7 @@ import plotter
 class PolicySolver(Solver):
 
 	def __init__(self,problem,paths):
-		self.models = [PolicyNetwork(problem,"policy",path=path) for path in paths]
+		self.models = [PolicyNetwork(problem,path=path) for path in paths]
 		
 	def policy(self,problem,root_state):
 		action = np.zeros((problem.action_dim,1))
@@ -27,7 +27,7 @@ class PolicySolver(Solver):
 class ValueSolver(Solver):
 
 	def __init__(self,problem,path):
-		self.model = ValueNetwork(problem,"value",path=path)
+		self.model = ValueNetwork(problem,path=path)
 		
 	def __call__(self,problem,root_state):
 		value_encoding = problem.value_encoding(root_state)

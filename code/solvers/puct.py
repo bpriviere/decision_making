@@ -75,7 +75,7 @@ class PUCT(Solver):
 
 	def best_child(self,curr_node,robot):
 		best_c = None
-		best_value = 0
+		best_value = -np.inf 
 		for child in curr_node.children: 
 			if child.num_visits == 0: 
 				return child
@@ -118,7 +118,7 @@ class PUCT(Solver):
 		
 		# check validity
 		if problem.is_terminal(root_state):
-			print('root node is terminal')
+			# print('root node is terminal')
 			return None
 
 		# init tree 

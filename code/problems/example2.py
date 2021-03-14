@@ -56,6 +56,11 @@ class Example2(POSG):
 		self.dt = dt
 		self.times = times 
 		self.position_idx = position_idx
+		
+		# learning 
+		self.policy_encoding_dim = state_dim_per_robot
+		self.value_encoding_dim = state_dim_per_robot		
+		
 		super(Example2,self).__init__(S,A,O,Z,R,T,b0,gamma,I)
 
 
@@ -161,3 +166,15 @@ class Example2(POSG):
 		ax.legend(loc='best')
 
 		return fig,ax 
+
+	# learning 
+	def policy_encoding(self,state,robot):
+		s1 = state[np.arange(state_dim_per_robot),:]
+		s2 = state[state_dim_per_robot + np.arange(state_dim_per_robot),:]
+		return s2-s1 
+
+	def value_encoding(self,state):
+		s1 = state[np.arange(state_dim_per_robot),:]
+		s2 = state[state_dim_per_robot + np.arange(state_dim_per_robot),:]
+		return s2-s1 
+		

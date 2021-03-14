@@ -210,7 +210,7 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 	# target: robot_action 
 
 	encoding_dim = problem.policy_encoding_dim
-	target_dim = problem.action_dim 
+	target_dim = int(problem.action_dim / problem.num_robots)
 	state_lims = problem.S.lims
 	action_lims = problem.A.lims
 

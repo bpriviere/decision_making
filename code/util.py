@@ -27,17 +27,22 @@ def write_sim_result(sim_result_dict,fn):
 	with open(fn+'.pickle', 'xb') as h:
 		pickle.dump(sim_result_dict, h)
 
+def load_sim_result(fn):
+	with open(fn, 'rb') as h:
+		sim_result = pickle.load(h)
+	return sim_result
+
 def write_dataset(dataset,fn):
 	# with open(fn, 'xb') as h:
 	# 	pickle.dump(dataset, h)
 	np.save(fn,dataset)
 
-def get_dataset_fn(oracle,l,robot=0):
+def get_dataset_fn(oracle_name,l,robot=0):
 	# return "../current/data/{}_l{}_i{}.pickle".format(oracle,l,robot)
-	return "../current/data/{}_l{}_i{}.npy".format(oracle,l,robot)
+	return "../current/data/{}_l{}_i{}.npy".format(oracle_name,l,robot)
 
-def get_oracle_fn(oracle,l,robot=0):
-	return "../current/models/{}_l{}_i{}.pt".format(oracle,l,robot)
+def get_oracle_fn(oracle_name,l,robot=0):
+	return "../current/models/model_{}_l{}_i{}.pt".format(oracle_name,l,robot)
 
 def format_dir(clean_dirnames=[]):
 	dirnames = ["plots","data","models"]
