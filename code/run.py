@@ -36,6 +36,10 @@ def make_instance(param):
 		from solvers.puct import PUCT
 		solver = PUCT(vis_on=param.tree_vis_on)
 
+	elif param.solver_name == "C_PUCT": 
+		from solvers.c_puct import C_PUCT
+		solver = C_PUCT()
+
 	instance["problem"] = problem 
 	instance["solver"] = solver 
 	instance["initial_state"] = problem.initialize() 

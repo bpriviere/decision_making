@@ -1,5 +1,4 @@
 
-#include <iostream>
 #include <string>
 #include <vector>
 #include <random>
@@ -30,6 +29,7 @@ class Example1 {
             m_num_robots = 1;
             m_timestep = 0.1f;
             m_gamma = 1.0f;
+            
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
 
@@ -93,8 +93,9 @@ class Example1 {
                 r = reward(state,action);
                 float r_max = 100;
                 float r_min = -1 * r_max;  
-                r = r.cwiseMin(r_min).cwiseMax(r_max);                
-                return (r.array() - r_min) / (r_max - r_min) ;
+                r = r.cwiseMin(r_max).cwiseMax(r_min);
+                r.array() = (r.array() - r_min) / (r_max - r_min);
+                return r;
             }
         
 

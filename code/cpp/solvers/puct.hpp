@@ -1,5 +1,4 @@
 
-// #include "../problems/example1.hpp"
 
 struct Node { 
 	Eigen::Matrix<float,2,1> state;
@@ -13,7 +12,7 @@ struct Node {
 		{
 			int depth = 0;
 			Node* ptr = parent;
-			while(ptr) {
+			while (ptr) {
 				ptr = ptr->parent;
 				depth += 1;
 			}
@@ -23,28 +22,26 @@ struct Node {
 
 class PUCT {
 	public: 
-		Example1 m_problem; 
-		int m_num_nodes; 
-		int m_search_depth;
-		std::vector<Node> m_nodes;
-		float m_C_exp;
-		float m_alpha_exp;
-		float m_C_pw;
-		float m_alpha_pw;
-		float m_beta_policy;
-		float m_beta_value;
-
-		PUCT() // default constructor 
-		{
-			m_num_nodes = 1000; 
-			m_search_depth = 10;
-			m_C_exp = 1.0f;
-			m_alpha_exp = 0.25f; 
-			m_C_pw = 2.0f; 
-			m_alpha_pw = 0.5f; 
-			m_beta_policy = 0.0f; 
-			m_beta_value = 0.0f; 
-		}
+		PUCT(
+			Example1& problem,
+			int num_nodes,
+			int search_depth,
+			float C_exp,
+			float alpha_exp,
+			float C_pw,
+			float alpha_pw,
+			float beta_policy,
+			float beta_value) 
+			: m_problem(problem) 
+			, m_num_nodes(num_nodes)
+			, m_search_depth(search_depth)
+			, m_C_exp(C_exp)
+			, m_alpha_exp(alpha_exp)
+			, m_C_pw(C_pw)
+			, m_alpha_pw(alpha_pw)
+			, m_beta_policy(beta_policy)
+			, m_beta_value(beta_value)
+			{}
 
 
 		Node search(
@@ -62,7 +59,7 @@ class PUCT {
 					return root_node; 
 				}
 
-				for (int ii = 0; ii < m_num_nodes; ii++){
+				for (int ii = 1; ii <= m_num_nodes; ii++){
 					int robot_turn = ii % m_problem.m_num_robots; 
 					Node* parent_node_ptr = select_node(root_node_ptr,robot_turn); 
 					Node* child_node_ptr = expand_node(parent_node_ptr);
@@ -106,11 +103,28 @@ class PUCT {
 		}
 
 
+		Node* most_visited(
+			Node* node_ptr,
+			int robot_turn)
+		{
+			Node* result = nullptr;
+			int mostVisits = 0;
+			for (Node* c : node_ptr->children) {
+				if (c->num_visits > mostVisits) {
+					mostVisits = c->num_visits;
+					result = c;
+				}
+			}
+			return result;
+		}
+
+
 		bool is_expanded(
 			Node* node_ptr)
 			{
 				int max_children = ceil(m_C_pw*(powf(node_ptr->num_visits, m_alpha_pw)));
-				return node_ptr->children.size() > max_children;
+				// return node_ptr->children.size() > max_children;
+				return int(node_ptr->children.size()) > max_children;
 			}
 
 
@@ -123,6 +137,7 @@ class PUCT {
 				auto& child_node = m_nodes[m_nodes.size()-1];
 				child_node.parent = parent_node_ptr;
 				child_node.action_to_node = action;
+				child_node.state = next_state;
 				parent_node_ptr->children.push_back(&child_node);
 				return &child_node;
 			}
@@ -131,7 +146,7 @@ class PUCT {
 		Eigen::Matrix<float,1,1> default_policy(
 			Node* node_ptr)
 			{
-				Eigen::Matrix<float,1,1> value;
+				Eigen::Matrix<float,1,1> value = Eigen::Matrix<float,1,1>::Zero();
 				float total_discount = 0.0;
 				int depth = node_ptr->calc_depth();
 				Eigen::Matrix<float,2,1> curr_state = node_ptr->state; 
@@ -140,14 +155,15 @@ class PUCT {
 					auto action = m_problem.sample_action();
 					auto next_state = m_problem.step(curr_state,action);
 					float discount = powf(m_problem.m_gamma,depth); 
-					value += discount * m_problem.normalized_reward(curr_state,action);
+					Eigen::Matrix<float,1,1> reward = m_problem.normalized_reward(curr_state,action);
+					value += discount * reward ; 
 					total_discount += discount; 
 					curr_state = next_state;
 					depth += 1;
 				}
-				if (total_discount > 0){
-					value  = value / total_discount;
-				}
+				// if (total_discount > 0){
+				// 	value  = value / total_discount;
+				// }
 				return value; 
 			}
 
@@ -162,4 +178,17 @@ class PUCT {
 					node_ptr = node_ptr->parent;
 				} while (node_ptr != nullptr);
 			}
+
+	private: 
+		Example1& m_problem;
+		int m_num_nodes;
+		int m_search_depth;
+		float m_C_exp;
+		float m_alpha_exp;
+		float m_C_pw;
+		float m_alpha_pw;
+		float m_beta_policy;
+		float m_beta_value;
+		std::vector<Node> m_nodes;
+				
 };

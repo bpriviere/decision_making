@@ -12,12 +12,17 @@ tf = 10
 dt = 0.1
 times = np.arange(t0,tf,dt)
 
+# state and action lim 
+pos_lim = 1
+vel_lim = 1
+action_lim = 1
+
 # dynamics
 m = 1
-name = "double_integrator"
+name = "single_integrator"
 if name == "single_integrator":
-	Fc = np.zeros((state_dim,state_dim)) 
-	Bc = np.eye(state_dim)
+	Fc = np.array(((0,0),(0,0)))
+	Bc = np.eye(2)
 	position_idx = np.arange(2)
 	velocity_idx = [] 
 elif name == "double_integrator":
@@ -25,20 +30,14 @@ elif name == "double_integrator":
 	Bc = 1/m * np.array(((0,0),(0,0),(1,0),(0,1)))
 	position_idx = np.arange(2)
 	velocity_idx = np.arange(2) + 2
+
 state_dim,action_dim = Bc.shape
 F = np.eye(state_dim) +  Fc * dt 
 B = Bc * dt
 Q = np.eye(state_dim)
 Ru = np.eye(action_dim)
 
-# state and action lim 
-pos_lim = 10
-vel_lim = 5
-action_lim = 5
-
-
 class Example1(LQR):
-
 
 	def __init__(self): 
 		self.dt = dt

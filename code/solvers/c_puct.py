@@ -6,7 +6,7 @@ import numpy as np
 
 # custom
 from solvers.solver import Solver 
-from cpp.bindings import cpp_search
+from cpp.build.bindings import cpp_search
 
 class C_PUCT(Solver):
 
@@ -14,16 +14,23 @@ class C_PUCT(Solver):
 		pass 
 
 	def policy(self,problem,root_state):
-		root_node = self.search_wrapper(problem,root_state)
-		most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
-		best_action = root_node.edges[most_visited_child]
-		return best_action 
+		# root_node = self.wrap_search(problem,root_state)
+		# most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
+		# best_action = root_node.edges[most_visited_child]
+		# return best_action 
+		return self.wrap_search(problem,root_state)
 
-	def search_wrapper(self,problem,root_state):
-		cpp_root_node = cpp_search(problem,root_state)
-		root_node = Node(root_state,None,problem.num_robots)
+	def wrap_search(self,problem,root_state):
+		# cpp_root_node = cpp_search(problem,root_state)
+		# root_node = Node(root_state,None,problem.num_robots)
+		# return root_node 
+		# print('root_state',root_state)
+		# print('root_state.shape',root_state.shape)
+		cpp_action = cpp_search(root_state)
+		py_action = np.zeros((problem.action_dim,1))
+		py_action[:,0] = cpp_action
+		return py_action
 
-		return root_node 
 
 
 
