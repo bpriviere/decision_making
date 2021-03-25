@@ -119,7 +119,7 @@ def plot_loss(losses):
 	ax.set_title("Losses")
 
 
-def plot_tree_state(problem,tree_state):
+def plot_tree_state(problem,tree_state,zoom_on=False):
 	# tree state : nd array in [num_nodes x state_dim + 1]
 
 	position_idxs = problem.position_idx
@@ -140,9 +140,10 @@ def plot_tree_state(problem,tree_state):
 		ax.add_collection(ln_coll)
 		ax.scatter(nodes[0,0],nodes[0,1])
 
-		lims = problem.S.lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
+		if not zoom_on: 
+			lims = problem.state_lims
+			ax.set_xlim((lims[0,0],lims[0,1]))
+			ax.set_ylim((lims[1,0],lims[1,1]))
 
 	elif len(position_idxs) == 3: 
 		
@@ -166,11 +167,11 @@ def plot_tree_state(problem,tree_state):
 			ln_coll = Line3DCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
 
-		lims = problem.S.lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
-		ax.set_zlim((lims[2,0],lims[2,1]))
-
+		if not zoom_on: 
+			lims = problem.state_lims
+			ax.set_xlim((lims[0,0],lims[0,1]))
+			ax.set_ylim((lims[1,0],lims[1,1]))
+			ax.set_zlim((lims[2,0],lims[2,1]))
 
 	else: 
 		print('tree plot dimension not supported')
@@ -184,7 +185,7 @@ def plot_value_dataset(problem,train_dataset,test_dataset):
 	
 	encoding_dim = problem.policy_encoding_dim
 	target_dim = 1
-	state_lims = problem.S.lims
+	state_lims = problem.state_lims
 	# action_lims = [0,1]
 
 	for title,dataset in zip(["Train","Test"],[train_dataset,test_dataset]):
@@ -211,8 +212,8 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 
 	encoding_dim = problem.policy_encoding_dim
 	target_dim = int(problem.action_dim / problem.num_robots)
-	state_lims = problem.S.lims
-	action_lims = problem.A.lims
+	state_lims = problem.state_lims
+	action_lims = problem.action_lims
 
 	for title,dataset in zip(["Train","Test"],[train_dataset,test_dataset]):
 		encodings = dataset.X_np 

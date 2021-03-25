@@ -10,7 +10,8 @@ import plotter
 
 # Polynomial Upper Confidence Trees (PUCT):
 # from https://hal.inria.fr/hal-00835352/document
-class PUCT(Solver):
+# with special state-space expansion 
+class PUCT_V2(Solver):
 
 	def __init__(self,
 		policy_oracle=None,\
@@ -25,7 +26,7 @@ class PUCT(Solver):
 		beta_value = 0.,
 		vis_on=False,
 		):
-		super(PUCT, self).__init__()
+		super(PUCT_V2, self).__init__()
 
 		self.policy_oracle = policy_oracle 
 		self.value_oracle = value_oracle 
@@ -61,7 +62,8 @@ class PUCT(Solver):
 		if self.policy_oracle is not None and np.random.uniform() < self.beta_policy:
 			action = self.policy_solver.policy(problem,parent_node.state)
 		else: 
-			action = problem.sample_action()
+			random_state = problem.sample_state()
+			action = problem.steer(parent_node.state,random_state)
 		next_state = problem.step(parent_node.state,action)
 		child_node = Node(next_state,parent_node,problem.num_robots)
 		parent_node.add_child(child_node,action)
@@ -118,7 +120,7 @@ class PUCT(Solver):
 		
 		# check validity
 		if problem.is_terminal(root_state):
-			# print('root node is terminal')
+			print('root node is terminal')
 			return None
 
 		# init tree 
@@ -140,7 +142,7 @@ class PUCT(Solver):
 
 		if self.vis_on: 
 			tree_state = self.export_tree(root_node)
-			plotter.plot_tree_state(problem,tree_state,zoom_on=False)
+			plotter.plot_tree_state(problem,tree_state,zoom_on=True)
 
 		return root_node
 

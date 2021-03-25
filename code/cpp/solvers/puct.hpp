@@ -155,15 +155,14 @@ class PUCT {
 					auto action = m_problem.sample_action();
 					auto next_state = m_problem.step(curr_state,action);
 					float discount = powf(m_problem.m_gamma,depth); 
-					Eigen::Matrix<float,1,1> reward = m_problem.normalized_reward(curr_state,action);
-					value += discount * reward ; 
+					value += discount * m_problem.normalized_reward(curr_state,action);
 					total_discount += discount; 
 					curr_state = next_state;
 					depth += 1;
 				}
-				// if (total_discount > 0){
-				// 	value  = value / total_discount;
-				// }
+				if (total_discount > 0){
+					value  = value / total_discount;
+				}
 				return value; 
 			}
 
@@ -178,6 +177,23 @@ class PUCT {
 					node_ptr = node_ptr->parent;
 				} while (node_ptr != nullptr);
 			}
+
+
+		Eigen::MatrixXf export_tree()
+		{
+			Eigen::MatrixXf tree(m_nodes.size(), m_problem.m_state_dim + 1);
+			for (int ii = 0; ii < m_nodes.size(); ++ii) {
+				tree.row(ii).head(m_problem.m_state_dim) = m_nodes[ii].state.array();
+				
+				int parentIdx = -1;
+				if (!(ii == 0)){
+					parentIdx = m_nodes[ii].parent - &m_nodes[0];
+				}
+				tree(ii,m_problem.m_state_dim) = parentIdx;
+			}
+			return tree; 
+		}
+
 
 	private: 
 		Example1& m_problem;

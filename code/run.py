@@ -14,11 +14,38 @@ def make_instance(param):
 
 	if param.problem_name == "example1":
 		from problems.example1 import Example1
-		problem = Example1()
+		problem = Example1(
+			t0 = param.t0,
+			tf = param.tf,
+			dt = param.dt,
+			pos_lim = param.pos_lim,
+			vel_lim = param.vel_lim)
 
 	elif param.problem_name == "example2":
 		from problems.example2 import Example2
-		problem = Example2()
+		problem = Example2(
+			t0 = param.t0,
+			tf = param.tf,
+			dt = param.dt,
+			pos_lim = param.pos_lim,
+			vel_lim = param.vel_lim,
+			acc_lim = param.acc_lim,
+			mass = param.mass)
+
+	elif param.problem_name == "example3":
+		from problems.example3 import Example3
+		problem = Example3(
+			t0 = param.t0,
+			tf = param.tf,
+			dt = param.dt,
+			pos_lim = param.pos_lim,
+			vel_lim = param.vel_lim,
+			acc_lim = param.acc_lim,
+			rad_lim = param.rad_lim,
+			omega_lim = param.omega_lim,
+			desired_distance = param.desired_distance,
+			state_control_weight = param.state_control_weight,
+			g = param.g)
 
 	if param.solver_name == "Empty": 
 		from solvers.empty import Empty
@@ -34,11 +61,51 @@ def make_instance(param):
 
 	elif param.solver_name == "PUCT": 
 		from solvers.puct import PUCT
-		solver = PUCT(vis_on=param.tree_vis_on)
+		solver = PUCT(
+			policy_oracle=param.policy_oracle,
+			value_oracle=param.value_oracle,
+			search_depth=param.search_depth,
+			number_simulations=param.number_simulations,
+			C_pw=param.C_pw,
+			alpha_pw=param.alpha_pw,
+			C_exp=param.C_exp,
+			alpha_exp=param.alpha_exp,
+			beta_policy=param.beta_policy,
+			beta_value=param.beta_value,
+			vis_on=param.vis_on
+			)
+
+	elif param.solver_name == "PUCT_V2": 
+		from solvers.puct_v2 import PUCT_V2
+		solver = PUCT_V2(
+			policy_oracle=param.policy_oracle,
+			value_oracle=param.value_oracle,
+			search_depth=param.search_depth,
+			number_simulations=param.number_simulations,
+			C_pw=param.C_pw,
+			alpha_pw=param.alpha_pw,
+			C_exp=param.C_exp,
+			alpha_exp=param.alpha_exp,
+			beta_policy=param.beta_policy,
+			beta_value=param.beta_value,
+			vis_on=param.vis_on
+			)		
 
 	elif param.solver_name == "C_PUCT": 
 		from solvers.c_puct import C_PUCT
-		solver = C_PUCT()
+		solver = C_PUCT(
+			policy_oracle=param.policy_oracle,
+			value_oracle=param.value_oracle,
+			search_depth=param.search_depth,
+			number_simulations=param.number_simulations,
+			C_pw=param.C_pw,
+			alpha_pw=param.alpha_pw,
+			C_exp=param.C_exp,
+			alpha_exp=param.alpha_exp,
+			beta_policy=param.beta_policy,
+			beta_value=param.beta_value,
+			vis_on=param.vis_on
+			)
 
 	instance["problem"] = problem 
 	instance["solver"] = solver 

@@ -22,15 +22,15 @@ from learning.policy_network import PolicyNetwork
 from learning.value_network import ValueNetwork
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
-L = 10
-num_D_pi = 10000
-num_D_v = 10000
+L = 2
+num_D_pi = 10
+num_D_v = 10
 num_self_play_plots = 10
-num_simulations_expert = 10000
-num_simulations_learner = 1000
+num_simulations_expert = 10
+num_simulations_learner = 10
 learning_rate = 0.001
-num_epochs = 300
-batch_size = 512
+num_epochs = 10
+batch_size = 2
 train_test_split = 0.8
 
 class Dataset(torch.utils.data.Dataset):

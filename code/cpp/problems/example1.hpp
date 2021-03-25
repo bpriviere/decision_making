@@ -1,5 +1,5 @@
 
-#include <string>
+// #include <string>
 #include <vector>
 #include <random>
 #include <eigen3/Eigen/Dense>
@@ -29,19 +29,21 @@ class Example1 {
             m_num_robots = 1;
             m_timestep = 0.1f;
             m_gamma = 1.0f;
-            
+
+            float pos_lim = 5.0f;
+            float vel_lim = 1.0f;
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
 
-            m_state_lims(0,0) = -1.0f;
-            m_state_lims(0,1) = 1.0f;
-            m_state_lims(1,0) = -1.0f;
-            m_state_lims(1,1) = 1.0f;
+            m_state_lims(0,0) = -pos_lim;
+            m_state_lims(0,1) = pos_lim;
+            m_state_lims(1,0) = -pos_lim;
+            m_state_lims(1,1) = pos_lim;
 
-            m_action_lims(0,0) = -1.0f;
-            m_action_lims(0,1) = 1.0f;
-            m_action_lims(1,0) = -1.0f;
-            m_action_lims(1,1) = 1.0f;
+            m_action_lims(0,0) = -vel_lim;
+            m_action_lims(0,1) = vel_lim;
+            m_action_lims(1,0) = -vel_lim;
+            m_action_lims(1,1) = vel_lim;
 
             m_F(0,0) = 1.0f;
             m_F(0,1) = 0.0f; 

@@ -5,58 +5,64 @@
 import numpy as np 
 
 # custom
+import plotter 
 from solvers.solver import Solver 
-from cpp.build.bindings import cpp_search
+from cpp.build.bindings import cpp_search, Settings
 
 class C_PUCT(Solver):
 
-	def __init__(self):
-		pass 
+	def __init__(self,
+		policy_oracle=None,\
+		value_oracle=None,\
+		search_depth=10,\
+		number_simulations=1000,
+		C_pw=2.0,
+		alpha_pw=0.5,
+		C_exp=1.0,
+		alpha_exp=0.25,
+		beta_policy=0.,
+		beta_value=0.,
+		vis_on=False,
+		):
+		super(C_PUCT, self).__init__()
+
+		self.policy_oracle = policy_oracle 
+		self.value_oracle = value_oracle 
+		self.search_depth = search_depth 
+		self.number_simulations = number_simulations 
+		self.C_pw = C_pw 
+		self.alpha_pw = alpha_pw 
+		self.C_exp = C_exp 
+		self.alpha_exp = alpha_exp 
+		self.beta_policy = beta_policy 
+		self.beta_value = beta_value
+		self.vis_on = vis_on 
 
 	def policy(self,problem,root_state):
-		# root_node = self.wrap_search(problem,root_state)
-		# most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
-		# best_action = root_node.edges[most_visited_child]
-		# return best_action 
-		return self.wrap_search(problem,root_state)
-
-	def wrap_search(self,problem,root_state):
-		# cpp_root_node = cpp_search(problem,root_state)
-		# root_node = Node(root_state,None,problem.num_robots)
-		# return root_node 
-		# print('root_state',root_state)
-		# print('root_state.shape',root_state.shape)
-		cpp_action = cpp_search(root_state)
+		result = self.wrap_search(problem,root_state)
 		py_action = np.zeros((problem.action_dim,1))
-		py_action[:,0] = cpp_action
+		py_action[:,0] = result.best_action
 		return py_action
 
+	def wrap_search(self,problem,root_state):
 
+		settings = Settings()
+		# settings.policy_oracle = self.policy_oracle # todo 
+		# settings.value_oracle = self.value_oracle 
+		settings.search_depth = self.search_depth 
+		settings.num_nodes = self.number_simulations 
+		settings.C_pw = self.C_pw 
+		settings.alpha_pw = self.alpha_pw 
+		settings.C_exp = self.C_exp 
+		settings.alpha_exp = self.alpha_exp 
+		settings.beta_policy = self.beta_policy 
+		settings.beta_value = self.beta_value
+		settings.vis_on = self.vis_on 
 
+		result = cpp_search(root_state,settings)
 
+		if settings.vis_on: 
+			tree_state = result.tree 
+			plotter.plot_tree_state(problem,tree_state,zoom_on=True)
 
-
-class Node: 
-
-	def __init__(self,state,parent,num_robots):
-		self.state = state 
-		self.parent = parent 
-		self.num_visits = 0 
-		self.total_value = np.zeros(num_robots) 
-		self.children = []
-		self.edges = dict()
-
-
-	def add_child(self,child_node,action):
-		self.children.append(child_node)
-		self.edges[child_node] = action 
-
-
-	def calc_depth(self):
-		curr_node = self 
-		depth = 0 
-		while curr_node.parent is not None: 
-			curr_node = curr_node.parent 
-			depth += 1 
-		return depth 
-
+		return result

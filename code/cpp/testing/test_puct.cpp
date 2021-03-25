@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include <eigen3/Eigen/Dense>
-#include "problems/example1.hpp"
-#include "solvers/puct.hpp" 
+#include "../problems/example1.hpp"
+#include "../solvers/puct.hpp" 
  
 int main()
 {
@@ -39,6 +39,7 @@ int main()
     // search
     PUCT puct(problem,num_nodes,search_depth,C_exp,alpha_exp,C_pw,alpha_pw,beta_policy,beta_value);
     auto result = puct.search(state); 
+    auto tree = puct.export_tree();
 
     std::cout << "result:" << result.total_value/result.num_visits << std::endl ;
 
