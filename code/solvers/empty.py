@@ -12,7 +12,7 @@ class Empty(Solver):
 		pass 
 
 	def policy(self,problem,state):
-		action_dim = problem.A.dim 
+		action_dim = problem.action_dim
 		return np.zeros((action_dim,1))
 
 

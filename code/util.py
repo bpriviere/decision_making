@@ -5,6 +5,9 @@ import importlib
 import signal
 import json 
 import pprint
+import pickle 
+import os 
+import glob 
 
 def dbgp(name,value):
 	if type(value) is dict:
@@ -19,3 +22,45 @@ def load_module(fn):
 	module_name, _ = module_name.split(".")
 	module = importlib.import_module("{}.{}".format(module_dir, module_name))
 	return module	
+
+def write_sim_result(sim_result_dict,fn):
+	with open(fn+'.pickle', 'xb') as h:
+		pickle.dump(sim_result_dict, h)
+
+def load_sim_result(fn):
+	with open(fn, 'rb') as h:
+		sim_result = pickle.load(h)
+	return sim_result
+
+def write_dataset(dataset,fn):
+	# with open(fn, 'xb') as h:
+	# 	pickle.dump(dataset, h)
+	np.save(fn,dataset)
+
+def get_dataset_fn(oracle_name,l,robot=0):
+	# return "../current/data/{}_l{}_i{}.pickle".format(oracle,l,robot)
+	return "../current/data/{}_l{}_i{}.npy".format(oracle_name,l,robot)
+
+def get_oracle_fn(oracle_name,l,robot=0):
+	return "../current/models/model_{}_l{}_i{}.pt".format(oracle_name,l,robot)
+
+def format_dir(clean_dirnames=[]):
+	dirnames = ["plots","data","models"]
+	for dirname in dirnames:
+		path = os.path.join(os.getcwd(),"../current/{}".format(dirname))
+		os.makedirs(path,exist_ok=True)
+	for dirname in clean_dirnames:
+		path = os.path.join(os.getcwd(),"../current/{}".format(dirname))
+		for file in glob.glob(path + "/*"):
+			os.remove(file)
+
+def sample_vector(lims,damp=0.0):
+	# from cube
+	dim = lims.shape[0]
+	x = np.zeros((dim,1))
+	for i in range(dim):
+		x[i] = lims[i,0] + np.random.uniform(damp,1-damp)*(lims[i,1] - lims[i,0])
+	return x
+
+def contains(vector,lims):
+	return (vector[:,0] > lims[:,0]).all() and (vector[:,0] < lims[:,1]).all()

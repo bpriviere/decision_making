@@ -1,11 +1,26 @@
 
-# standard 
-import numpy as np 
 
 class Problem: 
 
 	def __init__(self):
-		pass 
+		self.num_robots = None
+		self.gamma = None
+		self.state_dim = None 
+		self.state_lims = None 
+		self.action_dim = None
+		self.action_lims = None 
+		self.position_idx = None 
+		self.dt = None
+		self.times = None  
+		self.policy_encoding_dim = None
+		self.value_encoding_dim = None
+		self.name = None
+
+	def sample_action():
+		exit("sample_action needs to be overwritten")
+
+	def sample_state():
+		exit("sample_action needs to be overwritten")	
 
 	def reward(self,state,action):
 		exit("reward needs to be overwritten")
@@ -23,99 +38,15 @@ class Problem:
 		exit("is_terminal needs to be overwritten")
 
 	def initialize(self):
-		exit("initialize needs to be overwritten")		
+		exit("initialize needs to be overwritten")
+
+	def policy_encoding(self,state,robot):
+		exit("policy_encoding needs to be overwritten")		
+
+	def value_encoding(self,state):
+		exit("value_encoding needs to be overwritten")
+
+	def render(self,states):
+		exit("render needs to be overwritten")
 
 
-class MDP(Problem):
-
-	def __init__(self,S,A,R,T,gamma):
-		# input: 
-		# 	- S: state space, elements in [state_dim x 1]
-		# 	- A: action space, elements in [action_dim x 1]
-		# 	- R: reward function, r = R(s,a)
-		# 	- T: transition function, P(s_tp1 | s_t,a_t) = T(s_tp1,s_t,a_t)
-		# 	- gamma: discount factor 
-		self.S = S 
-		self.A = A
-		self.reward = R
-		self.T = T
-		self.gamma = gamma
-		self.num_robots = 1
-		self.state_dim = S.dim
-		self.state_lims = S.lims
-		self.action_dim = A.dim 
-		self.action_lims = A.lims
-		super(MDP, self).__init__()
-
-
-class LQR(MDP):
-	
-	def __init__(self,F,B,Q,Ru,S,A):
-		self.F = F 
-		self.B = B 
-		self.Q = Q 
-		self.Ru = Ru 
-		R = self.reward 
-		T = None
-		gamma = 1
-		super(LQR, self).__init__(S,A,R,T,gamma)
-
-
-	def step(self,s,a):
-		# input: 
-		# 	- numpy float [state_dim x 1]
-		# 	- numpy float [action_dim x 1]
-		# output: 
-		# 	- numpy float [state_dim x 1]
-		s_tp1 = np.dot(self.F,s) + np.dot(self.B,a)
-		return s_tp1 
-
-
-	def reward(self,s,a):
-		# output:
-		# 	- numpy float scalar 
-		return -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
-
-
-class POMDP(Problem):
-
-	def __init__(self,S,A,O,Z,R,T,b0,gamma):
-		# input: 
-		# 	- S: state space, elements in [state_dim x 1]
-		# 	- A: action space, elements in [action_dim x 1]
-		# 	- O: observation function, P(z|s,a) = O(s,a,z)
-		# 	- Z: observation space, elements in [measurement_dim x 1]
-		# 	- R: reward function, r = R(s,a)
-		# 	- T: transition function, P(s_tp1 | s_t,a_t) = T(s_tp1,s_t,a_t)
-		# 	- b0: initial beliefs, P(b0|s0)
-		# 	- gamma: discount factor 
-		self.num_robots = 1
-		super(POMDP, self).__init__()		
-
-
-class POSG(Problem):
-
-	def __init__(self,S,A,O,Z,R,T,b0,gamma,I):
-		# input: 
-		# 	- S: state space for each agent, dict of space objects 
-		# 	- A: action space for each agent, dict of space objects
-		# 	- O: observation function for each agent, dict of O_i functions, P(z|s,a) = O_i(s,a,z)
-		# 	- Z: observation space, [num agents x measurement dim]
-		# 	- R: reward function for each agent, dict of functions, r_i = R_i(s,a)
-		# 	- T: transition function for each agent, dict of functions, P(s_{t+1} | s_t,a_t) = T
-		# 	- I: index set of robots 
-		self.S = S 
-		self.A = A
-		self.O = O
-		self.Z = Z 
-		self.reward = R
-		self.T = T
-		self.b0 = b0 
-		self.gamma = gamma	
-		self.I = I 
-		self.state_dim = S.dim
-		self.state_lims = S.lims
-		self.action_dim = A.dim 
-		self.action_lims = A.lims		
-		self.num_robots = len(I)
-		super(POSG, self).__init__()

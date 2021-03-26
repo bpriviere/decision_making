@@ -1,163 +1,123 @@
 
+
 # standard 
 import numpy as np 
 
 # custom 
-from problems.problem import POSG
-from problems.types.space import Cube
+from problems.problem import Problem
+from util import sample_vector, contains
 import plotter 
 
-# 
-t0 = 0 
-tf = 20
-dt = 0.1
-times = np.arange(t0,tf,dt)
+# 2d double integrator , single robot 
+class Example2(Problem):
 
-# 
-num_robots = 2
-state_dim_per_robot = 7
-action_dim_per_robot = 3
-state_dim = state_dim_per_robot * num_robots
-action_dim = action_dim_per_robot * num_robots
-position_idx = np.arange(3)
+	def __init__(self,\
+		t0 = 0,
+		tf = 10,
+		dt = 0.1,
+		pos_lim = 5,
+		vel_lim = 1,
+		acc_lim = 1,
+		mass = 1,
+		): 
+		super(Example2,self).__init__()
 
-# reward 
-Q = np.zeros((state_dim_per_robot,state_dim_per_robot))
-Q[0,0] = 1
-Q[1,1] = 1
-Q[2,2] = 1
-d = 0.2
-Ru = 0.1*np.eye(action_dim_per_robot)
+		times = np.arange(t0,tf,dt)
+		
+		Fc = np.array(((0,0,1,0),(0,0,0,1),(0,0,0,0),(0,0,0,0))) 
+		Bc = 1/mass * np.array(((0,0),(0,0),(1,0),(0,1)))
+		position_idx = np.arange(2)
+		velocity_idx = np.arange(2) + 2
 
-# state and action lim 
-pos_lim = 2 # m 
-rad_lim = 2*np.pi # rad 
-vel_lim = 2  # m / s
-omega_lim = 2*np.pi / 10 # rad / s 
-acc_lim = 1.0 # m / s^2
+		state_dim,action_dim = Bc.shape
+		state_lims = np.zeros((state_dim,2))
+		for i_s in range(state_dim):
+			if i_s in position_idx: 
+				state_lims[i_s,0] = -pos_lim
+				state_lims[i_s,1] =  pos_lim
+			elif i_s in velocity_idx: 
+				state_lims[i_s,0] = -vel_lim
+				state_lims[i_s,1] =  vel_lim	
 
-# other constants
-# g = 0.98 # m / s^2
-g = 3.0
+		action_lims = np.zeros((action_dim,2))
+		for i_s in range(action_dim):
+			action_lims[i_s,0] = -acc_lim
+			action_lims[i_s,1] =  acc_lim
 
+		self.F = np.eye(state_dim) +  Fc * dt 
+		self.B = Bc * dt
+		self.Q = np.eye(state_dim)
+		self.Ru = np.eye(action_dim)
 
-class Example2(POSG):
-
-	def __init__(self): 
-		S = self.make_S()
-		A = self.make_A()
-		O = None 
-		Z = None 
-		R = self.reward
-		T = None 
-		b0 = None 
-		gamma = 1.0 
-		I = np.arange(num_robots)
+		# 
+		self.num_robots = 1
+		self.gamma = 1
+		self.state_dim = state_dim
+		self.state_lims = state_lims 
+		self.action_dim = action_dim
+		self.action_lims = action_lims 
+		self.position_idx = position_idx 
 		self.dt = dt
-		self.times = times 
-		self.position_idx = position_idx
-		super(Example2,self).__init__(S,A,O,Z,R,T,b0,gamma,I)
+		self.times = times  
+		self.policy_encoding_dim = state_dim
+		self.value_encoding_dim = state_dim
+		self.name = "example2"
 
+	def sample_action(self):
+		return sample_vector(self.action_lims)
+
+	def sample_state(self):
+		return sample_vector(self.state_lims)
+
+	def reward(self,s,a):
+		return -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()		
+
+	def normalized_reward(self,s,a): 
+		reward = self.reward(s,a)
+		r_max = 100
+		r_min = -r_max
+		reward = np.clip(reward,r_min,r_max)
+		return (reward - r_min) / (r_max - r_min)
+
+	def step(self,s,a):
+		s_tp1 = np.dot(self.F,s) + np.dot(self.B,a)
+		return s_tp1 
+
+	def render(self,states):
+		states = np.array(states)
+		state_lims = self.state_lims
+		fig,ax = plotter.make_fig() 
+		ax.plot(states[:,0],states[:,1])
+		ax.plot(states[0,0],states[0,1],'o')
+		ax.plot(states[-1,0],states[-1,1],'s')
+		ax.set_xlim([state_lims[0,0],state_lims[0,1]])
+		ax.set_ylim([state_lims[1,0],state_lims[1,1]])
 
 	def is_terminal(self,state):
 		return not self.is_valid(state)
 
-
 	def is_valid(self,state):
-		return self.S.contains(state) 
-
+		return contains(state,self.state_lims)
 
 	def initialize(self):
-		return self.S.sample(damp=0.2)
+		return self.sample_state()
 
+	def steer(self,s1,s2):
+		num_samples = 10 
+		for i in range(num_samples):
+			action = self.sample_action()
+			dist = self.dist(self.step(s1,action),s2)
+			if i == 0 or dist < best_dist:
+				best_action = action
+				best_dist = dist 
+		return best_action 
 
-	def reward(self,s,a):
-		s_1 = s[0:state_dim_per_robot]
-		s_2 = s[state_dim_per_robot:]
-		a_1 = a[0:action_dim_per_robot]
-		r = -1 * (
-			np.abs((s_1-s_2).T @ Q @ (s_1 - s_2) - d) + \
-			a_1.T @ Ru @ a_1)
-		return r 
+	def dist(self,s1,s2):
+		return np.linalg.norm(s1-s2)
 
+	def policy_encoding(self,state,robot):
+		return state 
 
-	def normalized_reward(self,s,a):
-		# needs to be in [0,1]
-		r1 = self.reward(s,a)
-		r_max = 100
-		r_min = -r_max
-		r1 = np.clip(r1,r_min,r_max)
-		r1 = (r1 - r_min) / (r_max - r_min)
-		return np.array([r1,1-r1]).squeeze()
+	def value_encoding(self,state):
+		return state 
 
-
-	def step(self,s,a):
-		# s = [x,y,z,psi,gamma,phi,v]
-		# a = [gammadot, phidot,vdot]
-		sdot = np.zeros(s.shape)
-		for robot in range(num_robots):
-			state_shift = robot * state_dim_per_robot
-			action_shift = robot * action_dim_per_robot
-			sdot[state_shift+0,0] = s[state_shift+6,0] * np.cos(s[state_shift+4,0]) * np.sin(s[state_shift+3,0])
-			sdot[state_shift+1,0] = s[state_shift+6,0] * np.cos(s[state_shift+4,0]) * np.cos(s[state_shift+3,0])
-			sdot[state_shift+2,0] = -s[state_shift+6,0] * np.sin(s[state_shift+4,0]) 
-			sdot[state_shift+3,0] = g / s[state_shift+6,0] * np.tan(s[state_shift+5,0])
-			sdot[state_shift+4,0] = a[action_shift+0,0]
-			sdot[state_shift+5,0] = a[action_shift+1,0]
-			sdot[state_shift+6,0] = a[action_shift+2,0]
-		s_tp1 = s + sdot * self.dt 
-
-		# wrap angles 
-		for robot in range(num_robots):
-			state_shift = robot * state_dim_per_robot
-			s_tp1[state_shift+3,0] = s_tp1[state_shift+3,0] % (2*np.pi)
-			s_tp1[state_shift+4,0] = s_tp1[state_shift+4,0] % (2*np.pi)
-			s_tp1[state_shift+5,0] = s_tp1[state_shift+5,0] % (2*np.pi)
-
-		return s_tp1 
-
-
-	def make_S(self):
-		state_lims = np.zeros((state_dim,2))
-		for i in range(num_robots):
-			shift = i * state_dim_per_robot 
-			state_lims[shift+np.arange(3),0] = -pos_lim 
-			state_lims[shift+np.arange(3),1] = pos_lim 
-			state_lims[shift+3+np.arange(3),0] = -rad_lim 
-			state_lims[shift+3+np.arange(3),1] = rad_lim 
-			state_lims[shift+6,0] = 0.5*vel_lim
-			state_lims[shift+6,1] = vel_lim 
-		return Cube(state_lims)
-
-
-	def make_A(self):
-		action_lims = np.zeros((action_dim,2))
-		for i in range(num_robots):
-			shift = i * action_dim_per_robot 
-			action_lims[shift+np.arange(2),0] = -omega_lim
-			action_lims[shift+np.arange(2),1] = omega_lim
-			action_lims[shift+2,0] = -acc_lim
-			action_lims[shift+2,1] = acc_lim
-		return Cube(action_lims)
-
-
-	def render(self,states):
-		# states, np array in [nt x state_dim]
-		fig,ax = plotter.make_3d_fig()
-		colors = plotter.get_n_colors(num_robots)
-		for robot in range(num_robots):
-			state_idxs = robot * state_dim_per_robot + np.arange(state_dim_per_robot)
-			ax.plot(states[:,state_idxs[0]].squeeze(), states[:,state_idxs[1]].squeeze(), states[:,state_idxs[2]].squeeze(), color=colors[robot])
-			# ax.scatter(states[0,state_idxs[0]], states[0,state_idxs[1]], states[0,state_idxs[2]], color=colors[robot])
-			ax.scatter(states[-1,state_idxs[0]], states[-1,state_idxs[1]], states[-1,state_idxs[2]], color=colors[robot])
-
-		lims = self.S.lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
-		ax.set_zlim((lims[2,0],lims[2,1]))
-
-		for robot in range(num_robots):
-			ax.scatter(np.nan,np.nan,np.nan,color=colors[robot],label="Robot {}".format(robot))
-		ax.legend(loc='best')
-
-		return fig,ax 

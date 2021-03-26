@@ -113,7 +113,13 @@ def plot_sim_result(sim_result):
 	# fig.tight_layout()
 
 
-def plot_tree_state(problem,tree_state):
+def plot_loss(losses):
+	fig,ax = plt.subplots()
+	ax.plot(losses)
+	ax.set_title("Losses")
+
+
+def plot_tree_state(problem,tree_state,zoom_on=False):
 	# tree state : nd array in [num_nodes x state_dim + 1]
 
 	position_idxs = problem.position_idx
@@ -134,9 +140,10 @@ def plot_tree_state(problem,tree_state):
 		ax.add_collection(ln_coll)
 		ax.scatter(nodes[0,0],nodes[0,1])
 
-		lims = problem.S.lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
+		if not zoom_on: 
+			lims = problem.state_lims
+			ax.set_xlim((lims[0,0],lims[0,1]))
+			ax.set_ylim((lims[1,0],lims[1,1]))
 
 	elif len(position_idxs) == 3: 
 		
@@ -160,11 +167,11 @@ def plot_tree_state(problem,tree_state):
 			ln_coll = Line3DCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
 
-		lims = problem.S.lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
-		ax.set_zlim((lims[2,0],lims[2,1]))
-
+		if not zoom_on: 
+			lims = problem.state_lims
+			ax.set_xlim((lims[0,0],lims[0,1]))
+			ax.set_ylim((lims[1,0],lims[1,1]))
+			ax.set_zlim((lims[2,0],lims[2,1]))
 
 	else: 
 		print('tree plot dimension not supported')
@@ -172,3 +179,55 @@ def plot_tree_state(problem,tree_state):
 	# save_figs('../current/tree.pdf')
 	# open_figs('../current/tree.pdf')
 	# exit()
+
+
+def plot_value_dataset(problem,train_dataset,test_dataset):
+	
+	encoding_dim = problem.policy_encoding_dim
+	target_dim = 1
+	state_lims = problem.state_lims
+	# action_lims = [0,1]
+
+	for title,dataset in zip(["Train","Test"],[train_dataset,test_dataset]):
+		encodings = dataset.X_np 
+		target = dataset.target_np 
+
+		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
+		for i_e in range(encoding_dim):
+			ax[0,i_e].hist(encodings[:,i_e])
+			ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+		ax[0,0].set_ylabel("Encoding")
+
+		for i_t in range(target_dim):
+			ax[1,i_t].hist(target[:,i_t])
+			# ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
+		ax[1,0].set_ylabel("Target")
+		fig.suptitle(title)
+
+
+def plot_policy_dataset(problem,train_dataset,test_dataset):
+	# datapoints: [(encoding,target) ]
+	# encoding: problem.policy_encoding(state)
+	# target: robot_action 
+
+	encoding_dim = problem.policy_encoding_dim
+	target_dim = int(problem.action_dim / problem.num_robots)
+	state_lims = problem.state_lims
+	action_lims = problem.action_lims
+
+	for title,dataset in zip(["Train","Test"],[train_dataset,test_dataset]):
+		encodings = dataset.X_np 
+		target = dataset.target_np 
+
+		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
+		for i_e in range(encoding_dim):
+			ax[0,i_e].hist(encodings[:,i_e])
+			ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+		ax[0,0].set_ylabel("Encoding")
+
+		for i_t in range(target_dim):
+			ax[1,i_t].hist(target[:,i_t])
+			ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
+		ax[1,0].set_ylabel("Target")
+		fig.suptitle(title)
+
