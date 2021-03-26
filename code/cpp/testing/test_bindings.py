@@ -1,7 +1,8 @@
 
 import numpy as np 
+import sys
+sys.path.append("../")
 import build.bindings as bindings
-
 
 if __name__ == "__main__":
     # print('example.add(1,2)',example.add(1,2))

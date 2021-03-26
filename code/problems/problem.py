@@ -14,6 +14,7 @@ class Problem:
 		self.times = None  
 		self.policy_encoding_dim = None
 		self.value_encoding_dim = None
+		self.name = None
 
 	def sample_action():
 		exit("sample_action needs to be overwritten")

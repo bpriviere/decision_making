@@ -80,6 +80,7 @@ class Example3(Problem):
 		self.times = times  
 		self.policy_encoding_dim = state_dim
 		self.value_encoding_dim = state_dim
+		self.name = "example3"
 
 	def sample_action(self):
 		return sample_vector(self.action_lims)

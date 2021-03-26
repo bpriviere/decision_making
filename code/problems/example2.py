@@ -61,6 +61,7 @@ class Example2(Problem):
 		self.times = times  
 		self.policy_encoding_dim = state_dim
 		self.value_encoding_dim = state_dim
+		self.name = "example2"
 
 	def sample_action(self):
 		return sample_vector(self.action_lims)

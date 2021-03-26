@@ -1,5 +1,4 @@
 
-
 struct Node { 
 	Eigen::Matrix<float,2,1> state;
 	Node* parent = nullptr; 
@@ -23,7 +22,7 @@ struct Node {
 class PUCT {
 	public: 
 		PUCT(
-			Example1& problem,
+			std::default_random_engine & gen,
 			int num_nodes,
 			int search_depth,
 			float C_exp,
@@ -32,7 +31,7 @@ class PUCT {
 			float alpha_pw,
 			float beta_policy,
 			float beta_value) 
-			: m_problem(problem) 
+			: g_gen(gen)
 			, m_num_nodes(num_nodes)
 			, m_search_depth(search_depth)
 			, m_C_exp(C_exp)
@@ -45,6 +44,7 @@ class PUCT {
 
 
 		Node search(
+			Example1& problem,
 			Eigen::Matrix<float,2,1> root_state)
 			{
 				m_nodes.clear();
@@ -55,15 +55,15 @@ class PUCT {
 				root_node.state = root_state;
 				Node* root_node_ptr = &root_node; 
 
-				if (m_problem.is_terminal(root_state)){
+				if (problem.is_terminal(root_state)){
 					return root_node; 
 				}
 
 				for (int ii = 1; ii <= m_num_nodes; ii++){
-					int robot_turn = ii % m_problem.m_num_robots; 
-					Node* parent_node_ptr = select_node(root_node_ptr,robot_turn); 
-					Node* child_node_ptr = expand_node(parent_node_ptr);
-					auto value = default_policy(child_node_ptr);
+					int robot_turn = ii % problem.m_num_robots; 
+					Node* parent_node_ptr = select_node(problem,root_node_ptr,robot_turn); 
+					Node* child_node_ptr = expand_node(problem,parent_node_ptr);
+					auto value = default_policy(problem, child_node_ptr);
 					backup(child_node_ptr,value); 
 				};
 
@@ -72,10 +72,11 @@ class PUCT {
 
 
 		Node* select_node(
+			Example1& problem,
 			Node* node_ptr,
 			int robot_turn)
 			{
-				while ( !m_problem.is_terminal(node_ptr->state) ){
+				while ( !problem.is_terminal(node_ptr->state) ){
 					if ( is_expanded(node_ptr) ){
 						node_ptr = best_child(node_ptr,robot_turn);
 					} else {
@@ -129,10 +130,12 @@ class PUCT {
 
 
 		Node* expand_node(
+			Example1& problem,
 			Node* parent_node_ptr)
 			{
-				auto action = m_problem.sample_action();
-				auto next_state = m_problem.step(parent_node_ptr->state,action);
+				// auto action = problem.sample_action();
+				auto action = problem.sample_action(g_gen);
+				auto next_state = problem.step(parent_node_ptr->state,action);
 				m_nodes.resize(m_nodes.size() + 1);
 				auto& child_node = m_nodes[m_nodes.size()-1];
 				child_node.parent = parent_node_ptr;
@@ -144,18 +147,20 @@ class PUCT {
 
 
 		Eigen::Matrix<float,1,1> default_policy(
+			Example1& problem,
 			Node* node_ptr)
 			{
 				Eigen::Matrix<float,1,1> value = Eigen::Matrix<float,1,1>::Zero();
 				float total_discount = 0.0;
 				int depth = node_ptr->calc_depth();
 				Eigen::Matrix<float,2,1> curr_state = node_ptr->state; 
-				while (! m_problem.is_terminal(curr_state) && depth < m_search_depth) 
+				while (! problem.is_terminal(curr_state) && depth < m_search_depth) 
 				{
-					auto action = m_problem.sample_action();
-					auto next_state = m_problem.step(curr_state,action);
-					float discount = powf(m_problem.m_gamma,depth); 
-					value += discount * m_problem.normalized_reward(curr_state,action);
+					// auto action = problem.sample_action();
+					auto action = problem.sample_action(g_gen);
+					auto next_state = problem.step(curr_state,action);
+					float discount = powf(problem.m_gamma,depth); 
+					value += discount * problem.normalized_reward(curr_state,action);
 					total_discount += discount; 
 					curr_state = next_state;
 					depth += 1;
@@ -179,24 +184,24 @@ class PUCT {
 			}
 
 
-		Eigen::MatrixXf export_tree()
+		Eigen::MatrixXf export_tree(
+			Example1& problem)
 		{
-			Eigen::MatrixXf tree(m_nodes.size(), m_problem.m_state_dim + 1);
+			Eigen::MatrixXf tree(m_nodes.size(), problem.m_state_dim + 1);
 			for (int ii = 0; ii < m_nodes.size(); ++ii) {
-				tree.row(ii).head(m_problem.m_state_dim) = m_nodes[ii].state.array();
+				tree.row(ii).head(problem.m_state_dim) = m_nodes[ii].state.array();
 				
 				int parentIdx = -1;
 				if (!(ii == 0)){
 					parentIdx = m_nodes[ii].parent - &m_nodes[0];
 				}
-				tree(ii,m_problem.m_state_dim) = parentIdx;
+				tree(ii,problem.m_state_dim) = parentIdx;
 			}
 			return tree; 
 		}
 
 
 	private: 
-		Example1& m_problem;
 		int m_num_nodes;
 		int m_search_depth;
 		float m_C_exp;
@@ -206,5 +211,5 @@ class PUCT {
 		float m_beta_policy;
 		float m_beta_value;
 		std::vector<Node> m_nodes;
-				
+		std::default_random_engine g_gen;
 };

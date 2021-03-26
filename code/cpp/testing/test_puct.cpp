@@ -37,9 +37,9 @@ int main()
     float beta_value = 0.0f; 
 
     // search
-    PUCT puct(problem,num_nodes,search_depth,C_exp,alpha_exp,C_pw,alpha_pw,beta_policy,beta_value);
-    auto result = puct.search(state); 
-    auto tree = puct.export_tree();
+    PUCT puct(num_nodes,search_depth,C_exp,alpha_exp,C_pw,alpha_pw,beta_policy,beta_value);
+    auto result = puct.search(problem,state); 
+    auto tree = puct.export_tree(problem);
 
     std::cout << "result:" << result.total_value/result.num_visits << std::endl ;
 
