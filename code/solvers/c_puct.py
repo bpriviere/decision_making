@@ -6,7 +6,7 @@ import numpy as np
 # custom
 import plotter 
 from solvers.solver import Solver 
-from cpp.build.bindings import search, PUCT_Wrapper, Result, Problem_Wrapper
+from cpp.build.bindings import search, PUCT_Wrapper, Result, Problem_Wrapper, Problem_Settings
 
 class C_PUCT(Solver):
 
@@ -61,7 +61,14 @@ class C_PUCT(Solver):
 			print('problem {} not supported'.format(problem.name))
 			exit()
 		else: 
-			cpp_problem = Problem_Wrapper("temp")
+			problem_settings = Problem_Settings()
+			if problem.name == "example1":
+				problem_settings.timestep = problem.dt
+				problem_settings.pos_lim = problem.pos_lim 
+				problem_settings.vel_lim = problem.vel_lim 
+				problem_settings.gamma = problem.gamma 
+
+			cpp_problem = Problem_Wrapper("temp",problem_settings)
 
 		result = search(self.w_puct,cpp_problem,root_state)
 

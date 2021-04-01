@@ -85,5 +85,12 @@ PYBIND11_MODULE(bindings, m) {
         .def(pybind11::init<int, int, float, float, float, float, float, float, bool>());
 
     pybind11::class_<Problem_Wrapper> (m, "Problem_Wrapper")
-        .def(pybind11::init<std::string>());
+        .def(pybind11::init<std::string,Problem_Settings>());
+
+    pybind11::class_<Problem_Settings> (m, "Problem_Settings")
+        .def(pybind11::init())
+        .def_readwrite("timestep", &Problem_Settings::timestep)
+        .def_readwrite("pos_lim", &Problem_Settings::pos_lim)
+        .def_readwrite("vel_lim", &Problem_Settings::vel_lim)
+        .def_readwrite("gamma", &Problem_Settings::gamma);
 }

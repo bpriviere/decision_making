@@ -19,17 +19,16 @@ class Example1 : public Problem {
         Eigen::Matrix<float,2,2> m_Q;
         Eigen::Matrix<float,2,2> m_R;  
 
-
-        Example1() // default constructor
+        void set_params(Problem_Settings & problem_settings) override 
         {
             m_state_dim = 2;
             m_action_dim = 2;
             m_num_robots = 1;
-            m_timestep = 0.1f;
-            m_gamma = 1.0f;
+            m_timestep = problem_settings.timestep;
+            m_gamma = problem_settings.gamma;
 
-            float pos_lim = 5.0f;
-            float vel_lim = 1.0f;
+            float pos_lim = problem_settings.pos_lim;
+            float vel_lim = problem_settings.vel_lim;
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
 
@@ -68,75 +67,75 @@ class Example1 : public Problem {
         Eigen::Matrix<float,-1,1> step(
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
-            {
-                Eigen::Matrix<float,-1,1> next_state(m_state_dim,1); 
-                next_state = m_F * state + m_B * action; 
-                return next_state;
-            }
+        {
+            Eigen::Matrix<float,-1,1> next_state(m_state_dim,1); 
+            next_state = m_F * state + m_B * action; 
+            return next_state;
+        }
 
 
         Eigen::Matrix<float,-1,1> reward(
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
-            { 
-                Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-                r = -1 * (state.transpose() * m_Q * state + action.transpose() * m_R * action); 
-                return r;
-            }
+        { 
+            Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+            r = -1 * (state.transpose() * m_Q * state + action.transpose() * m_R * action); 
+            return r;
+        }
 
 
         Eigen::Matrix<float,-1,1> normalized_reward(
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
-            {
-                Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-                r = reward(state,action);
-                float r_max = 100;
-                float r_min = -1 * r_max;  
-                r = r.cwiseMin(r_max).cwiseMax(r_min);
-                r.array() = (r.array() - r_min) / (r_max - r_min);
-                return r;
-            }
+        {
+            Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+            r = reward(state,action);
+            float r_max = 100;
+            float r_min = -1 * r_max;  
+            r = r.cwiseMin(r_max).cwiseMax(r_min);
+            r.array() = (r.array() - r_min) / (r_max - r_min);
+            return r;
+        }
         
 
-        Eigen::Matrix<float,-1,1> sample_state(std::default_random_engine & gen)
-            {
-                Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
-                for (int ii = 0; ii < m_state_dim; ii++){
-                    float alpha = dist(gen); 
-                    state(ii,0) = alpha * (m_state_lims(ii,1) - m_state_lims(ii,0)) + m_state_lims(ii,0);
-                }
-                return state;
+        Eigen::Matrix<float,-1,1> sample_state(std::default_random_engine & gen) 
+        {
+            Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
+            for (int ii = 0; ii < m_state_dim; ii++){
+                float alpha = dist(gen); 
+                state(ii,0) = alpha * (m_state_lims(ii,1) - m_state_lims(ii,0)) + m_state_lims(ii,0);
             }
+            return state;
+        }
 
 
-        Eigen::Matrix<float,-1,1> sample_action(std::default_random_engine & gen) override
-            {
-                Eigen::Matrix<float,2,1> action(m_action_dim,1); 
-                for (int ii = 0; ii < m_action_dim; ii++){
-                    float alpha = dist(gen); 
-                    action(ii,0) = alpha * (m_action_lims(ii,1) - m_action_lims(ii,0)) + m_action_lims(ii,0);
-                }
-                return action;
-            } 
+        Eigen::Matrix<float,-1,1> sample_action(std::default_random_engine & gen) override 
+        {
+            Eigen::Matrix<float,2,1> action(m_action_dim,1); 
+            for (int ii = 0; ii < m_action_dim; ii++){
+                float alpha = dist(gen); 
+                action(ii,0) = alpha * (m_action_lims(ii,1) - m_action_lims(ii,0)) + m_action_lims(ii,0);
+            }
+            return action;
+        } 
         
 
-        Eigen::Matrix<float,-1,1> initialize(std::default_random_engine & gen) override
-            {
-                auto state = sample_state(gen); 
-                return state;
-            }
+        Eigen::Matrix<float,-1,1> initialize(std::default_random_engine & gen) override 
+        {
+            auto state = sample_state(gen); 
+            return state;
+        }
 
 
-
-        bool is_terminal(Eigen::Matrix<float,-1,1> state) override
+        bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
         {
             return !is_valid(state);
         }
 
 
-        bool is_valid(Eigen::Matrix<float,-1,1> state) override
+        bool is_valid(Eigen::Matrix<float,-1,1> state) override 
         {
             return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
         }
+
 };

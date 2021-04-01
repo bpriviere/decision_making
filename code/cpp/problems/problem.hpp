@@ -4,8 +4,18 @@
 #include <random>
 #include <eigen3/Eigen/Dense>
 
-// All internal functions of problem need to be overloaded
 
+class Problem_Settings
+{
+    public: 
+        float timestep; 
+        float pos_lim; 
+        float vel_lim; 
+        float gamma; 
+};
+
+
+// All internal functions of problem need to be overloaded
 class Problem
 {
 public:
@@ -16,7 +26,7 @@ public:
     float m_gamma; 
     virtual ~Problem() { }
 
-    virtual void set_params() 
+    virtual void set_params(Problem_Settings & problem_settings) 
     {
         0; 
     }
@@ -49,34 +59,27 @@ public:
     }
 
     // stop condition
-    virtual bool is_terminal(
-        Eigen::Matrix<float, -1, 1> state)
+    virtual bool is_terminal(Eigen::Matrix<float, -1, 1> state)
     {
         return true;
     }
 
     // initialize state 
-    virtual Eigen::Matrix<float, -1, 1> initialize(
-        std::default_random_engine& generator
-        )
+    virtual Eigen::Matrix<float, -1, 1> initialize(std::default_random_engine& generator)
     {
         Eigen::Matrix<float, -1, 1> state;
         return state;
     }
 
     // action sample  
-    virtual Eigen::Matrix<float, -1, 1> sample_action(
-        std::default_random_engine& generator
-        )
+    virtual Eigen::Matrix<float, -1, 1> sample_action(std::default_random_engine& generator)
     {
         Eigen::Matrix<float, -1, 1> action;
         return action;
     }
 
     // is valid 
-    virtual bool is_valid(
-        Eigen::Matrix<float, -1, 1> state
-        )
+    virtual bool is_valid(Eigen::Matrix<float, -1, 1> state)
     {
         return false; 
     }

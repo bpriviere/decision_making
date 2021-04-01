@@ -21,15 +21,16 @@ class Param:
 			self.alpha_exp = 0.25
 			self.beta_policy = 0.0
 			self.beta_value = 0.0
-			self.vis_on = True
+			self.vis_on = False
 
 		# problem settings 
 		if self.problem_name == "example1":
 			self.t0 = 0
-			self.tf = 10
+			self.tf = 20
 			self.dt = 0.1
 			self.pos_lim = 5
 			self.vel_lim = 1
+
 		elif self.problem_name == "example2":
 			self.t0 = 0
 			self.tf = 10
@@ -38,6 +39,7 @@ class Param:
 			self.vel_lim = 1
 			self.acc_lim = 1
 			self.mass = 1		
+			
 		elif self.problem_name == "example3":
 			self.t0 = 0
 			self.tf = 20
