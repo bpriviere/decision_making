@@ -23,60 +23,60 @@ public:
     }
 
     // forward propagate dynamics 
-    virtual Eigen::Matrix<float, 2, 1> step(
-        Eigen::Matrix<float, 2, 1> state,
-        Eigen::Matrix<float, 2, 1> action)
+    virtual Eigen::Matrix<float, -1, 1> step(
+        Eigen::Matrix<float, -1, 1> state,
+        Eigen::Matrix<float, -1, 1> action)
     {
-        Eigen::Matrix<float, 2, 1> next_state;
+        Eigen::Matrix<float, -1, 1> next_state;
         return next_state;
     }
 
     // calculate rewards  
-    virtual Eigen::Matrix<float, 1, 1> reward(
-        Eigen::Matrix<float, 2, 1> state,
-        Eigen::Matrix<float, 2, 1> action)
+    virtual Eigen::Matrix<float, -1, 1> reward(
+        Eigen::Matrix<float, -1, 1> state,
+        Eigen::Matrix<float, -1, 1> action)
     {
-        Eigen::Matrix<float, 1, 1> reward;
+        Eigen::Matrix<float, -1, 1> reward;
         return reward;
     }
 
     // calculate rewards  
-    virtual Eigen::Matrix<float, 1, 1> normalized_reward(
-        Eigen::Matrix<float, 2, 1> state,
-        Eigen::Matrix<float, 2, 1> action)
+    virtual Eigen::Matrix<float, -1, 1> normalized_reward(
+        Eigen::Matrix<float, -1, 1> state,
+        Eigen::Matrix<float, -1, 1> action)
     {
-        Eigen::Matrix<float, 1, 1> reward;
+        Eigen::Matrix<float, -1, 1> reward;
         return reward;
     }
 
     // stop condition
     virtual bool is_terminal(
-        Eigen::Matrix<float, 2, 1> state)
+        Eigen::Matrix<float, -1, 1> state)
     {
         return true;
     }
 
     // initialize state 
-    virtual Eigen::Matrix<float, 2, 1> initialize(
+    virtual Eigen::Matrix<float, -1, 1> initialize(
         std::default_random_engine& generator
         )
     {
-        Eigen::Matrix<float, 2, 1> state;
+        Eigen::Matrix<float, -1, 1> state;
         return state;
     }
 
     // action sample  
-    virtual Eigen::Matrix<float, 2, 1> sample_action(
+    virtual Eigen::Matrix<float, -1, 1> sample_action(
         std::default_random_engine& generator
         )
     {
-        Eigen::Matrix<float, 2, 1> action;
+        Eigen::Matrix<float, -1, 1> action;
         return action;
     }
 
     // is valid 
     virtual bool is_valid(
-        Eigen::Matrix<float, 2, 1> state
+        Eigen::Matrix<float, -1, 1> state
         )
     {
         return false; 

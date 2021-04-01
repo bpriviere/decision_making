@@ -1,14 +1,14 @@
 
+
 struct Node { 
-	Eigen::Matrix<float,2,1> state;
+	Eigen::Matrix<float,-1,1> state;
 	Node* parent = nullptr; 
-	Eigen::Matrix<float,2,1> action_to_node; 
-	Eigen::Matrix<float,1,1> total_value;
+	Eigen::Matrix<float,-1,1> action_to_node; 
+	Eigen::Matrix<float,-1,1> total_value;
 	int num_visits = 0;
 	std::vector<Node*> children;
 
-	int calc_depth()
-		{
+	int calc_depth(){
 			int depth = 0;
 			Node* ptr = parent;
 			while (ptr) {
@@ -17,7 +17,14 @@ struct Node {
 			}
 			return depth;
 		}
+
+	void resize_node(Example1& problem){
+			action_to_node.resize(problem.m_action_dim,1);
+			state.resize(problem.m_state_dim,1);
+			total_value = Eigen::Matrix<float,-1,1>::Zero(problem.m_num_robots,1);
+	}
 };
+
 
 class PUCT {
 	public: 
@@ -43,15 +50,14 @@ class PUCT {
 			{}
 
 
-		Node search(
-			Example1& problem,
-			Eigen::Matrix<float,2,1> root_state)
-			{
+		Node search(Example1& problem,Eigen::Matrix<float,-1,1> root_state){
+
 				m_nodes.clear();
 				m_nodes.reserve(m_num_nodes+1);
 				m_nodes.resize(1);
 
 				auto& root_node = m_nodes[0];
+				root_node.resize_node(problem);
 				root_node.state = root_state;
 				Node* root_node_ptr = &root_node; 
 
@@ -71,11 +77,7 @@ class PUCT {
 			}
 
 
-		Node* select_node(
-			Example1& problem,
-			Node* node_ptr,
-			int robot_turn)
-			{
+		Node* select_node(Example1& problem,Node* node_ptr,int robot_turn){
 				while ( !problem.is_terminal(node_ptr->state) ){
 					if ( is_expanded(node_ptr) ){
 						node_ptr = best_child(node_ptr,robot_turn);
@@ -87,10 +89,7 @@ class PUCT {
 			}
 
 
-		Node* best_child(
-			Node* node_ptr,
-			int robot_turn)
-		{
+		Node* best_child(Node* node_ptr,int robot_turn){
 			Node* result = nullptr;
 			float bestValue = -1.0f;
 			for (Node* c : node_ptr->children) {
@@ -104,10 +103,7 @@ class PUCT {
 		}
 
 
-		Node* most_visited(
-			Node* node_ptr,
-			int robot_turn)
-		{
+		Node* most_visited(Node* node_ptr,int robot_turn){
 			Node* result = nullptr;
 			int mostVisits = 0;
 			for (Node* c : node_ptr->children) {
@@ -120,25 +116,19 @@ class PUCT {
 		}
 
 
-		bool is_expanded(
-			Node* node_ptr)
-			{
+		bool is_expanded(Node* node_ptr){
 				int max_children = ceil(m_C_pw*(powf(node_ptr->num_visits, m_alpha_pw)));
-				// return node_ptr->children.size() > max_children;
 				return int(node_ptr->children.size()) > max_children;
 			}
 
 
-		Node* expand_node(
-			Example1& problem,
-			Node* parent_node_ptr)
-			{
-				// auto action = problem.sample_action();
+		Node* expand_node(Example1& problem,Node* parent_node_ptr){
+				m_nodes.resize(m_nodes.size() + 1);
 				auto action = problem.sample_action(g_gen);
 				auto next_state = problem.step(parent_node_ptr->state,action);
-				m_nodes.resize(m_nodes.size() + 1);
 				auto& child_node = m_nodes[m_nodes.size()-1];
 				child_node.parent = parent_node_ptr;
+				child_node.resize_node(problem);
 				child_node.action_to_node = action;
 				child_node.state = next_state;
 				parent_node_ptr->children.push_back(&child_node);
@@ -146,17 +136,13 @@ class PUCT {
 			}
 
 
-		Eigen::Matrix<float,1,1> default_policy(
-			Example1& problem,
-			Node* node_ptr)
-			{
-				Eigen::Matrix<float,1,1> value = Eigen::Matrix<float,1,1>::Zero();
+		Eigen::Matrix<float,-1,1> default_policy(Example1& problem,Node* node_ptr){
+				Eigen::Matrix<float,-1,1> value = Eigen::Matrix<float,-1,1>::Zero(problem.m_num_robots,1);
 				float total_discount = 0.0;
 				int depth = node_ptr->calc_depth();
 				Eigen::Matrix<float,2,1> curr_state = node_ptr->state; 
 				while (! problem.is_terminal(curr_state) && depth < m_search_depth) 
 				{
-					// auto action = problem.sample_action();
 					auto action = problem.sample_action(g_gen);
 					auto next_state = problem.step(curr_state,action);
 					float discount = powf(problem.m_gamma,depth); 
@@ -172,10 +158,7 @@ class PUCT {
 			}
 
 
-		void backup(
-			Node* node_ptr, 
-			Eigen::Matrix<float,1,1> value)
-			{
+		void backup(Node* node_ptr,Eigen::Matrix<float,-1,1> value){
 				do {
 					node_ptr->num_visits += 1;
 					node_ptr->total_value += value;
