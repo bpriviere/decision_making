@@ -1,58 +1,85 @@
 
+#pragma once
 #include <vector>
 #include <random>
+#include <eigen3/Eigen/Dense>
 
 // All internal functions of problem need to be overloaded
 
 class Problem
 {
 public:
-    int m_state_dim{};
-    Eigen::MatrixXd m_state_lims{};
-    int m_action_dim{};
-    Eigen::MatrixXd m_action_lims{};
-    int m_num_robots{};
+    int m_state_dim;
+    int m_action_dim;
+    int m_num_robots;
+    float m_timestep;
+    float m_gamma; 
+    virtual ~Problem() { }
+
+    // virtual void set_params(Problem * problem) 
+    virtual void set_params() 
+    {
+        0; 
+    }
 
     // forward propagate dynamics 
-    Eigen::MatrixXd step(
-        Eigen::MatrixXd state,
-        Eigen::MatrixXd action)
+    virtual Eigen::Matrix<float, 2, 1> step(
+        Eigen::Matrix<float, 2, 1> state,
+        Eigen::Matrix<float, 2, 1> action)
     {
-        Eigen::MatrixXd next_state;
+        Eigen::Matrix<float, 2, 1> next_state;
         return next_state;
     }
 
     // calculate rewards  
-    Eigen::MatrixXd rewards(
-        Eigen::MatrixXd state,
-        Eigen::MatrixXd action)
+    virtual Eigen::Matrix<float, 1, 1> reward(
+        Eigen::Matrix<float, 2, 1> state,
+        Eigen::Matrix<float, 2, 1> action)
     {
-        Eigen::MatrixXd reward;
+        Eigen::Matrix<float, 1, 1> reward;
+        return reward;
+    }
+
+    // calculate rewards  
+    virtual Eigen::Matrix<float, 1, 1> normalized_reward(
+        Eigen::Matrix<float, 2, 1> state,
+        Eigen::Matrix<float, 2, 1> action)
+    {
+        Eigen::Matrix<float, 1, 1> reward;
         return reward;
     }
 
     // stop condition
-    bool isTerminal(
-        Eigen::MatrixXd state)
+    virtual bool is_terminal(
+        Eigen::Matrix<float, 2, 1> state)
     {
         return true;
     }
 
     // initialize state 
-    Eigen::MatrixXd initialize(
+    virtual Eigen::Matrix<float, 2, 1> initialize(
         std::default_random_engine& generator
         )
     {
-        Eigen::MatrixXd state;
+        Eigen::Matrix<float, 2, 1> state;
         return state;
     }
 
     // action sample  
-    Eigen::MatrixXd sample_action(
+    virtual Eigen::Matrix<float, 2, 1> sample_action(
         std::default_random_engine& generator
         )
     {
-        Eigen::MatrixXd action;
+        Eigen::Matrix<float, 2, 1> action;
         return action;
     }
+
+    // is valid 
+    virtual bool is_valid(
+        Eigen::Matrix<float, 2, 1> state
+        )
+    {
+        return false; 
+    }
+
 };

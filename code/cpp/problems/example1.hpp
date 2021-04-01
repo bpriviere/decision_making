@@ -3,15 +3,11 @@
 #include <vector>
 #include <random>
 #include <eigen3/Eigen/Dense>
+#include "problem.hpp"
 
-class Example1 { 
+class Example1 : public Problem { 
     
     public:
-        int m_state_dim;
-        int m_action_dim;
-        int m_num_robots;
-        float m_timestep;
-        float m_gamma; 
         std::uniform_real_distribution<double> dist;
         std::default_random_engine m_gen;
         Eigen::Matrix<float,2,2> m_state_lims;  
@@ -69,7 +65,7 @@ class Example1 {
 
         Eigen::Matrix<float,2,1> step(
             Eigen::Matrix<float,2,1> state,
-            Eigen::Matrix<float,2,1> action)
+            Eigen::Matrix<float,2,1> action) override
             {
                 Eigen::Matrix<float,2,1> next_state; 
                 next_state = m_F * state + m_B * action; 
@@ -79,8 +75,8 @@ class Example1 {
 
         Eigen::Matrix<float,1,1> reward(
             Eigen::Matrix<float,2,1> state,
-            Eigen::Matrix<float,2,1> action)
-            {
+            Eigen::Matrix<float,2,1> action) override
+            { 
                 Eigen::Matrix<float,1,1> r;
                 r = -1 * (state.transpose() * m_Q * state + action.transpose() * m_R * action); 
                 return r;
@@ -89,7 +85,7 @@ class Example1 {
 
         Eigen::Matrix<float,1,1> normalized_reward(
             Eigen::Matrix<float,2,1> state,
-            Eigen::Matrix<float,2,1> action)
+            Eigen::Matrix<float,2,1> action) override
             {
                 Eigen::Matrix<float,1,1> r;
                 r = reward(state,action);
@@ -102,7 +98,6 @@ class Example1 {
         
 
         Eigen::Matrix<float,2,1> sample_state(std::default_random_engine & gen)
-        // Eigen::Matrix<float,2,1> sample_state()
             {
                 Eigen::Matrix<float,2,1> state; 
                 for (int ii = 0; ii < m_state_dim; ii++){
@@ -114,8 +109,7 @@ class Example1 {
             }
 
 
-        Eigen::Matrix<float,2,1> sample_action(std::default_random_engine & gen)
-        // Eigen::Matrix<float,2,1> sample_action()
+        Eigen::Matrix<float,2,1> sample_action(std::default_random_engine & gen) override
             {
                 Eigen::Matrix<float,2,1> action; 
                 for (int ii = 0; ii < m_action_dim; ii++){
@@ -126,10 +120,18 @@ class Example1 {
                 return action;
             } 
         
+        
+        Eigen::Matrix<float,2,1> initialize(std::default_random_engine & gen) override
+            {
+                Eigen::Matrix<float,2,1> state = sample_state(gen); 
+                return state;
+            }
+
+
 
         bool is_terminal(
             Eigen::Matrix<float,2,1> state
-        )
+        ) override
         {
             return !is_valid(state);
         }
@@ -137,7 +139,7 @@ class Example1 {
 
         bool is_valid(
             Eigen::Matrix<float,2,1> state
-        )
+        ) override
         {
             return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
         }
