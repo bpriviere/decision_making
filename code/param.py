@@ -11,7 +11,7 @@ class Param:
 
 		# solver settings 
 		if self.solver_name in ["PUCT","C_PUCT","PUCT_V2"]:
-			self.number_simulations = 50
+			self.number_simulations = 100
 			self.policy_oracle = None
 			self.value_oracle = None
 			self.search_depth = 10

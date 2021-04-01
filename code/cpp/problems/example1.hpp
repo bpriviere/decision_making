@@ -1,4 +1,6 @@
 
+#pragma once 
+
 // #include <string>
 #include <vector>
 #include <random>
@@ -102,7 +104,6 @@ class Example1 : public Problem {
                 Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
                 for (int ii = 0; ii < m_state_dim; ii++){
                     float alpha = dist(gen); 
-                    // float alpha = dist(m_gen); 
                     state(ii,0) = alpha * (m_state_lims(ii,1) - m_state_lims(ii,0)) + m_state_lims(ii,0);
                 }
                 return state;
@@ -114,7 +115,6 @@ class Example1 : public Problem {
                 Eigen::Matrix<float,2,1> action(m_action_dim,1); 
                 for (int ii = 0; ii < m_action_dim; ii++){
                     float alpha = dist(gen); 
-                    // float alpha = dist(m_gen); 
                     action(ii,0) = alpha * (m_action_lims(ii,1) - m_action_lims(ii,0)) + m_action_lims(ii,0);
                 }
                 return action;

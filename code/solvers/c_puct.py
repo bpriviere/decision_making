@@ -61,7 +61,7 @@ class C_PUCT(Solver):
 			print('problem {} not supported'.format(problem.name))
 			exit()
 		else: 
-			cpp_problem = Problem_Wrapper()
+			cpp_problem = Problem_Wrapper("temp")
 
 		result = search(self.w_puct,cpp_problem,root_state)
 

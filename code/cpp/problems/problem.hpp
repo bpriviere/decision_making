@@ -16,7 +16,6 @@ public:
     float m_gamma; 
     virtual ~Problem() { }
 
-    // virtual void set_params(Problem * problem) 
     virtual void set_params() 
     {
         0; 

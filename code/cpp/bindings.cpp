@@ -4,24 +4,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
-
-#include "problems/example1.hpp"
+#include "problems/problem_wrapper.hpp"
 #include "solvers/puct.hpp"
-
-class Problem_Wrapper
-{
-    public: 
-        Example1 m_problem; 
-
-    // Problem_Wrapper(
-    //     std::string name,
-    // ){
-    //     // if (str1.compare(str2) != 0){
-    //     //     m_problem = 
-    //     // }
-    // }
-};
-
 
 class PUCT_Wrapper
 {
@@ -71,18 +55,18 @@ Result search(
         Result result;
 
         // check valid 
-        if (!w_problem.m_problem.is_valid(state)) {
+        if (!w_problem.problem->is_valid(state)) {
             std::cout << "initial state not valid" << std::endl;
             return result; 
         }
 
         // search
-        auto root_node = w_puct.m_puct.search(w_problem.m_problem,state); 
+        auto root_node = w_puct.m_puct.search(w_problem.problem,state); 
 
         // result 
         result.best_action = w_puct.m_puct.most_visited(&root_node,0)->action_to_node;
         if (w_puct.m_vis_on) {
-            result.tree = w_puct.m_puct.export_tree(w_problem.m_problem); 
+            result.tree = w_puct.m_puct.export_tree(w_problem.problem); 
         }
         return result;
 }
@@ -101,6 +85,5 @@ PYBIND11_MODULE(bindings, m) {
         .def(pybind11::init<int, int, float, float, float, float, float, float, bool>());
 
     pybind11::class_<Problem_Wrapper> (m, "Problem_Wrapper")
-        // .def(pybind11::init<std::string>());
-        .def(pybind11::init());
+        .def(pybind11::init<std::string>());
 }
