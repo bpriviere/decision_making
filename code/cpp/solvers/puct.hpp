@@ -141,7 +141,7 @@ class PUCT {
 			Eigen::Matrix<float,-1,1> value = Eigen::Matrix<float,-1,1>::Zero(problem->m_num_robots,1);
 			float total_discount = 0.0;
 			int depth = node_ptr->calc_depth();
-			Eigen::Matrix<float,2,1> curr_state = node_ptr->state; 
+			Eigen::Matrix<float,-1,1> curr_state = node_ptr->state; 
 			while (! problem->is_terminal(curr_state) && depth < m_search_depth) 
 			{
 				auto action = problem->sample_action(g_gen);

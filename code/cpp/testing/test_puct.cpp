@@ -56,8 +56,12 @@ int main()
     s_p.pos_lim = 5.0;
     s_p.vel_lim = 1.0; 
     s_p.gamma = 1.0; 
+    if (true) {
+        s_p.acc_lim = 1.0;
+        s_p.mass = 1.0;
+    }
 
-    Problem_Wrapper w_p = Problem_Wrapper("temp", s_p);
+    Problem_Wrapper w_p = Problem_Wrapper("example2", s_p);
 
     auto root_state = w_p.problem->initialize(gen); 
     auto root_node = puct.search(w_p.problem,root_state);

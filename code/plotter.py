@@ -119,7 +119,7 @@ def plot_loss(losses):
 	ax.set_title("Losses")
 
 
-def plot_tree_state(problem,tree_state,zoom_on=False):
+def plot_tree_state(problem,tree_state,zoom_on=True):
 	# tree state : nd array in [num_nodes x state_dim + 1]
 
 	position_idxs = problem.position_idx

@@ -43,14 +43,14 @@ class PUCT_Wrapper
 class Result
 {
 public:
-    Eigen::Matrix<float,2,1> best_action;
+    Eigen::Matrix<float,-1,1> best_action;
     Eigen::MatrixXf tree;
 };
 
 Result search(
     PUCT_Wrapper & w_puct,
     Problem_Wrapper & w_problem,
-    Eigen::Matrix<float,2,1> & state)
+    Eigen::Matrix<float,-1,1> & state)
     {
         Result result;
 
@@ -92,5 +92,7 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("timestep", &Problem_Settings::timestep)
         .def_readwrite("pos_lim", &Problem_Settings::pos_lim)
         .def_readwrite("vel_lim", &Problem_Settings::vel_lim)
+        .def_readwrite("acc_lim", &Problem_Settings::acc_lim)
+        .def_readwrite("mass", &Problem_Settings::mass)
         .def_readwrite("gamma", &Problem_Settings::gamma);
 }

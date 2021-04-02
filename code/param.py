@@ -6,7 +6,7 @@ class Param:
 	def __init__(self):
 
 		# names 
-		self.problem_name = "example1" # e.g. example1, example2, example3, ...
+		self.problem_name = "example2" # e.g. example1, example2, example3, ...
 		self.solver_name = "C_PUCT" # e.g. Empty, DARE, MCTS, PUCT, C_PUCT, ...
 
 		# solver settings 
@@ -21,7 +21,7 @@ class Param:
 			self.alpha_exp = 0.25
 			self.beta_policy = 0.0
 			self.beta_value = 0.0
-			self.vis_on = False
+			self.vis_on = True
 
 		# problem settings 
 		if self.problem_name == "example1":
@@ -39,7 +39,7 @@ class Param:
 			self.vel_lim = 1
 			self.acc_lim = 1
 			self.mass = 1		
-			
+
 		elif self.problem_name == "example3":
 			self.t0 = 0
 			self.tf = 20

@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Dense>
 
 
+// Problem settings holds all possible problem parameters 
 class Problem_Settings
 {
     public: 
@@ -12,6 +13,8 @@ class Problem_Settings
         float pos_lim; 
         float vel_lim; 
         float gamma; 
+        float mass; 
+        float acc_lim; 
 };
 
 
