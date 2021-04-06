@@ -140,7 +140,7 @@ class PUCT(Solver):
 
 		if self.vis_on: 
 			tree_state = self.export_tree(root_node)
-			plotter.plot_tree_state(problem,tree_state,zoom_on=False)
+			plotter.plot_tree_state(problem,tree_state,zoom_on=True)
 
 		return root_node
 

@@ -41,6 +41,10 @@ class Example1(Problem):
 		self.Ru = np.eye(action_dim)
 
 		# 
+		self.pos_lim = pos_lim 
+		self.vel_lim = vel_lim 
+
+		# 
 		self.num_robots = 1
 		self.gamma = 1
 		self.state_dim = state_dim

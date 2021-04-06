@@ -7,23 +7,23 @@
 #include <eigen3/Eigen/Dense>
 #include "problem.hpp"
 
-class Example1 : public Problem { 
+class Example2 : public Problem { 
     
     public:
         std::uniform_real_distribution<double> dist;
         std::default_random_engine m_gen;
-        Eigen::Matrix<float,2,2> m_state_lims;  
+        Eigen::Matrix<float,4,2> m_state_lims;  
         Eigen::Matrix<float,2,2> m_action_lims;  
-        Eigen::Matrix<float,2,2> m_F;
-        Eigen::Matrix<float,2,2> m_B;
-        Eigen::Matrix<float,2,2> m_Q;
+        Eigen::Matrix<float,4,4> m_F;
+        Eigen::Matrix<float,4,2> m_B;
+        Eigen::Matrix<float,4,4> m_Q;
         Eigen::Matrix<float,2,2> m_R;  
-        float m_r_max; 
         float m_r_min; 
+        float m_r_max;  
 
         void set_params(Problem_Settings & problem_settings) override 
         {
-            m_state_dim = 2;
+            m_state_dim = 4;
             m_action_dim = 2;
             m_num_robots = 1;
             m_r_max = 100;
@@ -34,6 +34,8 @@ class Example1 : public Problem {
 
             float pos_lim = problem_settings.pos_lim;
             float vel_lim = problem_settings.vel_lim;
+            float acc_lim = problem_settings.acc_lim; 
+            float mass = problem_settings.mass; 
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
 
@@ -41,31 +43,30 @@ class Example1 : public Problem {
             m_state_lims(0,1) = pos_lim;
             m_state_lims(1,0) = -pos_lim;
             m_state_lims(1,1) = pos_lim;
+            m_state_lims(2,0) = -vel_lim;
+            m_state_lims(2,1) = vel_lim;
+            m_state_lims(3,0) = -vel_lim;
+            m_state_lims(3,1) = vel_lim;
 
-            m_action_lims(0,0) = -vel_lim;
-            m_action_lims(0,1) = vel_lim;
-            m_action_lims(1,0) = -vel_lim;
-            m_action_lims(1,1) = vel_lim;
+            m_action_lims(0,0) = -acc_lim;
+            m_action_lims(0,1) = acc_lim;
+            m_action_lims(1,0) = -acc_lim;
+            m_action_lims(1,1) = acc_lim;
 
-            m_F(0,0) = 1.0f;
-            m_F(0,1) = 0.0f; 
-            m_F(1,0) = 0.0f; 
-            m_F(1,1) = 1.0f; 
-
-            m_B(0,0) = 1.0f * m_timestep;
-            m_B(0,1) = 0.0f * m_timestep; 
-            m_B(1,0) = 0.0f * m_timestep; 
-            m_B(1,1) = 1.0f * m_timestep; 
-
-            m_Q(0,0) = 1.0f;
-            m_Q(0,1) = 0.0f; 
-            m_Q(1,0) = 0.0f; 
-            m_Q(1,1) = 1.0f; 
-
-            m_R(0,0) = 1.0f;
-            m_R(0,1) = 0.0f; 
-            m_R(1,0) = 0.0f; 
-            m_R(1,1) = 1.0f; 
+            m_F <<  1,0,m_timestep,0,
+                    0,1,0,m_timestep,
+                    0,0,1,0,
+                    0,0,0,1;
+            m_B <<  0,0,
+                    0,0,
+                    m_timestep / mass,0,
+                    0,m_timestep / mass;
+            m_Q <<  1,0,0,0,
+                    0,1,0,0,
+                    0,0,1,0,
+                    0,0,0,1;
+            m_R <<  1,0,
+                    0,1;
         }
 
 

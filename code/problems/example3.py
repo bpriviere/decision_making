@@ -48,8 +48,8 @@ class Example3(Problem):
 			state_lims[state_shift + 6,0]   =  0.5*vel_lim
 			state_lims[state_shift + 6,1]   =  vel_lim
 
-			action_lims[action_shift + np.arange(0,2),0] = -rad_lim
-			action_lims[action_shift + np.arange(0,2),1] =  rad_lim
+			action_lims[action_shift + np.arange(0,2),0] = -omega_lim
+			action_lims[action_shift + np.arange(0,2),1] =  omega_lim
 			action_lims[action_shift+2,0] = -acc_lim
 			action_lims[action_shift+2,1] =  acc_lim
 
@@ -65,6 +65,12 @@ class Example3(Problem):
 		# other
 		self.g = g 
 		self.desired_distance = desired_distance
+		self.pos_lim = pos_lim
+		self.vel_lim = vel_lim
+		self.acc_lim = acc_lim
+		self.rad_lim = rad_lim
+		self.omega_lim = omega_lim
+		self.state_control_weight = state_control_weight
 
 		# standard 
 		self.num_robots = num_robots

@@ -119,7 +119,7 @@ def plot_loss(losses):
 	ax.set_title("Losses")
 
 
-def plot_tree_state(problem,tree_state,zoom_on=False):
+def plot_tree_state(problem,tree_state,zoom_on=True):
 	# tree state : nd array in [num_nodes x state_dim + 1]
 
 	position_idxs = problem.position_idx
@@ -231,3 +231,9 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 		ax[1,0].set_ylabel("Target")
 		fig.suptitle(title)
 
+def plot_regression_test(result):
+	# dict : (key,value)
+	# key = (int number_simulations, string solver_name)
+	# value = (float duration, float total_reward)
+
+	print(result)
