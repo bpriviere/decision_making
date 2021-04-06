@@ -152,9 +152,9 @@ class PUCT {
 				curr_state = next_state;
 				depth += 1;
 			}
-			if (total_discount > 0){
-				value  = value / total_discount;
-			}
+			// if (total_discount > 0){
+			// 	value  = value / total_discount;
+			// }
 			return value; 
 		}
 

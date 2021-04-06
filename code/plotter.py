@@ -231,3 +231,9 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 		ax[1,0].set_ylabel("Target")
 		fig.suptitle(title)
 
+def plot_regression_test(result):
+	# dict : (key,value)
+	# key = (int number_simulations, string solver_name)
+	# value = (float duration, float total_reward)
+
+	print(result)

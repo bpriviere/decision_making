@@ -16,7 +16,7 @@ from torch.nn import MSELoss
 import plotter 
 from param import Param 
 from run import make_instance, run_instance
-from solvers.puct import PUCT 
+from solvers.c_puct import C_PUCT
 from solvers.policy_solver import PolicySolver
 from learning.policy_network import PolicyNetwork
 from learning.value_network import ValueNetwork
@@ -81,7 +81,7 @@ def worker_sps(fn,seed,problem,num_states,policy_oracle,value_oracle):
 		instance = dict()
 		instance["problem"] = problem 
 		instance["initial_state"] = problem.initialize() 
-		instance["solver"] = PUCT(\
+		instance["solver"] = C_PUCT(\
 			policy_oracle=policy_oracle,
 			value_oracle=value_oracle,
 			number_simulations=num_simulations_learner)
@@ -130,7 +130,7 @@ def worker_edp_wrapper(arg):
 
 def worker_edp(fn,problem,robot,states,policy_oracle,value_oracle):
 	datapoints = []
-	solver = PUCT(\
+	solver = C_PUCT(\
 		policy_oracle=policy_oracle,
 		value_oracle=value_oracle,
 		number_simulations=num_simulations_expert)

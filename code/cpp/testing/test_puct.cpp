@@ -51,17 +51,35 @@ int main()
     PUCT puct(gen,num_nodes,search_depth,C_exp,alpha_exp,C_pw,alpha_pw,beta_policy,beta_value);
 
     // 
-    Problem_Settings s_p; 
-    s_p.timestep = 0.1; 
-    s_p.pos_lim = 5.0;
-    s_p.vel_lim = 1.0; 
-    s_p.gamma = 1.0; 
-    if (true) {
+    std::string problem_name = "example3";
+    Problem_Settings s_p;
+    if (problem_name == "example1") {
+        s_p.timestep = 0.1; 
+        s_p.pos_lim = 5.0;
+        s_p.vel_lim = 1.0; 
+        s_p.gamma = 1.0; 
+
+    } else if (problem_name == "example2") {
+        s_p.timestep = 0.1; 
+        s_p.pos_lim = 5.0;
+        s_p.vel_lim = 1.0; 
+        s_p.gamma = 1.0; 
         s_p.acc_lim = 1.0;
         s_p.mass = 1.0;
+
+    } else if (problem_name == "example3") {
+        s_p.timestep = 0.1;
+        s_p.pos_lim = 2.0; 
+        s_p.vel_lim = 2.0;
+        s_p.acc_lim = 1.0;
+        s_p.rad_lim = 2*M_PI;
+        s_p.omega_lim = 2*M_PI/10.0;
+        s_p.gamma = 1.0;
+        s_p.g = 3;
+        s_p.desired_distance = 0.2;
     }
 
-    Problem_Wrapper w_p = Problem_Wrapper("example2", s_p);
+    Problem_Wrapper w_p = Problem_Wrapper("example3", s_p);
 
     auto root_state = w_p.problem->initialize(gen); 
     auto root_node = puct.search(w_p.problem,root_state);

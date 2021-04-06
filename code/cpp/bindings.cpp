@@ -74,7 +74,7 @@ Result search(
 // python interface
 PYBIND11_MODULE(bindings, m) {
 
-    m.def("search", &search, "PUCT");
+    m.def("cpp_search", &search, "PUCT");
 
     pybind11::class_<Result> (m, "Result")
         .def(pybind11::init())
@@ -93,6 +93,11 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("pos_lim", &Problem_Settings::pos_lim)
         .def_readwrite("vel_lim", &Problem_Settings::vel_lim)
         .def_readwrite("acc_lim", &Problem_Settings::acc_lim)
+        .def_readwrite("rad_lim", &Problem_Settings::rad_lim)
+        .def_readwrite("omega_lim", &Problem_Settings::omega_lim)
+        .def_readwrite("desired_distance", &Problem_Settings::desired_distance)
+        .def_readwrite("g", &Problem_Settings::g)
         .def_readwrite("mass", &Problem_Settings::mass)
+        .def_readwrite("state_control_weight", &Problem_Settings::state_control_weight)
         .def_readwrite("gamma", &Problem_Settings::gamma);
 }

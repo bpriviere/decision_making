@@ -6,7 +6,7 @@ import numpy as np
 # custom
 import plotter 
 from solvers.solver import Solver 
-from cpp.build.bindings import search, PUCT_Wrapper, Result, Problem_Wrapper, Problem_Settings
+from cpp.build.bindings import cpp_search, PUCT_Wrapper, Result, Problem_Wrapper, Problem_Settings
 
 class C_PUCT(Solver):
 
@@ -50,12 +50,12 @@ class C_PUCT(Solver):
 		)
 
 	def policy(self,problem,root_state):
-		result = self.wrap_search(problem,root_state)
+		result = self.search(problem,root_state)
 		py_action = np.zeros((problem.action_dim,1))
 		py_action[:,0] = result.best_action
 		return py_action
 
-	def wrap_search(self,problem,root_state):
+	def search(self,problem,root_state):
 
 		problem_settings = Problem_Settings()
 		if problem.name == "example1":
@@ -70,13 +70,24 @@ class C_PUCT(Solver):
 			problem_settings.acc_lim = problem.acc_lim 
 			problem_settings.gamma = problem.gamma 
 			problem_settings.mass = problem.mass 
+		elif problem.name == "example3":
+			problem_settings.timestep = problem.dt
+			problem_settings.pos_lim = problem.pos_lim 
+			problem_settings.vel_lim = problem.vel_lim 
+			problem_settings.acc_lim = problem.acc_lim 
+			problem_settings.rad_lim = problem.rad_lim
+			problem_settings.omega_lim = problem.omega_lim
+			problem_settings.gamma = problem.gamma 	
+			problem_settings.g = problem.g 		
+			problem_settings.desired_distance = problem.desired_distance
+			problem_settings.state_control_weight = problem.state_control_weight
 		else: 
 			print("problem not supported")
 			exit()
 
 		cpp_problem = Problem_Wrapper(problem.name,problem_settings)
 
-		result = search(self.w_puct,cpp_problem,root_state)
+		result = cpp_search(self.w_puct,cpp_problem,root_state)
 
 		if self.vis_on: 
 			tree_state = result.tree 

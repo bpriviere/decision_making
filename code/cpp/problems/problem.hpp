@@ -15,6 +15,11 @@ class Problem_Settings
         float gamma; 
         float mass; 
         float acc_lim; 
+        float omega_lim;
+        float rad_lim; 
+        float g; 
+        float desired_distance;
+        float state_control_weight; 
 };
 
 

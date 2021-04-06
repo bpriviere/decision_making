@@ -114,7 +114,7 @@ class Example1 : public Problem {
 
         Eigen::Matrix<float,-1,1> sample_action(std::default_random_engine & gen) override 
         {
-            Eigen::Matrix<float,2,1> action(m_action_dim,1); 
+            Eigen::Matrix<float,-1,1> action(m_action_dim,1); 
             for (int ii = 0; ii < m_action_dim; ii++){
                 float alpha = dist(gen); 
                 action(ii,0) = alpha * (m_action_lims(ii,1) - m_action_lims(ii,0)) + m_action_lims(ii,0);
