@@ -18,8 +18,9 @@ def make_instance(param):
 			t0 = param.t0,
 			tf = param.tf,
 			dt = param.dt,
-			pos_lim = param.pos_lim,
-			vel_lim = param.vel_lim)
+			state_lims = param.state_lims,
+			action_lims = param.action_lims,
+			init_lims = param.init_lims,)
 
 	elif param.problem_name == "example2":
 		from problems.example2 import Example2
@@ -27,9 +28,9 @@ def make_instance(param):
 			t0 = param.t0,
 			tf = param.tf,
 			dt = param.dt,
-			pos_lim = param.pos_lim,
-			vel_lim = param.vel_lim,
-			acc_lim = param.acc_lim,
+			state_lims = param.state_lims,
+			action_lims = param.action_lims,
+			init_lims = param.init_lims,
 			mass = param.mass)
 
 	elif param.problem_name == "example3":
@@ -38,11 +39,9 @@ def make_instance(param):
 			t0 = param.t0,
 			tf = param.tf,
 			dt = param.dt,
-			pos_lim = param.pos_lim,
-			vel_lim = param.vel_lim,
-			acc_lim = param.acc_lim,
-			rad_lim = param.rad_lim,
-			omega_lim = param.omega_lim,
+			state_lims = param.state_lims,
+			action_lims = param.action_lims,
+			init_lims = param.init_lims,
 			desired_distance = param.desired_distance,
 			state_control_weight = param.state_control_weight,
 			g = param.g)
@@ -162,7 +161,7 @@ def run_instance(instance,verbose=True):
 	sim_result["times"] = times 
 	sim_result["states"] = np.array(states)
 	sim_result["actions"] = np.array(actions)
-	sim_result["rewards"] = np.array(rewards).squeeze()
+	sim_result["rewards"] = np.array(rewards)
 
 	return sim_result
 

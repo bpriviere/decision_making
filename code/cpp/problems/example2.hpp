@@ -14,12 +14,14 @@ class Example2 : public Problem {
         std::default_random_engine m_gen;
         Eigen::Matrix<float,4,2> m_state_lims;  
         Eigen::Matrix<float,2,2> m_action_lims;  
+        Eigen::Matrix<float,4,2> m_init_lims; 
         Eigen::Matrix<float,4,4> m_F;
         Eigen::Matrix<float,4,2> m_B;
         Eigen::Matrix<float,4,4> m_Q;
         Eigen::Matrix<float,2,2> m_R;  
         float m_r_min; 
         float m_r_max;  
+        float m_mass; 
 
         void set_params(Problem_Settings & problem_settings) override 
         {
@@ -29,29 +31,18 @@ class Example2 : public Problem {
             m_r_max = 100;
             m_r_min = -1 * m_r_max;  
 
+            problem_settings.state_lims.resize(m_state_dim,2);
+            problem_settings.action_lims.resize(m_action_dim,2);
+            problem_settings.init_lims.resize(m_state_dim,2);
+
             m_timestep = problem_settings.timestep;
             m_gamma = problem_settings.gamma;
-
-            float pos_lim = problem_settings.pos_lim;
-            float vel_lim = problem_settings.vel_lim;
-            float acc_lim = problem_settings.acc_lim; 
-            float mass = problem_settings.mass; 
+            m_state_lims = problem_settings.state_lims;
+            m_action_lims = problem_settings.action_lims; 
+            m_init_lims = problem_settings.init_lims; 
+            m_mass = problem_settings.mass; 
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
-
-            m_state_lims(0,0) = -pos_lim;
-            m_state_lims(0,1) = pos_lim;
-            m_state_lims(1,0) = -pos_lim;
-            m_state_lims(1,1) = pos_lim;
-            m_state_lims(2,0) = -vel_lim;
-            m_state_lims(2,1) = vel_lim;
-            m_state_lims(3,0) = -vel_lim;
-            m_state_lims(3,1) = vel_lim;
-
-            m_action_lims(0,0) = -acc_lim;
-            m_action_lims(0,1) = acc_lim;
-            m_action_lims(1,0) = -acc_lim;
-            m_action_lims(1,1) = acc_lim;
 
             m_F <<  1,0,m_timestep,0,
                     0,1,0,m_timestep,
@@ -59,8 +50,8 @@ class Example2 : public Problem {
                     0,0,0,1;
             m_B <<  0,0,
                     0,0,
-                    m_timestep / mass,0,
-                    0,m_timestep / mass;
+                    m_timestep / m_mass,0,
+                    0,m_timestep / m_mass;
             m_Q <<  1,0,0,0,
                     0,1,0,0,
                     0,0,1,0,
@@ -126,7 +117,11 @@ class Example2 : public Problem {
 
         Eigen::Matrix<float,-1,1> initialize(std::default_random_engine & gen) override 
         {
-            auto state = sample_state(gen); 
+            Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
+            for (int ii = 0; ii < m_state_dim; ii++){
+                float alpha = dist(gen); 
+                state(ii,0) = alpha * (m_init_lims(ii,1) - m_init_lims(ii,0)) + m_init_lims(ii,0);
+            }
             return state;
         }
 

@@ -107,7 +107,8 @@ def plot_sim_result(sim_result):
 	axs[num_robots,0].set_ylabel("Actions")
 
 	# reward 
-	axs[num_robots+1,0].plot(times[1:],rewards)
+	for i_robot in range(num_robots):
+		axs[num_robots+1,0].plot(times[1:],rewards[:,i_robot])
 	axs[num_robots+1,0].set_ylabel("Rewards")
 
 	# fig.tight_layout()
@@ -175,10 +176,6 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 
 	else: 
 		print('tree plot dimension not supported')
-	
-	# save_figs('../current/tree.pdf')
-	# open_figs('../current/tree.pdf')
-	# exit()
 
 
 def plot_value_dataset(problem,train_dataset,test_dataset):

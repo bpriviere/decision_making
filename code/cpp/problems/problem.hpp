@@ -10,16 +10,14 @@ class Problem_Settings
 {
     public: 
         float timestep; 
-        float pos_lim; 
-        float vel_lim; 
         float gamma; 
         float mass; 
-        float acc_lim; 
-        float omega_lim;
-        float rad_lim; 
         float g; 
         float desired_distance;
         float state_control_weight; 
+        Eigen::Matrix<float,-1,2> state_lims;
+        Eigen::Matrix<float,-1,2> action_lims;
+        Eigen::Matrix<float,-1,2> init_lims;
 };
 
 

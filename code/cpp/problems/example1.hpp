@@ -13,7 +13,8 @@ class Example1 : public Problem {
         std::uniform_real_distribution<double> dist;
         std::default_random_engine m_gen;
         Eigen::Matrix<float,2,2> m_state_lims;  
-        Eigen::Matrix<float,2,2> m_action_lims;  
+        Eigen::Matrix<float,2,2> m_action_lims; 
+        Eigen::Matrix<float,2,2> m_init_lims; 
         Eigen::Matrix<float,2,2> m_F;
         Eigen::Matrix<float,2,2> m_B;
         Eigen::Matrix<float,2,2> m_Q;
@@ -29,23 +30,17 @@ class Example1 : public Problem {
             m_r_max = 100;
             m_r_min = -1 * m_r_max;  
 
+            problem_settings.state_lims.resize(m_state_dim,2);
+            problem_settings.action_lims.resize(m_action_dim,2);
+            problem_settings.init_lims.resize(m_state_dim,2);
+
             m_timestep = problem_settings.timestep;
             m_gamma = problem_settings.gamma;
-
-            float pos_lim = problem_settings.pos_lim;
-            float vel_lim = problem_settings.vel_lim;
+            m_state_lims = problem_settings.state_lims; 
+            m_action_lims = problem_settings.action_lims; 
+            m_init_lims = problem_settings.init_lims; 
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
-
-            m_state_lims(0,0) = -pos_lim;
-            m_state_lims(0,1) = pos_lim;
-            m_state_lims(1,0) = -pos_lim;
-            m_state_lims(1,1) = pos_lim;
-
-            m_action_lims(0,0) = -vel_lim;
-            m_action_lims(0,1) = vel_lim;
-            m_action_lims(1,0) = -vel_lim;
-            m_action_lims(1,1) = vel_lim;
 
             m_F(0,0) = 1.0f;
             m_F(0,1) = 0.0f; 
@@ -125,7 +120,11 @@ class Example1 : public Problem {
 
         Eigen::Matrix<float,-1,1> initialize(std::default_random_engine & gen) override 
         {
-            auto state = sample_state(gen); 
+            Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
+            for (int ii = 0; ii < m_state_dim; ii++){
+                float alpha = dist(gen); 
+                state(ii,0) = alpha * (m_init_lims(ii,1) - m_init_lims(ii,0)) + m_init_lims(ii,0);
+            }
             return state;
         }
 

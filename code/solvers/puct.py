@@ -166,7 +166,7 @@ class Node:
 		self.state = state 
 		self.parent = parent 
 		self.num_visits = 0 
-		self.total_value = np.zeros(num_robots) 
+		self.total_value = np.zeros((num_robots,1))
 		self.children = []
 		self.edges = dict()
 

@@ -1,6 +1,7 @@
 
 # standard 
 import numpy as np 
+import copy 
 
 # custom 
 from problems.problem import Problem
@@ -11,17 +12,15 @@ import plotter
 class Example3(Problem):
 
 	def __init__(self,\
-		t0 = 0,
-		tf = 20,
-		dt = 0.1,
-		pos_lim = 2,
-		vel_lim = 2,
-		acc_lim = 1.0,
-		rad_lim = 2*np.pi,
-		omega_lim = 2*np.pi / 10,
-		desired_distance = 0.2, 
-		state_control_weight = 0.1,
-		g = 3.0, 
+		t0,
+		tf,
+		dt,
+		state_lims,
+		action_lims,
+		init_lims,
+		desired_distance,
+		state_control_weight,
+		g,
 		): 
 		super(Example3,self).__init__()
 
@@ -33,25 +32,6 @@ class Example3(Problem):
 		state_dim = state_dim_per_robot * num_robots
 		action_dim = action_dim_per_robot * num_robots
 		position_idx = np.arange(3)
-
-		# state and action lim 
-		state_lims = np.zeros((state_dim,2))
-		action_lims = np.zeros((action_dim,2))
-		for i in range(num_robots):
-			state_shift = state_dim_per_robot * i 
-			action_shift = action_dim_per_robot * i 
-			
-			state_lims[state_shift + np.arange(0,3),0] = -pos_lim
-			state_lims[state_shift + np.arange(0,3),1] =  pos_lim
-			state_lims[state_shift + np.arange(3,6),0] = -rad_lim
-			state_lims[state_shift + np.arange(3,6),1] =  rad_lim
-			state_lims[state_shift + 6,0]   =  0.5*vel_lim
-			state_lims[state_shift + 6,1]   =  vel_lim
-
-			action_lims[action_shift + np.arange(0,2),0] = -omega_lim
-			action_lims[action_shift + np.arange(0,2),1] =  omega_lim
-			action_lims[action_shift+2,0] = -acc_lim
-			action_lims[action_shift+2,1] =  acc_lim
 
 		# reward 
 		Q = np.zeros((state_dim_per_robot,state_dim_per_robot))
@@ -65,11 +45,6 @@ class Example3(Problem):
 		# other
 		self.g = g 
 		self.desired_distance = desired_distance
-		self.pos_lim = pos_lim
-		self.vel_lim = vel_lim
-		self.acc_lim = acc_lim
-		self.rad_lim = rad_lim
-		self.omega_lim = omega_lim
 		self.state_control_weight = state_control_weight
 
 		# standard 
@@ -81,6 +56,7 @@ class Example3(Problem):
 		self.action_dim = action_dim
 		self.action_dim_per_robot = action_dim_per_robot
 		self.action_lims = action_lims 
+		self.init_lims = init_lims 
 		self.position_idx = position_idx 
 		self.dt = dt
 		self.times = times  
@@ -101,15 +77,15 @@ class Example3(Problem):
 		r = -1 * (
 			np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2) - self.desired_distance) + \
 			a_1.T @ self.Ru @ a_1)
-		return r 
+		return np.array([r,-r]).squeeze() 
 
 	def normalized_reward(self,s,a): 
-		r1 = self.reward(s,a)
+		r0 = self.reward(s,a)[0]
 		r_max = 100
 		r_min = -r_max
-		r1 = np.clip(r1,r_min,r_max)
-		r1 = (r1 - r_min) / (r_max - r_min)
-		return np.array([r1,1-r1]).squeeze()
+		r0 = np.clip(r0,r_min,r_max)
+		r0 = (r0 - r_min) / (r_max - r_min)
+		return np.array([r0,1-r0]).squeeze()
 
 	def step(self,s,a):
 		# s = [x,y,z,psi,gamma,phi,v]
@@ -139,13 +115,22 @@ class Example3(Problem):
 	def render(self,states):
 		# states, np array in [nt x state_dim]
 		fig,ax = plotter.make_3d_fig()
+		lims = self.state_lims
 		colors = plotter.get_n_colors(self.num_robots)
 		for robot in range(self.num_robots):
 			state_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
 			ax.plot(states[:,state_idxs[0]].squeeze(), states[:,state_idxs[1]].squeeze(), \
 				states[:,state_idxs[2]].squeeze(), color=colors[robot])
 			ax.scatter(states[-1,state_idxs[0]], states[-1,state_idxs[1]], states[-1,state_idxs[2]], color=colors[robot])
-		lims = self.state_lims
+			# projections 
+			# print(states.shape) # nt x 14 x 1
+			ax.plot(lims[0,0]*np.ones(states.shape[0]),states[:,state_idxs[1]].squeeze(),states[:,state_idxs[2]].squeeze(),\
+				color=colors[robot],linewidth=1,linestyle="--")
+			ax.plot(states[:,state_idxs[0]].squeeze(),lims[1,1]*np.ones(states.shape[0]),states[:,state_idxs[2]].squeeze(),\
+				color=colors[robot],linewidth=1,linestyle="--")
+			ax.plot(states[:,state_idxs[0]].squeeze(),states[:,state_idxs[1]].squeeze(),lims[2,0]*np.ones(states.shape[0]),\
+				color=colors[robot],linewidth=1,linestyle="--")
+
 		ax.set_xlim((lims[0,0],lims[0,1]))
 		ax.set_ylim((lims[1,0],lims[1,1]))
 		ax.set_zlim((lims[2,0],lims[2,1]))
@@ -164,8 +149,7 @@ class Example3(Problem):
 
 
 	def initialize(self):
-		# return self.sample_state(damp=0.2)
-		return self.sample_state()
+		return sample_vector(self.init_lims)
 
 
 	def steer(self,s1,s2):

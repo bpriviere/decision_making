@@ -58,26 +58,17 @@ class C_PUCT(Solver):
 	def search(self,problem,root_state):
 
 		problem_settings = Problem_Settings()
+		problem_settings.timestep = problem.dt
+		problem_settings.gamma = problem.gamma
+		problem_settings.state_lims = problem.state_lims
+		problem_settings.action_lims = problem.action_lims 
+		problem_settings.init_lims = problem.init_lims 
+
 		if problem.name == "example1":
-			problem_settings.timestep = problem.dt
-			problem_settings.pos_lim = problem.pos_lim 
-			problem_settings.vel_lim = problem.vel_lim 
-			problem_settings.gamma = problem.gamma 
+			pass 
 		elif problem.name == "example2":
-			problem_settings.timestep = problem.dt
-			problem_settings.pos_lim = problem.pos_lim 
-			problem_settings.vel_lim = problem.vel_lim 
-			problem_settings.acc_lim = problem.acc_lim 
-			problem_settings.gamma = problem.gamma 
 			problem_settings.mass = problem.mass 
 		elif problem.name == "example3":
-			problem_settings.timestep = problem.dt
-			problem_settings.pos_lim = problem.pos_lim 
-			problem_settings.vel_lim = problem.vel_lim 
-			problem_settings.acc_lim = problem.acc_lim 
-			problem_settings.rad_lim = problem.rad_lim
-			problem_settings.omega_lim = problem.omega_lim
-			problem_settings.gamma = problem.gamma 	
 			problem_settings.g = problem.g 		
 			problem_settings.desired_distance = problem.desired_distance
 			problem_settings.state_control_weight = problem.state_control_weight

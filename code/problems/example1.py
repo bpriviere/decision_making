@@ -11,11 +11,12 @@ import plotter
 class Example1(Problem):
 
 	def __init__(self,\
-		t0 = 0,
-		tf = 10,
-		dt = 0.1,
-		pos_lim = 5,
-		vel_lim = 1,
+		t0,
+		tf,
+		dt, 
+		state_lims,
+		action_lims,  
+		init_lims,
 		): 
 		super(Example1,self).__init__()
 
@@ -25,15 +26,7 @@ class Example1(Problem):
 		Bc = np.eye(2)
 		position_idx = np.arange(2)
 
-		state_dim,action_dim = Bc.shape
-		state_lims = np.zeros((state_dim,2))
-		for i_s in range(state_dim):
-			state_lims[i_s,0] = -pos_lim
-			state_lims[i_s,1] =  pos_lim
-		action_lims = np.zeros((action_dim,2))
-		for i_s in range(action_dim):
-			action_lims[i_s,0] = -vel_lim
-			action_lims[i_s,1] =  vel_lim
+		state_dim,action_dim = 2,2
 
 		self.F = np.eye(state_dim) +  Fc * dt 
 		self.B = Bc * dt
@@ -41,14 +34,11 @@ class Example1(Problem):
 		self.Ru = np.eye(action_dim)
 
 		# 
-		self.pos_lim = pos_lim 
-		self.vel_lim = vel_lim 
-
-		# 
 		self.num_robots = 1
 		self.gamma = 1
 		self.state_dim = state_dim
 		self.state_lims = state_lims 
+		self.init_lims = init_lims 
 		self.action_dim = action_dim
 		self.action_lims = action_lims 
 		self.position_idx = position_idx 
@@ -65,7 +55,9 @@ class Example1(Problem):
 		return sample_vector(self.state_lims)
 
 	def reward(self,s,a):
-		return -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()		
+		reward = np.zeros((self.num_robots,1))
+		reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
+		return reward
 
 	def normalized_reward(self,s,a): 
 		reward = self.reward(s,a)
@@ -95,7 +87,7 @@ class Example1(Problem):
 		return contains(state,self.state_lims)
 
 	def initialize(self):
-		return self.sample_state()
+		return sample_vector(self.init_lims)
 
 	def steer(self,s1,s2):
 		num_samples = 10 
