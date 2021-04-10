@@ -228,9 +228,48 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 		ax[1,0].set_ylabel("Target")
 		fig.suptitle(title)
 
+
 def plot_regression_test(result):
 	# dict : (key,value)
 	# key = (int number_simulations, string solver_name)
 	# value = (float duration, float total_reward)
 
 	print(result)
+
+
+def make_movie(sim_result,instance,filename):
+
+	from matplotlib import animation
+
+	states = sim_result["states"]
+	times = sim_result["times"] 
+
+	if instance["problem"].name in ["example3","example4"]:
+		fig,ax = make_3d_fig()
+	else:
+		fig,ax = make_fig()
+
+	def init(): 
+		ax.clear()
+		ax.grid(True)
+
+	# animate over trajectory
+	def animate(i_t):
+
+		init()
+
+		print(i_t/len(times))
+
+		time_idxs = range(i_t) #times[0:i_t]
+		states_i = states[time_idxs]
+
+		if i_t < 2:
+			return ln 
+		else:
+			instance["problem"].render(states_i,fig=fig,ax=ax)
+
+		return ln 
+
+	ln = ax.plot([],[],[])
+	anim = animation.FuncAnimation(fig, animate, frames=len(times)+1, interval=1)
+	anim.save(filename, fps=10, extra_args=['-vcodec', 'libx264'], dpi=1000)

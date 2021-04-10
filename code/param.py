@@ -7,11 +7,14 @@ class Param:
 
 		# names 
 		self.problem_name = "example2" # e.g. example1, example2, example3, ...
-		self.solver_name = "PUCT" # e.g. Empty, DARE, MCTS, PUCT, C_PUCT, ...
+		self.solver_name = "C_PUCT" # e.g. Empty, DARE, MCTS, PUCT, C_PUCT, ...
+
+		# settings
+		self.movie_on = True
 
 		# solver settings 
-		if self.solver_name in ["PUCT","C_PUCT","PUCT_V2"]:
-			self.number_simulations = 100
+		if self.solver_name in ["PUCT","C_PUCT"]:
+			self.number_simulations = 1000
 			self.policy_oracle = None
 			self.value_oracle = None
 			self.search_depth = 10

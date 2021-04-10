@@ -36,15 +36,15 @@ class Example4(Problem):
 		self.action_dim = self.num_robots * self.action_dim_per_robot
 
 		self.state_lims = np.array((
-			(-10,10),
-			(-10,10),
-			(-10,10),
+			(-2,2),
+			(0,10),
+			(-2,2),
 			(-1,1),
 			(-1,1),
 			(-1,1),
-			(-10,10),
-			(-10,10),
-			(-10,10),
+			(-2,2),
+			(0,10),
+			(-2,2),
 			(-1,1),
 			(-1,1),
 			(-1,1),
@@ -60,18 +60,18 @@ class Example4(Problem):
 			))
 
 		self.init_lims = np.array((
-			(-10,10),
-			(-10,10),
-			(-10,10),
 			(-1,1),
+			( 0,1), 
 			(-1,1),
+			( 0,0),
+			( 0.5,0.5),
+			( 0,0),
 			(-1,1),
-			(-10,10),
-			(-10,10),
-			(-10,10),
+			( 1,2),
 			(-1,1),
-			(-1,1),
-			(-1,1),
+			( 0,0),
+			( 0.5,0.5),
+			( 0,0),
 			))
 
 		self.F = np.eye(self.state_dim_per_robot) +  self.dt * np.array((
@@ -122,15 +122,18 @@ class Example4(Problem):
 			s_tp1[state_idx,:] = np.dot(self.F,s[state_idx,:]) + np.dot(self.B,a[action_idx,:])
 		return s_tp1 
 
-	def render(self,states):
+	def render(self,states,fig=None,ax=None):
 		# states, np array in [nt x state_dim]
-		fig,ax = plotter.make_3d_fig()
+		
+		if fig == None or ax == None:
+			fig,ax = plotter.make_3d_fig()
+
 		lims = self.state_lims
 		colors = plotter.get_n_colors(self.num_robots)
 		for robot in range(self.num_robots):
 			state_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
 
-			ax.plot(states[:,state_idxs[0]].squeeze(), states[:,state_idxs[1]].squeeze(),states[:,state_idxs[2]].squeeze(),color=colors[robot])
+			ax.plot(states[:,state_idxs[0]].squeeze(axis=1), states[:,state_idxs[1]].squeeze(axis=1),states[:,state_idxs[2]].squeeze(axis=1),color=colors[robot])
 			ax.plot(states[0,state_idxs[0]], states[0,state_idxs[1]], states[0,state_idxs[2]], color=colors[robot],marker='o')
 			ax.plot(states[-1,state_idxs[0]], states[-1,state_idxs[1]], states[-1,state_idxs[2]], color=colors[robot],marker='s')
 			
@@ -145,9 +148,12 @@ class Example4(Problem):
 		ax.set_xlim((lims[0,0],lims[0,1]))
 		ax.set_ylim((lims[1,0],lims[1,1]))
 		ax.set_zlim((lims[2,0],lims[2,1]))
+		ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
+
 		for robot in range(self.num_robots):
 			ax.scatter(np.nan,np.nan,np.nan,color=colors[robot],label="Robot {}".format(robot))
 		ax.legend(loc='best')
+
 		return fig,ax 
 
 	def is_terminal(self,state):

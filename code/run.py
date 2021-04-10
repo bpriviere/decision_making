@@ -56,22 +56,6 @@ def make_instance(param):
 			vis_on=param.vis_on
 			)
 
-	elif param.solver_name == "PUCT_V2": 
-		from solvers.puct_v2 import PUCT_V2
-		solver = PUCT_V2(
-			policy_oracle=param.policy_oracle,
-			value_oracle=param.value_oracle,
-			search_depth=param.search_depth,
-			number_simulations=param.number_simulations,
-			C_pw=param.C_pw,
-			alpha_pw=param.alpha_pw,
-			C_exp=param.C_exp,
-			alpha_exp=param.alpha_exp,
-			beta_policy=param.beta_policy,
-			beta_value=param.beta_value,
-			vis_on=param.vis_on
-			)		
-
 	elif param.solver_name == "C_PUCT": 
 		from solvers.c_puct import C_PUCT
 		solver = C_PUCT(
@@ -155,8 +139,13 @@ if __name__ == '__main__':
 	# make instance 
 	instance = make_instance(param)
 
-	# run instance 
+	# # run instance 
 	sim_result = run_instance(instance)
+
+	if param.movie_on: 
+		print('making movie...')
+		plotter.make_movie(sim_result,instance,"../current/plots/vid.mp4")
+		plotter.open_figs("../current/plots/vid.mp4")	
 
 	# save/load results
 	# todo

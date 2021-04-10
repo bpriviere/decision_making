@@ -64,7 +64,7 @@ class Example2(Problem):
 			))
 
 		self.Q = np.eye(self.state_dim)
-		
+
 		self.Ru = self.state_control_weight * np.eye(self.action_dim)
 
 	def reward(self,s,a):
@@ -83,10 +83,11 @@ class Example2(Problem):
 		s_tp1 = np.dot(self.F,s) + np.dot(self.B,a)
 		return s_tp1 
 
-	def render(self,states):
+	def render(self,states,fig=None,ax=None):
+		if fig == None or ax == None: 
+			fig,ax = plotter.make_fig() 
 		states = np.array(states)
 		state_lims = self.state_lims
-		fig,ax = plotter.make_fig() 
 		ax.plot(states[:,0],states[:,1])
 		ax.plot(states[0,0],states[0,1],'o')
 		ax.plot(states[-1,0],states[-1,1],'s')
