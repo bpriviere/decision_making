@@ -36,21 +36,21 @@ class Example4(Problem):
 		self.action_dim = self.num_robots * self.action_dim_per_robot
 
 		self.state_lims = np.array((
-			(-2,2),
-			(0,10),
-			(-2,2),
-			(-1,1),
-			(-1,1),
-			(-1,1),
-			(-2,2),
-			(0,10),
+			(-2,2), 
+			(-5,5), 
+			(-2,2), 
+			(-1,1), 
+			(-1,1), 
+			(-1,1), 
+			(-2,2), 
+			(-5,5),
 			(-2,2),
 			(-1,1),
 			(-1,1),
 			(-1,1),
 			))
 
-		self.action_lims = np.array((
+		self.action_lims = 0.25*np.array((
 			(-1,1),
 			(-1,1),
 			(-1,1),
@@ -61,16 +61,16 @@ class Example4(Problem):
 
 		self.init_lims = np.array((
 			(-1,1),
-			( 0,1), 
+			(-4,-4), 
 			(-1,1),
 			( 0,0),
-			( 0.5,0.5),
+			( 0,0),
 			( 0,0),
 			(-1,1),
-			( 1,2),
+			(-3,-3),
 			(-1,1),
 			( 0,0),
-			( 0.5,0.5),
+			( 0,0),
 			( 0,0),
 			))
 

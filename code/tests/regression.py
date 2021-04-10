@@ -21,14 +21,15 @@ def get_unique_key(param,trial=None):
 
 if __name__ == '__main__':
 
-    mode = 0 
+    mode = 0
 
     # fast 
     if mode == 0:
-        number_simulations_lst = [100]
-        problem_name_lst = ["example1","example2","example4"]
-        solver_name_lst = ["PUCT","C_PUCT"]
-        num_trial = 1 
+        number_simulations_lst = [1000]
+        problem_name_lst = ["example4"]
+        # solver_name_lst = ["PUCT","C_PUCT"]
+        solver_name_lst = ["C_PUCT"]
+        num_trial = 2
     
     # speed test 
     elif mode == 1:
@@ -36,6 +37,14 @@ if __name__ == '__main__':
         problem_name_lst = ["example1"]
         solver_name_lst = ["PUCT","C_PUCT"]
         num_trial = 1 
+
+    # custom 
+    elif mode == 2:
+        number_simulations_lst = [1000]
+        problem_name_lst = ["example4"]
+        solver_name_lst = ["C_PUCT"]
+        # solver_name_lst = ["PUCT"]
+        num_trial = 2
 
     params = []
     instances = [] 
@@ -71,5 +80,5 @@ if __name__ == '__main__':
         sim_results.append((param,sim_result))
 
     plotter.plot_regression_test(sim_results)
-    plotter.save_figs("../current/plots/regression.pdf")
-    plotter.open_figs("../current/plots/regression.pdf")
+    plotter.save_figs("../../current/plots/regression.pdf")
+    plotter.open_figs("../../current/plots/regression.pdf")

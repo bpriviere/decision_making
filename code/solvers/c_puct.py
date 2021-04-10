@@ -60,14 +60,16 @@ class C_PUCT(Solver):
 		problem_settings = Problem_Settings()
 		problem_settings.timestep = problem.dt
 		problem_settings.gamma = problem.gamma
+		problem_settings.r_max = problem.r_max
 		problem_settings.state_lims = problem.state_lims
 		problem_settings.action_lims = problem.action_lims 
 		problem_settings.init_lims = problem.init_lims 
 
 		if problem.name == "example1":
-			pass 
+			problem_settings.state_control_weight = problem.state_control_weight
 		elif problem.name == "example2":
-			problem_settings.mass = problem.mass 
+			problem_settings.mass = problem.mass
+			problem_settings.state_control_weight = problem.state_control_weight 
 		elif problem.name == "example3":
 			problem_settings.g = problem.g 		
 			problem_settings.desired_distance = problem.desired_distance
@@ -75,6 +77,7 @@ class C_PUCT(Solver):
 		elif problem.name == "example4":
 			problem_settings.mass = problem.mass
 			problem_settings.desired_distance = problem.desired_distance
+			problem_settings.state_control_weight = problem.state_control_weight
 		else: 
 			print("problem not supported")
 			exit()

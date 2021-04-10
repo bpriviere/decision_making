@@ -94,6 +94,7 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("action_lims", &Problem_Settings::action_lims)
         .def_readwrite("init_lims", &Problem_Settings::init_lims)
         .def_readwrite("desired_distance", &Problem_Settings::desired_distance)
+        .def_readwrite("r_max", &Problem_Settings::r_max)
         .def_readwrite("g", &Problem_Settings::g)
         .def_readwrite("mass", &Problem_Settings::mass)
         .def_readwrite("state_control_weight", &Problem_Settings::state_control_weight)

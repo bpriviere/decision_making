@@ -33,8 +33,6 @@ class Example4 : public Problem {
             m_action_dim = 6;
             m_action_dim_per_robot = 3; 
             m_num_robots = 2;
-            m_r_max = 100;
-            m_r_min = -1 * m_r_max;  
 
             problem_settings.state_lims.resize(m_state_dim,2);
             problem_settings.action_lims.resize(m_action_dim,2);
@@ -42,8 +40,11 @@ class Example4 : public Problem {
 
             m_timestep = problem_settings.timestep;
             m_gamma = problem_settings.gamma;
-            m_mass = problem_settings.mass; 
             m_desired_distance = problem_settings.desired_distance;
+            m_mass = problem_settings.mass; 
+            m_r_max = problem_settings.r_max;
+            m_r_min = -1 * m_r_max;  
+            m_state_control_weight = problem_settings.state_control_weight;
             m_state_lims = problem_settings.state_lims; 
             m_action_lims = problem_settings.action_lims; 
             m_init_lims = problem_settings.init_lims; 
@@ -70,6 +71,7 @@ class Example4 : public Problem {
             m_Q(2,2) = 1; 
 
             m_R.setIdentity();
+            m_R = m_R * m_state_control_weight;
         }
 
 

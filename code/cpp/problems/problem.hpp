@@ -15,6 +15,7 @@ class Problem_Settings
         float g; 
         float desired_distance;
         float state_control_weight; 
+        float r_max; 
         Eigen::Matrix<float,-1,2> state_lims;
         Eigen::Matrix<float,-1,2> action_lims;
         Eigen::Matrix<float,-1,2> init_lims;
@@ -30,6 +31,11 @@ public:
     int m_num_robots;
     float m_timestep;
     float m_gamma; 
+    std::uniform_real_distribution<double> dist;
+    std::default_random_engine m_gen;    
+    Eigen::Matrix<float,-1,2> m_state_lims;  
+    Eigen::Matrix<float,-1,2> m_action_lims;  
+    Eigen::Matrix<float,-1,2> m_init_lims; 
     virtual ~Problem() { }
 
     virtual void set_params(Problem_Settings & problem_settings) 
@@ -64,30 +70,74 @@ public:
         return reward;
     }
 
-    // stop condition
-    virtual bool is_terminal(Eigen::Matrix<float, -1, 1> state)
-    {
-        return true;
-    }
+    // // stop condition
+    // virtual bool is_terminal(Eigen::Matrix<float, -1, 1> state)
+    // {
+    //     return true;
+    // }
 
-    // initialize state 
-    virtual Eigen::Matrix<float, -1, 1> initialize(std::default_random_engine& generator)
+    // // initialize state 
+    // virtual Eigen::Matrix<float, -1, 1> initialize(std::default_random_engine& generator)
+    // {
+    //     Eigen::Matrix<float, -1, 1> state;
+    //     return state;
+    // }
+
+    // // action sample  
+    // virtual Eigen::Matrix<float, -1, 1> sample_action(std::default_random_engine& generator)
+    // {
+    //     Eigen::Matrix<float, -1, 1> action;
+    //     return action;
+    // }
+
+    // // is valid 
+    // virtual bool is_valid(Eigen::Matrix<float, -1, 1> state)
+    // {
+    //     return false; 
+    // }
+
+    Eigen::Matrix<float,-1,1> sample_state(std::default_random_engine & gen) 
     {
-        Eigen::Matrix<float, -1, 1> state;
+        Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
+        for (int ii = 0; ii < m_state_dim; ii++){
+            float alpha = dist(gen); 
+            state(ii,0) = alpha * (m_state_lims(ii,1) - m_state_lims(ii,0)) + m_state_lims(ii,0);
+        }
         return state;
     }
 
-    // action sample  
-    virtual Eigen::Matrix<float, -1, 1> sample_action(std::default_random_engine& generator)
+
+    Eigen::Matrix<float,-1,1> sample_action(std::default_random_engine & gen) 
     {
-        Eigen::Matrix<float, -1, 1> action;
+        Eigen::Matrix<float,-1,1> action(m_action_dim,1); 
+        for (int ii = 0; ii < m_action_dim; ii++){
+            float alpha = dist(gen); 
+            action(ii,0) = alpha * (m_action_lims(ii,1) - m_action_lims(ii,0)) + m_action_lims(ii,0);
+        }
         return action;
+    } 
+    
+
+    Eigen::Matrix<float,-1,1> initialize(std::default_random_engine & gen) 
+    {
+        Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
+        for (int ii = 0; ii < m_state_dim; ii++){
+            float alpha = dist(gen); 
+            state(ii,0) = alpha * (m_init_lims(ii,1) - m_init_lims(ii,0)) + m_init_lims(ii,0);
+        }
+        return state;
     }
 
-    // is valid 
-    virtual bool is_valid(Eigen::Matrix<float, -1, 1> state)
+
+    bool is_terminal(Eigen::Matrix<float,-1,1> state)  
     {
-        return false; 
+        return !is_valid(state);
+    }
+
+
+    bool is_valid(Eigen::Matrix<float,-1,1> state)  
+    {
+        return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
     }
 
 };
