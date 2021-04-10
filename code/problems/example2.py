@@ -93,6 +93,7 @@ class Example2(Problem):
 		ax.plot(states[-1,0],states[-1,1],'s')
 		ax.set_xlim([state_lims[0,0],state_lims[0,1]])
 		ax.set_ylim([state_lims[1,0],state_lims[1,1]])
+		return fig,ax
 
 	def is_terminal(self,state):
 		return not self.is_valid(state)

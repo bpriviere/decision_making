@@ -10,11 +10,6 @@
 class Example2 : public Problem { 
     
     public:
-        std::uniform_real_distribution<double> dist;
-        std::default_random_engine m_gen;
-        Eigen::Matrix<float,4,2> m_state_lims;  
-        Eigen::Matrix<float,2,2> m_action_lims;  
-        Eigen::Matrix<float,4,2> m_init_lims; 
         Eigen::Matrix<float,4,4> m_F;
         Eigen::Matrix<float,4,2> m_B;
         Eigen::Matrix<float,4,4> m_Q;
@@ -91,50 +86,4 @@ class Example2 : public Problem {
             r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
             return r;
         }
-        
-
-        Eigen::Matrix<float,-1,1> sample_state(std::default_random_engine & gen) 
-        {
-            Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
-            for (int ii = 0; ii < m_state_dim; ii++){
-                float alpha = dist(gen); 
-                state(ii,0) = alpha * (m_state_lims(ii,1) - m_state_lims(ii,0)) + m_state_lims(ii,0);
-            }
-            return state;
-        }
-
-
-        Eigen::Matrix<float,-1,1> sample_action(std::default_random_engine & gen) override 
-        {
-            Eigen::Matrix<float,-1,1> action(m_action_dim,1); 
-            for (int ii = 0; ii < m_action_dim; ii++){
-                float alpha = dist(gen); 
-                action(ii,0) = alpha * (m_action_lims(ii,1) - m_action_lims(ii,0)) + m_action_lims(ii,0);
-            }
-            return action;
-        } 
-        
-
-        Eigen::Matrix<float,-1,1> initialize(std::default_random_engine & gen) override 
-        {
-            Eigen::Matrix<float,-1,1> state(m_state_dim,1); 
-            for (int ii = 0; ii < m_state_dim; ii++){
-                float alpha = dist(gen); 
-                state(ii,0) = alpha * (m_init_lims(ii,1) - m_init_lims(ii,0)) + m_init_lims(ii,0);
-            }
-            return state;
-        }
-
-
-        bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
-        {
-            return !is_valid(state);
-        }
-
-
-        bool is_valid(Eigen::Matrix<float,-1,1> state) override 
-        {
-            return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
-        }
-
 };

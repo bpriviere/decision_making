@@ -229,12 +229,16 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 		fig.suptitle(title)
 
 
-def plot_regression_test(result):
-	# dict : (key,value)
-	# key = (int number_simulations, string solver_name)
-	# value = (float duration, float total_reward)
+def plot_regression_test(results):
+	# results: list of (instance, sim_result) pairs 
 
-	print(result)
+	# render each sim result 
+	for (param, sim_result) in results:
+		fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
+		fig.suptitle(param.key)
+
+	# for each problem, plot duration per timestep across number of simulations for each solver 
+
 
 
 def make_movie(sim_result,instance,filename):

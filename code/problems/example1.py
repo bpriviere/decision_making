@@ -16,18 +16,18 @@ class Example1(Problem):
 		self.t0 = 0
 		self.tf = 20
 		self.dt = 0.1
-		self.gamma = 1.0
 		self.r_max = 100
 		self.num_robots = 1
 		self.gamma = 1
 		self.state_dim = 2
 		self.action_dim = 2
 		self.state_control_weight = 1.0
-		self.times = np.arange(self.t0,self.tf,self.dt)
+		self.name = "example1"
 		self.position_idx = np.arange(2)
+
+		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
-		self.name = "example1"
 
 		self.state_lims = np.array([
 			[-5,5],
@@ -63,15 +63,17 @@ class Example1(Problem):
 		s_tp1 = np.dot(self.F,s) + np.dot(self.B,a)
 		return s_tp1 
 
-	def render(self,states):
+	def render(self,states,fig=None,ax=None):
+		if fig == None or ax == None: 
+			fig,ax = plotter.make_fig()	
 		states = np.array(states)
 		state_lims = self.state_lims
-		fig,ax = plotter.make_fig() 
 		ax.plot(states[:,0],states[:,1])
 		ax.plot(states[0,0],states[0,1],'o')
 		ax.plot(states[-1,0],states[-1,1],'s')
 		ax.set_xlim([state_lims[0,0],state_lims[0,1]])
 		ax.set_ylim([state_lims[1,0],state_lims[1,1]])
+		return fig,ax
 
 	def is_terminal(self,state):
 		return not self.is_valid(state)
