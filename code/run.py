@@ -14,37 +14,19 @@ def make_instance(param):
 
 	if param.problem_name == "example1":
 		from problems.example1 import Example1
-		problem = Example1(
-			t0 = param.t0,
-			tf = param.tf,
-			dt = param.dt,
-			state_lims = param.state_lims,
-			action_lims = param.action_lims,
-			init_lims = param.init_lims,)
+		problem = Example1()
 
 	elif param.problem_name == "example2":
 		from problems.example2 import Example2
-		problem = Example2(
-			t0 = param.t0,
-			tf = param.tf,
-			dt = param.dt,
-			state_lims = param.state_lims,
-			action_lims = param.action_lims,
-			init_lims = param.init_lims,
-			mass = param.mass)
+		problem = Example2()
 
 	elif param.problem_name == "example3":
 		from problems.example3 import Example3
-		problem = Example3(
-			t0 = param.t0,
-			tf = param.tf,
-			dt = param.dt,
-			state_lims = param.state_lims,
-			action_lims = param.action_lims,
-			init_lims = param.init_lims,
-			desired_distance = param.desired_distance,
-			state_control_weight = param.state_control_weight,
-			g = param.g)
+		problem = Example3()
+
+	elif param.problem_name == "example4":
+		from problems.example4 import Example4
+		problem = Example4() 
 
 	if param.solver_name == "Empty": 
 		from solvers.empty import Empty

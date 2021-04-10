@@ -1,5 +1,6 @@
 
 
+
 # standard 
 import numpy as np 
 
@@ -11,53 +12,60 @@ import plotter
 # 2d double integrator , single robot 
 class Example2(Problem):
 
-	def __init__(self,\
-		t0,
-		tf,
-		dt,
-		state_lims,
-		action_lims,
-		init_lims,
-		mass,
-		): 
+	def __init__(self): 
 		super(Example2,self).__init__()
 
-		times = np.arange(t0,tf,dt)
-		
-		Fc = np.array(((0,0,1,0),(0,0,0,1),(0,0,0,0),(0,0,0,0))) 
-		Bc = 1/mass * np.array(((0,0),(0,0),(1,0),(0,1)))
-		position_idx = np.arange(2)
-		velocity_idx = np.arange(2) + 2
-
-		state_dim,action_dim = Bc.shape
-
-		self.F = np.eye(state_dim) +  Fc * dt 
-		self.B = Bc * dt
-		self.Q = np.eye(state_dim)
-		self.Ru = np.eye(action_dim)
-
-		self.mass = mass
-
-		# 
-		self.num_robots = 1
-		self.gamma = 1
-		self.state_dim = state_dim
-		self.state_lims = state_lims 
-		self.init_lims = init_lims 
-		self.action_dim = action_dim
-		self.action_lims = action_lims 
-		self.position_idx = position_idx 
-		self.dt = dt
-		self.times = times  
-		self.policy_encoding_dim = state_dim
-		self.value_encoding_dim = state_dim
+		self.t0 = 0
+		self.tf = 20
+		self.dt = 0.1
+		self.gamma = 1.0
+		self.mass = 1
+		self.num_robots = 1 
+		self.state_dim_per_robot = 4 
+		self.action_dim_per_robot = 2 
+		self.r_max = 100
+		self.state_control_weight = 1.0
 		self.name = "example2"
+		self.position_idx = np.arange(2) 
 
-	def sample_action(self):
-		return sample_vector(self.action_lims)
+		self.state_dim = self.num_robots * self.state_dim_per_robot
+		self.action_dim = self.num_robots * self.action_dim_per_robot
+		self.times = np.arange(self.t0,self.tf,self.dt)
+		self.policy_encoding_dim = self.state_dim
+		self.value_encoding_dim = self.state_dim
 
-	def sample_state(self):
-		return sample_vector(self.state_lims)
+		self.state_lims = np.array([
+			[-5,5],
+			[-5,5],
+			[-1,1],
+			[-1,1]
+		])
+		self.action_lims = np.array([
+			[-1,1],
+			[-1,1]
+		])
+		self.init_lims = np.array([
+			[-5,5],
+			[-5,5],
+			[-1,1],
+			[-1,1]
+		])
+		self.F = np.eye(self.state_dim) + self.dt * np.array((
+			(0,0,1,0),
+			(0,0,0,1),
+			(0,0,0,0),
+			(0,0,0,0)
+			))
+		self.B = self.dt / self.mass * np.array((
+			(0,0),
+			(0,0),
+			(1,0),
+			(0,1)
+			))
+
+		self.Q = np.eye(self.state_dim)
+		
+		self.Ru = self.state_control_weight * np.eye(self.action_dim)
 
 	def reward(self,s,a):
 		reward = np.zeros((self.num_robots,1))
@@ -66,7 +74,7 @@ class Example2(Problem):
 
 	def normalized_reward(self,s,a): 
 		reward = self.reward(s,a)
-		r_max = 100
+		r_max = self.r_max
 		r_min = -r_max
 		reward = np.clip(reward,r_min,r_max)
 		return (reward - r_min) / (r_max - r_min)
@@ -90,22 +98,6 @@ class Example2(Problem):
 
 	def is_valid(self,state):
 		return contains(state,self.state_lims)
-
-	def initialize(self):
-		return sample_vector(self.init_lims)
-
-	def steer(self,s1,s2):
-		num_samples = 10 
-		for i in range(num_samples):
-			action = self.sample_action()
-			dist = self.dist(self.step(s1,action),s2)
-			if i == 0 or dist < best_dist:
-				best_action = action
-				best_dist = dist 
-		return best_action 
-
-	def dist(self,s1,s2):
-		return np.linalg.norm(s1-s2)
 
 	def policy_encoding(self,state,robot):
 		return state 

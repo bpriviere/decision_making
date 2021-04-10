@@ -72,6 +72,9 @@ class C_PUCT(Solver):
 			problem_settings.g = problem.g 		
 			problem_settings.desired_distance = problem.desired_distance
 			problem_settings.state_control_weight = problem.state_control_weight
+		elif problem.name == "example4":
+			problem_settings.mass = problem.mass
+			problem_settings.desired_distance = problem.desired_distance
 		else: 
 			print("problem not supported")
 			exit()
