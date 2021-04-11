@@ -2,12 +2,12 @@
 
 ### Dependencies
 
- Python dependencies in '...todo.yml', can be batch installed with: 
- 	`conda ...todo`
+ Python dependencies in '~/environment.yml', can be batch installed with: 
+ 	`conda env create -f environment.yml`
  or installed individually with pip, e.g.: 
  	`pip install numpy`
  cpp dependencies 
- 	`todo`
+ 	`sudo apt install -y libeigen3-dev libyaml-cpp-dev`
 
 
 ### Compiling 
