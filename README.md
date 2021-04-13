@@ -19,7 +19,7 @@
 
 
 ### Script Examples 
- Run individual problems and solvers from ~\code by specifying 'code/param.py':
+ Run individual problems and solvers from ~\code by modifying 'code/param.py' and then:
   `python run.py`
  Batch runs from ~\code\tests : 
   `python regression.py`
