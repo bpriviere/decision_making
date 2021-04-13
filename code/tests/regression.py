@@ -4,8 +4,8 @@ import sys
 import numpy as np 
 sys.path.append("../")
 
-from run import run_instance, make_instance
 from param import Param 
+from run import run_instance, make_instance
 import plotter 
 
 
@@ -18,6 +18,19 @@ def get_unique_key(param,trial=None):
         param.number_simulations,
         trial)
 
+def worker(param):
+    from run import run_instance, make_instance
+    print('running {}/{}: {}'.format(param.count,param.total,param.key))
+    instance = make_instance(param)
+    instance["initial_state"] = param.initial_state
+    start = time.time()
+    sim_result = run_instance(instance,verbose=False)
+    duration = time.time() - start
+    sim_result["duration_per_timestep"] = duration / len(sim_result["times"])
+    # remove solver from instance because it can't pickle python bindings 
+    del sim_result["instance"]["solver"] 
+    return (param,sim_result)
+
 
 if __name__ == '__main__':
 
@@ -29,14 +42,14 @@ if __name__ == '__main__':
         problem_name_lst = ["example4"]
         # solver_name_lst = ["PUCT","C_PUCT"]
         solver_name_lst = ["C_PUCT"]
-        num_trial = 2
+        num_trial = 5
     
     # speed test 
     elif mode == 1:
-        number_simulations_lst = [10,100,1000,10000]
-        problem_name_lst = ["example1"]
+        number_simulations_lst = [10,50,100,500,1000] 
+        problem_name_lst = ["example1","example2","example4"]
         solver_name_lst = ["PUCT","C_PUCT"]
-        num_trial = 1 
+        num_trial = 5
 
     # custom 
     elif mode == 2:
@@ -47,7 +60,8 @@ if __name__ == '__main__':
         num_trial = 2
 
     params = []
-    instances = [] 
+    total = len(problem_name_lst) * len(number_simulations_lst) * len(solver_name_lst) * num_trial
+    count = 0 
     for problem_name in problem_name_lst: 
         for trial in range(num_trial):
             for i_ns, number_simulations in enumerate(number_simulations_lst): 
@@ -60,24 +74,38 @@ if __name__ == '__main__':
                     param.number_simulations_lst = number_simulations_lst
                     param.problem_name_lst = problem_name_lst
                     param.solver_name_lst = solver_name_lst
+                    param.num_trial = num_trial
+                    param.total = total
+                    param.count = count  
                     param.key = get_unique_key(param)
-                    params.append(param)
 
                     instance = make_instance(param)
                     if i_ns == 0 and i_sn == 0:
                         initial_state = instance["initial_state"]
                     else: 
                         instance["initial_state"] = initial_state
-                    instances.append(instance)
 
-    sim_results = []  
-    for i,(param,instance) in enumerate(zip(params,instances)): 
-        print('running {}/{}'.format(i,len(params)))
-        start = time.time()
-        sim_result = run_instance(instance,verbose=False)
-        duration = time.time() - start
-        sim_result["duration_per_timestep"] = duration / len(sim_result["times"])
-        sim_results.append((param,sim_result))
+                    param.initial_state = initial_state
+                    params.append(param)
+                    count += 1 
+
+    parallel_on = True
+
+    if parallel_on:
+        import multiprocessing as mp
+        pool = mp.Pool(mp.cpu_count()-1)
+        sim_results = pool.map(worker, params) 
+
+    else:
+        sim_results = []  
+        for i,(param,instance) in enumerate(params):
+            sim_results.append(worker(param)) 
+            # print('running {}/{}: {}'.format(param.count,param.total,param.key))
+            # start = time.time()
+            # sim_result = run_instance(instance,verbose=False)
+            # duration = time.time() - start
+            # sim_result["duration_per_timestep"] = duration / len(sim_result["times"])
+            # sim_results.append((param,sim_result))
 
     plotter.plot_regression_test(sim_results)
     plotter.save_figs("../../current/plots/regression.pdf")

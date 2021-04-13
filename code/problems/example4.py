@@ -16,10 +16,10 @@ class Example4(Problem):
 		super(Example4,self).__init__()
 
 		self.t0 = 0
-		self.tf = 20
+		self.tf = 40
 		self.dt = 0.1
 		self.gamma = 1.0
-		self.desired_distance = 0.2
+		self.desired_distance = 0.5
 		self.mass = 1
 		self.num_robots = 2 
 		self.state_dim_per_robot = 6 
@@ -27,7 +27,7 @@ class Example4(Problem):
 		self.r_max = 1000
 		self.name = "example4"
 		self.position_idx = np.arange(3) 
-		self.state_control_weight = 1.0
+		self.state_control_weight = 1e-5 
 
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
@@ -50,7 +50,7 @@ class Example4(Problem):
 			(-1,1),
 			))
 
-		self.action_lims = 0.25*np.array((
+		self.action_lims = 0.5*np.array((
 			(-1,1),
 			(-1,1),
 			(-1,1),
@@ -64,13 +64,13 @@ class Example4(Problem):
 			(-4,-4), 
 			(-1,1),
 			( 0,0),
-			( 0,0),
+			( 0.5,0.5),
 			( 0,0),
 			(-1,1),
-			(-3,-3),
+			( 0,0),
 			(-1,1),
 			( 0,0),
-			( 0,0),
+			( 0.5,0.5),
 			( 0,0),
 			))
 

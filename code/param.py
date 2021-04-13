@@ -18,7 +18,7 @@ class Param:
 			self.policy_oracle = None
 			self.value_oracle = None
 			self.search_depth = 10
-			self.C_pw = 2.0
+			self.C_pw = 3.0
 			self.alpha_pw = 0.5
 			self.C_exp = 1.0
 			self.alpha_exp = 0.25

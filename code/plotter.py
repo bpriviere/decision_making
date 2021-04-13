@@ -237,8 +237,65 @@ def plot_regression_test(results):
 		fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
 		fig.suptitle(param.key)
 
-	# for each problem, plot duration per timestep across number of simulations for each solver 
+	# for each problem, 
+	# 	- plot duration per timestep across number of simulations for each solver 
+	# 	- plot total reward ""
+	duration_plot_data = np.zeros((
+		len(param.problem_name_lst),
+		len(param.number_simulations_lst),
+		len(param.solver_name_lst),
+		param.num_trial))
+	reward_plot_data = np.zeros((
+		len(param.problem_name_lst),
+		len(param.number_simulations_lst),
+		len(param.solver_name_lst),
+		param.num_trial))
+	for (param,sim_result) in results: 
+		i_pn = param.problem_name_lst.index(param.problem_name)
+		i_ns = param.number_simulations_lst.index(param.number_simulations)
+		i_sn = param.solver_name_lst.index(param.solver_name)
+		duration_plot_data[i_pn,i_ns,i_sn,param.trial] = sim_result["duration_per_timestep"]
+		reward_plot_data[i_pn,i_ns,i_sn,param.trial] = np.sum(sim_result["rewards"][:,0])
+	
+	fig,axs = plt.subplots(ncols=len(param.problem_name_lst),nrows=1,squeeze=False)
+	for i_pn, problem_name in enumerate(param.problem_name_lst):
+		for i_sn, solver_name in enumerate(param.solver_name_lst):
+			lns = axs[0,i_pn].plot(
+				np.array(param.number_simulations_lst),
+				np.mean(duration_plot_data[i_pn,:,i_sn,:],axis=1),
+				label = solver_name)
+			axs[0,i_pn].fill_between(
+				np.array(param.number_simulations_lst),
+				np.mean(duration_plot_data[i_pn,:,i_sn,:],axis=1) - np.std(duration_plot_data[i_pn,:,i_sn,:],axis=1),
+				np.mean(duration_plot_data[i_pn,:,i_sn,:],axis=1) + np.std(duration_plot_data[i_pn,:,i_sn,:],axis=1),
+				color = lns[0].get_color(),
+				alpha = 0.5)
+		axs[0,i_pn].set_xscale('log')
+		axs[0,i_pn].set_title(problem_name)
+		axs[0,i_pn].tick_params(axis='x', rotation=45)
+	axs[0,0].legend(loc='best')
+	axs[0,0].set_ylabel("WCT / Timestep")
+	fig.suptitle("Computation Time Regression Test")
 
+	fig,axs = plt.subplots(ncols=len(param.problem_name_lst),nrows=1,squeeze=False)
+	for i_pn, problem_name in enumerate(param.problem_name_lst):
+		for i_sn, solver_name in enumerate(param.solver_name_lst):
+			lns = axs[0,i_pn].plot(
+				np.array(param.number_simulations_lst),
+				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1),
+				label = solver_name)
+			axs[0,i_pn].fill_between(
+				np.array(param.number_simulations_lst),
+				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1) - np.std(reward_plot_data[i_pn,:,i_sn,:],axis=1),
+				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1) + np.std(reward_plot_data[i_pn,:,i_sn,:],axis=1),
+				color = lns[0].get_color(),
+				alpha = 0.5)
+		axs[0,i_pn].set_xscale('log')
+		axs[0,i_pn].set_title(problem_name)
+		axs[0,i_pn].tick_params(axis='x', rotation=45)
+	axs[0,0].legend(loc='best')
+	axs[0,0].set_ylabel("Total Reward")
+	fig.suptitle("Total Reward Regression Test")
 
 
 def make_movie(sim_result,instance,filename):
@@ -259,19 +316,14 @@ def make_movie(sim_result,instance,filename):
 
 	# animate over trajectory
 	def animate(i_t):
-
 		init()
-
 		print(i_t/len(times))
-
 		time_idxs = range(i_t) #times[0:i_t]
 		states_i = states[time_idxs]
-
 		if i_t < 2:
 			return ln 
 		else:
 			instance["problem"].render(states_i,fig=fig,ax=ax)
-
 		return ln 
 
 	ln = ax.plot([],[],[])

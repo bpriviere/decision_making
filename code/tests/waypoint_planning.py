@@ -30,7 +30,6 @@ if __name__ == '__main__':
 	param.solver_name = "C_PUCT"
 	instance = make_instance(param)
 	instance["problem"].tf = 5 
-	instance["problem"].dt = 0.5 
 	instance["problem"].times = np.arange(
 		instance["problem"].t0,
 		instance["problem"].tf,
