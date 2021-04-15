@@ -50,7 +50,7 @@ int main()
     // search
     PUCT puct(gen,num_nodes,search_depth,C_exp,alpha_exp,C_pw,alpha_pw,beta_policy,beta_value);
 
-    std::string problem_name = "example3";
+    std::string problem_name = "example1";
 
     // 
     Problem_Settings s_p;
@@ -132,6 +132,9 @@ int main()
     auto root_node = puct.search(w_p.problem,root_state);
 
     std::cout << "root_node.num_visits: " << root_node.num_visits << std::endl;
+
+    std::cout << "root_node.child_distribution: " << puct.export_child_distribution(w_p.problem) << std::endl;
+
 
     return 0;
 }
