@@ -44,13 +44,15 @@ class Result
 {
 public:
     Eigen::Matrix<float,-1,1> best_action;
+    Eigen::Matrix<float,-1,-1> child_distribution;
     Eigen::MatrixXf tree;
 };
 
 Result search(
     PUCT_Wrapper & w_puct,
     Problem_Wrapper & w_problem,
-    Eigen::Matrix<float,-1,1> & state)
+    // Eigen::Matrix<float,-1,1> & state)
+    Eigen::Matrix<float,-1,1> state)
     {
         Result result;
 
@@ -65,6 +67,7 @@ Result search(
 
         // result 
         result.best_action = w_puct.m_puct.most_visited(&root_node,0)->action_to_node;
+        result.child_distribution = w_puct.m_puct.export_child_distribution(w_problem.problem);
         if (w_puct.m_vis_on) {
             result.tree = w_puct.m_puct.export_tree(w_problem.problem); 
         }
@@ -79,6 +82,7 @@ PYBIND11_MODULE(bindings, m) {
     pybind11::class_<Result> (m, "Result")
         .def(pybind11::init())
         .def_readwrite("best_action", &Result::best_action)
+        .def_readwrite("child_distribution", &Result::child_distribution)
         .def_readwrite("tree", &Result::tree);
 
     pybind11::class_<PUCT_Wrapper> (m, "PUCT_Wrapper")

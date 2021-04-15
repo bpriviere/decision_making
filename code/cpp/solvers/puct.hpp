@@ -183,6 +183,19 @@ class PUCT {
 		}
 
 
+		Eigen::MatrixXf export_child_distribution(Problem * problem){
+			Node* root_node_ptr = &m_nodes[0];
+			Eigen::MatrixXf child_distribution(int(root_node_ptr->children.size()), problem->m_action_dim + 1);
+			int count = 0 ;			
+			for (Node* c : root_node_ptr->children) {
+				child_distribution.row(count).head(problem->m_action_dim) = c->action_to_node;
+				child_distribution(count,problem->m_action_dim) = c->num_visits;
+				count = count + 1;
+			}
+			return child_distribution;
+		}
+
+
 	private: 
 		int m_num_nodes;
 		int m_search_depth;
