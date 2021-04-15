@@ -34,7 +34,7 @@ def worker(param):
 
 if __name__ == '__main__':
 
-    mode = 0
+    mode = 1
 
     # fast 
     if mode == 0:
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         number_simulations_lst = [10,50,100,500,1000] 
         problem_name_lst = ["example1","example2","example4"]
         solver_name_lst = ["PUCT","C_PUCT"]
-        num_trial = 5
+        num_trial = 500
 
     # custom 
     elif mode == 2:
