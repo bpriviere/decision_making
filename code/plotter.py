@@ -234,8 +234,9 @@ def plot_regression_test(results):
 
 	# render each sim result 
 	for (param, sim_result) in results:
-		fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
-		fig.suptitle(param.key)
+		# fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
+		# fig.suptitle(param.key)
+		pass 
 
 	# for each problem, 
 	# 	- plot duration per timestep across number of simulations for each solver 
@@ -271,6 +272,7 @@ def plot_regression_test(results):
 				color = lns[0].get_color(),
 				alpha = 0.5)
 		axs[0,i_pn].set_xscale('log')
+		axs[0,i_pn].set_yscale('log')
 		axs[0,i_pn].set_title(problem_name)
 		axs[0,i_pn].tick_params(axis='x', rotation=45)
 	axs[0,0].legend(loc='best')
