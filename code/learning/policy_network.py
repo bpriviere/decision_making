@@ -10,13 +10,14 @@ class PolicyNetwork(torch.nn.Module):
 	def __init__(self,problem,device="cpu",path=None):
 		super(PolicyNetwork, self).__init__()
 
+		h = 12
+
 		self.encoding_dim = problem.policy_encoding_dim
 		self.output_dim = 2*int(problem.action_dim/problem.num_robots) 
 		self.state_dim = problem.state_dim 
 		self.action_dim = problem.action_dim 
 		self.device = torch.device(device)
 
-		h = 12
 		psi_network_architecture = [
 			["Linear", self.encoding_dim, h], 
 			["Linear", h, h],
@@ -57,3 +58,4 @@ class PolicyNetwork(torch.nn.Module):
 			eps = torch.randn(size=(batch_size,int(self.output_dim/2)),device=self.device)
 			policy = mu + sd * eps
 			return policy 
+			
