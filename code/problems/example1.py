@@ -14,7 +14,7 @@ class Example1(Problem):
 		super(Example1,self).__init__()
 
 		self.t0 = 0
-		self.tf = 20
+		self.tf = 2
 		self.dt = 0.1
 		self.r_max = 100
 		self.num_robots = 1
@@ -28,6 +28,8 @@ class Example1(Problem):
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
+		self.state_dim_per_robot = self.state_dim
+		self.action_dim_per_robot = self.action_dim
 
 		self.state_lims = np.array([
 			[-5,5],
