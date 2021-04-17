@@ -6,7 +6,6 @@ import numpy as np
 # custom
 import plotter 
 from solvers.solver import Solver 
-from cpp.build.bindings import cpp_search, PUCT_Wrapper, Result, Problem_Wrapper, Problem_Settings
 
 class C_PUCT(Solver):
 
@@ -24,7 +23,8 @@ class C_PUCT(Solver):
 		vis_on=False,
 		):
 		super(C_PUCT, self).__init__()
-
+		from cpp.build.bindings import PUCT_Wrapper
+		
 		self.policy_oracle = policy_oracle 
 		self.value_oracle = value_oracle 
 		self.search_depth = search_depth 
@@ -50,12 +50,16 @@ class C_PUCT(Solver):
 		)
 
 	def policy(self,problem,root_state):
-		result = self.search(problem,root_state)
 		py_action = np.zeros((problem.action_dim,1))
-		py_action[:,0] = result.best_action
+		for robot in range(problem.num_robots): 
+			action_idxs = robot * problem.action_dim_per_robot + \
+				np.arange(problem.action_dim_per_robot)
+			result = self.search(problem,root_state)
+			py_action[action_idxs,0] = result.best_action[action_idxs]
 		return py_action
 
 	def search(self,problem,root_state):
+		from cpp.build.bindings import cpp_search, Result, Problem_Wrapper, Problem_Settings
 
 		problem_settings = Problem_Settings()
 		problem_settings.timestep = problem.dt
@@ -91,3 +95,10 @@ class C_PUCT(Solver):
 			plotter.plot_tree_state(problem,tree_state,zoom_on=True)
 
 		return result
+
+	def get_child_distribution(self,result):
+		mat = result.child_distribution;
+		actions = mat[:,:-1].tolist()
+		num_visits = mat[:,-1].tolist()
+		return actions,num_visits
+

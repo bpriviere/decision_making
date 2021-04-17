@@ -159,6 +159,10 @@ class PUCT(Solver):
 		return tree 
 		
 
+	def get_child_distribution(self,root_node):
+		actions,num_visits = list(zip(*[(a.squeeze(),c.num_visits) for (c,a) in root_node.edges.items()]))
+		return actions,num_visits
+
 
 class Node: 
 
