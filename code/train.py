@@ -165,17 +165,6 @@ def worker_edp_wrapper(arg):
 
 def worker_edp(rank,queue,fn,problem,robot,states,num_total_states,policy_oracle,value_oracle):
 
-	# print('rank',rank)
-	# print('queue',queue)
-	# print('fn',fn)
-	# print('problem',problem)
-	# print('robot',robot)
-	# # print('states',states)
-	# print('num_total_states',num_total_states)
-	# print('policy_oracle',policy_oracle)
-	# print('value_oracle',value_oracle)
-	# exit()
-
 	pbar = init_tqdm(rank,num_total_states)
 	datapoints = []
 	

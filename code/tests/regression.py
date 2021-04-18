@@ -34,7 +34,7 @@ def worker(param):
 
 if __name__ == '__main__':
 
-    mode = 1
+    mode = 3
 
     # fast 
     if mode == 0:
@@ -52,12 +52,12 @@ if __name__ == '__main__':
         num_trial = 500
 
     # custom 
-    elif mode == 2:
-        number_simulations_lst = [1000]
-        problem_name_lst = ["example4"]
-        solver_name_lst = ["C_PUCT"]
+    elif mode == 3:
+        number_simulations_lst = [10,50,100,500]
+        problem_name_lst = ["example2"] #,"example5"]
+        solver_name_lst = ["PUCT","PUCT_PW_MAB"]
         # solver_name_lst = ["PUCT"]
-        num_trial = 2
+        num_trial = 5
 
     params = []
     total = len(problem_name_lst) * len(number_simulations_lst) * len(solver_name_lst) * num_trial

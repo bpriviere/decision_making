@@ -173,6 +173,7 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 			ax.set_xlim((lims[0,0],lims[0,1]))
 			ax.set_ylim((lims[1,0],lims[1,1]))
 			ax.set_zlim((lims[2,0],lims[2,1]))
+			ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
 
 	else: 
 		print('tree plot dimension not supported')
@@ -234,9 +235,9 @@ def plot_regression_test(results):
 
 	# render each sim result 
 	for (param, sim_result) in results:
-		# fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
-		# fig.suptitle(param.key)
-		pass 
+		fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
+		fig.suptitle(param.key)
+		# pass 
 
 	# for each problem, 
 	# 	- plot duration per timestep across number of simulations for each solver 
