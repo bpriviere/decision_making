@@ -22,7 +22,7 @@ class Problem_Settings
 };
 
 
-// All internal functions of problem need to be overloaded
+// internal functions of problem need to be overloaded
 class Problem
 {
 public:

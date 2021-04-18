@@ -1,5 +1,6 @@
 
 #pragma once 
+#include "solver.hpp"
 
 struct Node { 
 	Eigen::Matrix<float,-1,1> state;
@@ -27,31 +28,26 @@ struct Node {
 };
 
 
-class PUCT {
+class PUCT_V0 : public Solver {
+
 	public: 
-		PUCT(
-			std::default_random_engine & gen,
-			int num_nodes,
-			int search_depth,
-			float C_exp,
-			float alpha_exp,
-			float C_pw,
-			float alpha_pw,
-			float beta_policy,
-			float beta_value) 
-			: g_gen(gen)
-			, m_num_nodes(num_nodes)
-			, m_search_depth(search_depth)
-			, m_C_exp(C_exp)
-			, m_alpha_exp(alpha_exp)
-			, m_C_pw(C_pw)
-			, m_alpha_pw(alpha_pw)
-			, m_beta_policy(beta_policy)
-			, m_beta_value(beta_value)
-			{}
+		void set_params(Solver_Settings & solver_settings) override {
+			std::random_device dev;
+			std::default_random_engine gen(dev());  
+			g_gen = gen;
+			m_num_nodes = solver_settings.num_nodes;
+			m_search_depth = solver_settings.search_depth;
+			m_C_exp = solver_settings.C_exp;
+			m_alpha_exp = solver_settings.alpha_exp;
+			m_C_pw = solver_settings.C_pw;
+			m_alpha_pw = solver_settings.alpha_pw;
+			m_beta_policy = solver_settings.beta_policy;
+			m_beta_value = solver_settings.beta_value;
+		}
 
+		Solver_Result search(Problem * problem, Eigen::Matrix<float,-1,1> root_state){			
 
-		Node search(Problem * problem, Eigen::Matrix<float,-1,1> root_state){			
+			Solver_Result solver_result;
 
 			m_nodes.clear();
 			m_nodes.reserve(m_num_nodes+1);
@@ -63,7 +59,8 @@ class PUCT {
 			Node* root_node_ptr = &root_node; 
 
 			if (problem->is_terminal(root_state)){
-				return root_node; 
+				solver_result.success = false;
+				return solver_result; 
 			}
 
 			for (int ii = 1; ii <= m_num_nodes; ii++){
@@ -74,7 +71,11 @@ class PUCT {
 				backup(child_node_ptr,value); 
 			};
 
-			return root_node;
+			solver_result.success = true;
+			solver_result.best_action = most_visited(root_node_ptr,0)->action_to_node; 
+			solver_result.child_distribution = export_child_distribution(problem);
+			solver_result.tree = export_tree(problem);
+			return solver_result;
 		}
 
 
@@ -206,5 +207,4 @@ class PUCT {
 		float m_beta_policy;
 		float m_beta_value;
 		std::vector<Node> m_nodes;
-		std::default_random_engine g_gen;
 };

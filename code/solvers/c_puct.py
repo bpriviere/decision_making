@@ -6,6 +6,8 @@ import numpy as np
 # custom
 import plotter 
 from solvers.solver import Solver 
+from cpp.build.bindings import cpp_search, Solver_Result, Solver_Settings, Solver_Wrapper, Problem_Settings, Problem_Wrapper
+
 
 class C_PUCT(Solver):
 
@@ -21,33 +23,34 @@ class C_PUCT(Solver):
 		beta_policy=0.,
 		beta_value=0.,
 		vis_on=False,
+		solver_name=None,
 		):
 		super(C_PUCT, self).__init__()
-		from cpp.build.bindings import PUCT_Wrapper
 		
 		self.policy_oracle = policy_oracle 
-		self.value_oracle = value_oracle 
-		self.search_depth = search_depth 
-		self.number_simulations = number_simulations 
-		self.C_pw = C_pw 
-		self.alpha_pw = alpha_pw 
-		self.C_exp = C_exp 
-		self.alpha_exp = alpha_exp 
-		self.beta_policy = beta_policy 
-		self.beta_value = beta_value
+		self.value_oracle = value_oracle
 		self.vis_on = vis_on 
+
+		# self.search_depth = search_depth 
+		# self.number_simulations = number_simulations 
+		# self.C_pw = C_pw 
+		# self.alpha_pw = alpha_pw 
+		# self.C_exp = C_exp 
+		# self.alpha_exp = alpha_exp 
+		# self.beta_policy = beta_policy 
+		# self.beta_value = beta_value
 		
-		self.w_puct = PUCT_Wrapper(
-			number_simulations,
-			search_depth,
-			C_pw,
-			alpha_pw,
-			C_exp,
-			alpha_exp,
-			beta_policy,
-			beta_value,
-			vis_on,
-		)
+		self.solver_settings = Solver_Settings()
+		self.solver_settings.number_simulations = number_simulations
+		self.solver_settings.search_depth = search_depth
+		self.solver_settings.C_pw = C_pw
+		self.solver_settings.alpha_pw = alpha_pw
+		self.solver_settings.C_exp = C_exp
+		self.solver_settings.alpha_exp = alpha_exp
+		self.solver_settings.beta_policy = beta_policy
+		self.solver_settings.beta_value = beta_value
+		self.solver_wrapper = Solver_Wrapper(solver_name,self.solver_settings)
+
 
 	def policy(self,problem,root_state):
 		py_action = np.zeros((problem.action_dim,1))
@@ -59,8 +62,8 @@ class C_PUCT(Solver):
 		return py_action
 
 	def search(self,problem,root_state):
-		from cpp.build.bindings import cpp_search, Result, Problem_Wrapper, Problem_Settings
 
+		# problem settings 
 		problem_settings = Problem_Settings()
 		problem_settings.timestep = problem.dt
 		problem_settings.gamma = problem.gamma
@@ -86,9 +89,11 @@ class C_PUCT(Solver):
 			print("problem not supported")
 			exit()
 
-		cpp_problem = Problem_Wrapper(problem.name,problem_settings)
+		# problem 
+		problem_wrapper = Problem_Wrapper(problem.name,problem_settings)
 
-		result = cpp_search(self.w_puct,cpp_problem,root_state)
+		# 
+		result = cpp_search(problem_wrapper,self.solver_wrapper,root_state)
 
 		if self.vis_on: 
 			tree_state = result.tree 

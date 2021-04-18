@@ -10,7 +10,7 @@ import plotter
 
 # Polynomial Upper Confidence Trees (PUCT):
 # from https://hal.inria.fr/hal-00835352/document
-class PUCT(Solver):
+class PUCT_V0(Solver):
 
 	def __init__(self,
 		policy_oracle=None,\
@@ -25,7 +25,7 @@ class PUCT(Solver):
 		beta_value = 0.,
 		vis_on=False,
 		):
-		super(PUCT, self).__init__()
+		super(PUCT_V0, self).__init__()
 
 		self.policy_oracle = policy_oracle 
 		self.value_oracle = value_oracle 
