@@ -8,9 +8,10 @@
 #include "solvers/solver_wrapper.hpp"
 
 
-Solver_Result cpp_search(Problem_Wrapper problem_wrapper, Solver_Wrapper solver_wrapper, Eigen::Matrix<float,-1,1> state) {
+Solver_Result cpp_search(Problem_Wrapper problem_wrapper, Solver_Wrapper solver_wrapper, Eigen::Matrix<float,-1,1> state, int turn) {
     Solver_Result solver_result; 
-    solver_result = solver_wrapper.solver->search(problem_wrapper.problem,state);
+    state.resize(problem_wrapper.problem->m_state_dim,1);
+    solver_result = solver_wrapper.solver->search(problem_wrapper.problem,state,turn);
     return solver_result;
 }
 
@@ -41,7 +42,7 @@ PYBIND11_MODULE(bindings, m) {
 
     pybind11::class_<Solver_Settings> (m, "Solver_Settings")
         .def(pybind11::init())
-        .def_readwrite("number_simulations", &Solver_Settings::num_nodes)
+        .def_readwrite("number_simulations", &Solver_Settings::num_simulations)
         .def_readwrite("search_depth", &Solver_Settings::search_depth)
         .def_readwrite("C_exp", &Solver_Settings::C_exp)
         .def_readwrite("alpha_exp", &Solver_Settings::alpha_exp)

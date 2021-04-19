@@ -2,32 +2,6 @@
 #pragma once 
 #include "solver.hpp"
 
-struct Node { 
-	Eigen::Matrix<float,-1,1> state;
-	Node* parent = nullptr; 
-	Eigen::Matrix<float,-1,1> action_to_node; 
-	Eigen::Matrix<float,-1,1> total_value;
-	int num_visits = 0;
-	std::vector<Node*> children;
-
-	int calc_depth(){
-		int depth = 0;
-		Node* ptr = parent;
-		while (ptr) {
-			ptr = ptr->parent;
-			depth += 1;
-		}
-		return depth;
-	}
-
-	void resize_node(Problem * problem){
-		action_to_node.resize(problem->m_action_dim,1);
-		state.resize(problem->m_state_dim,1);
-		total_value = Eigen::Matrix<float,-1,1>::Zero(problem->m_num_robots,1);
-	}
-};
-
-
 class PUCT_V0 : public Solver {
 
 	public: 
@@ -35,7 +9,7 @@ class PUCT_V0 : public Solver {
 			std::random_device dev;
 			std::default_random_engine gen(dev());  
 			g_gen = gen;
-			m_num_nodes = solver_settings.num_nodes;
+			m_num_simulations = solver_settings.num_simulations;
 			m_search_depth = solver_settings.search_depth;
 			m_C_exp = solver_settings.C_exp;
 			m_alpha_exp = solver_settings.alpha_exp;
@@ -45,12 +19,38 @@ class PUCT_V0 : public Solver {
 			m_beta_value = solver_settings.beta_value;
 		}
 
-		Solver_Result search(Problem * problem, Eigen::Matrix<float,-1,1> root_state){			
+		struct Node { 
+			Eigen::Matrix<float,-1,1> state;
+			Node* parent = nullptr; 
+			Eigen::Matrix<float,-1,1> action_to_node; 
+			Eigen::Matrix<float,-1,1> total_value;
+			int num_visits = 0;
+			std::vector<Node*> children;
+
+			int calc_depth(){
+				int depth = 0;
+				Node* ptr = parent;
+				while (ptr) {
+					ptr = ptr->parent;
+					depth += 1;
+				}
+				return depth;
+			}
+
+			void resize_node(Problem * problem){
+				action_to_node.resize(problem->m_action_dim,1);
+				state.resize(problem->m_state_dim,1);
+				total_value = Eigen::Matrix<float,-1,1>::Zero(problem->m_num_robots,1);
+			}
+		};
+
+
+		Solver_Result search(Problem * problem, Eigen::Matrix<float,-1,1> root_state, int turn){			
 
 			Solver_Result solver_result;
 
 			m_nodes.clear();
-			m_nodes.reserve(m_num_nodes+1);
+			m_nodes.reserve(m_num_simulations+1);
 			m_nodes.resize(1);
 
 			auto& root_node = m_nodes[0];
@@ -63,8 +63,8 @@ class PUCT_V0 : public Solver {
 				return solver_result; 
 			}
 
-			for (int ii = 1; ii <= m_num_nodes; ii++){
-				int robot_turn = ii % problem->m_num_robots; 
+			for (int ii = 1; ii <= m_num_simulations; ii++){
+				int robot_turn = (ii + turn) % problem->m_num_robots; 
 				Node* parent_node_ptr = select_node(problem,root_node_ptr,robot_turn); 
 				Node* child_node_ptr = expand_node(problem,parent_node_ptr);
 				auto value = default_policy(problem, child_node_ptr);
@@ -198,7 +198,7 @@ class PUCT_V0 : public Solver {
 
 
 	private: 
-		int m_num_nodes;
+		int m_num_simulations;
 		int m_search_depth;
 		float m_C_exp;
 		float m_alpha_exp;
@@ -207,4 +207,5 @@ class PUCT_V0 : public Solver {
 		float m_beta_policy;
 		float m_beta_value;
 		std::vector<Node> m_nodes;
+
 };
