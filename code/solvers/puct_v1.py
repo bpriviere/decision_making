@@ -76,7 +76,7 @@ class PUCT_V1(Solver):
 			if child.num_visits == 0: 
 				return child
 			value = child.total_value[robot] / child.num_visits + \
-				self.C_exp * np.sqrt((child.num_visits ** self.alpha_exp)/curr_node.num_visits)
+				self.C_exp * np.sqrt((curr_node.num_visits ** self.alpha_exp)/child.num_visits)
 			if value > best_value: 
 				best_value = value 
 				best_c = child 

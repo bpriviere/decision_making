@@ -97,6 +97,7 @@ class PUCT_V1 : public Solver {
 			return solver_result;
 		}
 
+
 		Eigen::Matrix<float,-1,1> calc_value(std::vector<Eigen::Matrix<float,-1,1>> rewards, int start_depth, int total_depth, float gamma, int num_robots){
 			Eigen::Matrix<float,-1,1> value = Eigen::Matrix<float,-1,1>::Zero(num_robots,1);
 			for (int d = start_depth; d <= total_depth; d++){

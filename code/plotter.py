@@ -235,9 +235,9 @@ def plot_regression_test(results):
 
 	# render each sim result 
 	for (param, sim_result) in results:
-		fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
-		fig.suptitle(param.key)
-		# pass 
+		# fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
+		# fig.suptitle(param.key)
+		pass 
 
 	# for each problem, 
 	# 	- plot duration per timestep across number of simulations for each solver 
