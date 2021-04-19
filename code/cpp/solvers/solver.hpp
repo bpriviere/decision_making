@@ -11,7 +11,7 @@
 class Solver_Settings
 {
     public: 
-		int num_nodes;
+		int num_simulations;
 		int search_depth;
 		float C_exp;
 		float alpha_exp;
@@ -39,7 +39,7 @@ class Solver
 		std::default_random_engine g_gen;
         virtual ~Solver() { }
 
-        virtual Solver_Result search(Problem * problem, Eigen::Matrix<float,-1,1> root_state) 
+        virtual Solver_Result search(Problem * problem, Eigen::Matrix<float,-1,1> root_state, int turn) 
         {
             Solver_Result solver_result;
             return solver_result;

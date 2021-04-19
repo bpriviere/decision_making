@@ -3,6 +3,7 @@
 #include <memory>
 #include "solver.hpp"
 #include "puct_v0.hpp" 
+#include "puct_v1.hpp" 
 
 // Strategy Pattern: https://stackoverflow.com/questions/41220046/is-it-possible-to-change-a-c-objects-class-after-instantiation
 
@@ -14,7 +15,11 @@ class Solver_Wrapper
         {
             if (string == "C_PUCT_V0"){
                 solver = new PUCT_V0(); 
-            } 
+            } else if (string == "C_PUCT_V1"){
+                solver = new PUCT_V1(); 
+            }
+
+
             (*solver).set_params(solver_settings);
         }
 };
