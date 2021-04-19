@@ -13,7 +13,7 @@ int main()
     
     // solver settings 
     Solver_Settings solver_settings; 
-    solver_settings.num_nodes = 10000;
+    solver_settings.num_simulations = 1000;
     solver_settings.search_depth = 10;
     solver_settings.C_exp = 1.0f;
     solver_settings.alpha_exp = 0.25f;
@@ -23,7 +23,7 @@ int main()
     solver_settings.beta_value = 0.0f; 
     
     // solver wrapper 
-    Solver_Wrapper solver_wrapper("C_PUCT",solver_settings);
+    Solver_Wrapper solver_wrapper("C_PUCT_V1",solver_settings);
     
     // problem stuff 
     std::string problem_name = "example1";
@@ -105,7 +105,7 @@ int main()
     Problem_Wrapper problem_wrapper(problem_name,problem_settings);
 
     auto root_state = problem_wrapper.problem->initialize(solver_wrapper.solver->g_gen); 
-    Solver_Result solver_result = solver_wrapper.solver->search(problem_wrapper.problem,root_state);
+    Solver_Result solver_result = solver_wrapper.solver->search(problem_wrapper.problem,root_state,0);
 
     std::cout << "solver_result.success: " << solver_result.success << std::endl;
     std::cout << "solver_result.best_action: " << solver_result.best_action << std::endl;
