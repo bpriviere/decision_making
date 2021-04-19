@@ -140,6 +140,7 @@ class PUCT_V1(Solver):
 				rewards.append(problem.gamma**d * problem.normalized_reward(curr_node.state,curr_node.edges[child_node]))
 				curr_node = child_node 
 			rewards.append(problem.gamma**self.search_depth * self.default_policy(child_node,problem))
+			path.append(curr_node)
 
 			# backpropagate 
 			for d,node in enumerate(path):

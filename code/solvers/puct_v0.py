@@ -41,10 +41,14 @@ class PUCT_V0(Solver):
 
 
 	def policy(self,problem,root_state):
-		root_node = self.search(problem,root_state)
-		most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
-		best_action = root_node.edges[most_visited_child]
-		return best_action 
+		action = np.zeros((problem.action_dim,1))
+		for robot in range(problem.num_robots): 
+			action_idxs = robot * problem.action_dim_per_robot + \
+				np.arange(problem.action_dim_per_robot)
+			root_node = self.search(problem,root_state,turn=robot)
+			most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
+			action[action_idxs,0] = root_node.edges[most_visited_child][action_idxs,0]
+		return action
 
 
 	def select_node(self,root_node,problem,robot):
@@ -114,7 +118,7 @@ class PUCT_V0(Solver):
 		return 
 
 
-	def search(self,problem,root_state): 
+	def search(self,problem,root_state,turn=0): 
 		
 		# check validity
 		if problem.is_terminal(root_state):
@@ -132,7 +136,7 @@ class PUCT_V0(Solver):
 
 		# search 
 		for t in range(self.number_simulations):
-			robot = t % problem.num_robots
+			robot = (t+turn) % problem.num_robots
 			parent_node = self.select_node(root_node,problem,robot)
 			child_node = self.expand_node(parent_node,problem)
 			value = self.default_policy(child_node,problem)

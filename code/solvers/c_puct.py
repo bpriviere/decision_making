@@ -57,11 +57,11 @@ class C_PUCT(Solver):
 		for robot in range(problem.num_robots): 
 			action_idxs = robot * problem.action_dim_per_robot + \
 				np.arange(problem.action_dim_per_robot)
-			result = self.search(problem,root_state)
+			result = self.search(problem,root_state,turn=robot)
 			py_action[action_idxs,0] = result.best_action[action_idxs]
 		return py_action
 
-	def search(self,problem,root_state):
+	def search(self,problem,root_state,turn=0):
 
 		# problem settings 
 		problem_settings = Problem_Settings()
@@ -93,7 +93,7 @@ class C_PUCT(Solver):
 		problem_wrapper = Problem_Wrapper(problem.name,problem_settings)
 
 		# 
-		result = cpp_search(problem_wrapper,self.solver_wrapper,root_state)
+		result = cpp_search(problem_wrapper,self.solver_wrapper,root_state,turn)
 
 		if self.vis_on: 
 			tree_state = result.tree 
