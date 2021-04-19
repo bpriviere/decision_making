@@ -66,7 +66,7 @@ class PUCT_V1 : public Solver {
 			for (int ii = 1; ii <= m_num_simulations; ii++){
 
 				Node* curr_node_ptr = root_node_ptr;
-				std::vector<Eigen::Matrix<float,-1,1>> rewards(m_search_depth+1);
+				std::vector< Eigen::Matrix<float,-1,1> > rewards(m_search_depth+1);
 				std::vector<Node*> path(m_search_depth+1);
 
 				for (int d = 0; d < m_search_depth; d++){
@@ -86,7 +86,7 @@ class PUCT_V1 : public Solver {
 
 				for (int d = 0; d <= m_search_depth; d++){
 					path[d]->num_visits += 1;
-					path[d]->total_value += Eigen::Matrix<float,-1,1>::Zero(problem->m_num_robots,1); // calc_value(rewards,d,m_search_depth,problem->m_gamma,problem->m_num_robots);
+					path[d]->total_value += calc_value(rewards,d,m_search_depth,problem->m_gamma,problem->m_num_robots);
 				}
 			};
 
