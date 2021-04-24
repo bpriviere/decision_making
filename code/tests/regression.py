@@ -34,22 +34,22 @@ def worker(param):
 
 if __name__ == '__main__':
 
-    mode = 0
+    mode = 1
 
     # fast 
     if mode == 0:
         number_simulations_lst = [50,100,200,500,1000]
-        problem_name_lst = ["example1"]
+        problem_name_lst = ["example4"]
         # solver_name_lst = ["PUCT","C_PUCT"]
         solver_name_lst = ["PUCT_V0","C_PUCT_V0","PUCT_V1","C_PUCT_V1"]
         num_trial = 20
     
     # speed test 
     elif mode == 1:
-        number_simulations_lst = [10,50,100,500,1000] 
-        problem_name_lst = ["example1","example2","example4"]
-        solver_name_lst = ["PUCT","C_PUCT"]
-        num_trial = 500
+        number_simulations_lst = [10,50,100] #,500,1000] 
+        problem_name_lst = ["example1"] #,"example2","example4"]
+        solver_name_lst = ["PUCT_V1","PUCT_V2"]
+        num_trial = 10
 
     # custom 
     elif mode == 3:
