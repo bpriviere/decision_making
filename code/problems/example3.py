@@ -110,7 +110,7 @@ class Example3(Problem):
 		r0 = (r0 - r_min) / (r_max - r_min)
 		return np.array([r0,1-r0]).squeeze()
 
-	def step(self,s,a):
+	def step(self,s,a,dt):
 		# s = [x,y,z,psi,gamma,phi,v]
 		# a = [gammadot, phidot,vdot]
 		sdot = np.zeros(s.shape)
@@ -124,7 +124,7 @@ class Example3(Problem):
 			sdot[state_shift+4,0] = a[action_shift+0,0]
 			sdot[state_shift+5,0] = a[action_shift+1,0]
 			sdot[state_shift+6,0] = a[action_shift+2,0]
-		s_tp1 = s + sdot * self.dt 
+		s_tp1 = s + sdot * dt 
 
 		# wrap angles 
 		for robot in range(self.num_robots):

@@ -44,8 +44,8 @@ class Example1(Problem):
 			[-5,5]
 		])
 
-		self.F = np.eye(self.state_dim) 
-		self.B = self.dt * np.eye(self.state_dim)
+		self.Fc = np.zeros((self.state_dim,self.state_dim))
+		self.Bc = np.eye(self.state_dim)
 		self.Q = np.eye(self.state_dim)
 		self.Ru = self.state_control_weight * np.eye(self.action_dim)
 
@@ -61,8 +61,10 @@ class Example1(Problem):
 		reward = np.clip(reward,r_min,r_max)
 		return (reward - r_min) / (r_max - r_min)
 
-	def step(self,s,a):
-		s_tp1 = np.dot(self.F,s) + np.dot(self.B,a)
+	def step(self,s,a,dt):
+		Fd = np.eye(self.state_dim) + self.Fc * dt 
+		Bd = self.Bc * dt 
+		s_tp1 = np.dot(Fd,s) + np.dot(Bd,a)
 		return s_tp1 
 
 	def render(self,states,fig=None,ax=None):

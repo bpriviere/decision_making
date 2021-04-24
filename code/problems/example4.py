@@ -74,7 +74,7 @@ class Example4(Problem):
 			( 0,0),
 			))
 
-		self.F = np.eye(self.state_dim_per_robot) +  self.dt * np.array((
+		self.Fc = np.array((
 			(0,0,0,1,0,0),
 			(0,0,0,0,1,0),
 			(0,0,0,0,0,1),
@@ -83,7 +83,7 @@ class Example4(Problem):
 			(0,0,0,0,0,0),
 			))
 
-		self.B = self.dt / self.mass * np.array((
+		self.Bc = self.mass * np.array((
 			(0,0,0),
 			(0,0,0),
 			(0,0,0),
@@ -114,12 +114,14 @@ class Example4(Problem):
 		normmalized_reward = np.array([[r0],[1-r0]])
 		return normmalized_reward
 
-	def step(self,s,a):
+	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		for robot in range(self.num_robots):
 			state_idx = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
 			action_idx = robot * self.action_dim_per_robot + np.arange(self.action_dim_per_robot)
-			s_tp1[state_idx,:] = np.dot(self.F,s[state_idx,:]) + np.dot(self.B,a[action_idx,:])
+			Fd = np.eye(self.state_dim_per_robot) +  dt * self.Fc 
+			Bd = dt * self.Bc 
+			s_tp1[state_idx,:] = np.dot(Fd,s[state_idx,:]) + np.dot(Bd,a[action_idx,:])
 		return s_tp1 
 
 	def render(self,states,fig=None,ax=None):

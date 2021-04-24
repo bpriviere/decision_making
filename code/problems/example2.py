@@ -47,16 +47,18 @@ class Example2(Problem):
 		self.init_lims = np.array([
 			[-5,5],
 			[-5,5],
-			[-1,1],
-			[-1,1]
+			# [-1,1],
+			# [-1,1]
+			[0,0],
+			[0,0]
 		])
-		self.F = np.eye(self.state_dim) + self.dt * np.array((
+		self.Fc = np.array((
 			(0,0,1,0),
 			(0,0,0,1),
 			(0,0,0,0),
 			(0,0,0,0)
 			))
-		self.B = self.dt / self.mass * np.array((
+		self.Bc = 1.0 / self.mass * np.array((
 			(0,0),
 			(0,0),
 			(1,0),
@@ -79,8 +81,10 @@ class Example2(Problem):
 		reward = np.clip(reward,r_min,r_max)
 		return (reward - r_min) / (r_max - r_min)
 
-	def step(self,s,a):
-		s_tp1 = np.dot(self.F,s) + np.dot(self.B,a)
+	def step(self,s,a,dt):
+		Fd = np.eye(self.state_dim) + dt * self.Fc
+		Bd = dt * self.Bc
+		s_tp1 = np.dot(Fd,s) + np.dot(Bd,a)
 		return s_tp1 
 
 	def render(self,states,fig=None,ax=None):
