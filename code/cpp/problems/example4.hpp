@@ -15,8 +15,9 @@ class Example4 : public Problem {
     public:
         Eigen::Matrix<float,6,6> m_Q;
         Eigen::Matrix<float,3,3> m_R;
-        Eigen::Matrix<float,6,6> m_F; 
-        Eigen::Matrix<float,6,3> m_B; 
+        Eigen::Matrix<float,6,6> m_Fc; 
+        Eigen::Matrix<float,6,3> m_Bc; 
+        Eigen::Matrix<float,6,6> m_I; 
         float m_r_min; 
         float m_r_max;  
         int m_state_dim_per_robot;
@@ -51,19 +52,21 @@ class Example4 : public Problem {
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
 
-            m_F <<  1,0,0,m_timestep,0,0,
-                    0,1,0,0,m_timestep,0,
-                    0,0,1,0,0,m_timestep,
-                    0,0,0,1,0,0,
-                    0,0,0,0,1,0,
-                    0,0,0,0,0,1; 
+            m_Fc << 0,0,0,1.0f,0,0,
+                    0,0,0,0,1.0f,0,
+                    0,0,0,0,0,1.0f,
+                    0,0,0,0,0,0,
+                    0,0,0,0,0,0,
+                    0,0,0,0,0,0; 
             
-            m_B <<  0,0,0,
+            m_Bc << 0,0,0,
                     0,0,0,
                     0,0,0,
-                    m_timestep/m_mass,0,0,
-                    0,m_timestep/m_mass,0,
-                    0,0,m_timestep/m_mass; 
+                    1.0f/m_mass,0,0,
+                    0,1.0f/m_mass,0,
+                    0,0,1.0f/m_mass; 
+
+            m_I.setIdentity();
 
             m_Q.setZero(); 
             m_Q(0,0) = 1;
@@ -77,12 +80,15 @@ class Example4 : public Problem {
 
         Eigen::Matrix<float,-1,1> step(
             Eigen::Matrix<float,-1,1> state,
-            Eigen::Matrix<float,-1,1> action) override
+            Eigen::Matrix<float,-1,1> action,
+            float timestep) override
         {
             // s = [x,y,z,vx,vy,vz]
             // a = [ax,ay,az]
 
             Eigen::Matrix<float,-1,1> next_state(m_state_dim,1); 
+            Eigen::Matrix<float,6,6> Fd = m_I + m_Fc * timestep;
+            Eigen::Matrix<float,6,3> Bd = m_Bc * timestep; 
             
             // dynamics 
             int state_shift;
@@ -91,7 +97,8 @@ class Example4 : public Problem {
                 state_shift = ii * m_state_dim_per_robot;
                 action_shift = ii * m_action_dim_per_robot;
                 next_state.block(state_shift,0,m_state_dim_per_robot,1) = 
-                    m_F * state.block(state_shift,0,m_state_dim_per_robot,1) + m_B * action.block(action_shift,0,m_action_dim_per_robot,1);
+                    Fd * state.block(state_shift,0,m_state_dim_per_robot,1) + 
+                    Bd * action.block(action_shift,0,m_action_dim_per_robot,1);
             }   
             return next_state;
         }

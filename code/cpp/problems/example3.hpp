@@ -60,7 +60,8 @@ class Example3 : public Problem {
 
         Eigen::Matrix<float,-1,1> step(
             Eigen::Matrix<float,-1,1> state,
-            Eigen::Matrix<float,-1,1> action) override
+            Eigen::Matrix<float,-1,1> action,
+            float timestep) override
         {
             // s = [x,y,z,psi,gamma,phi,v]
             // a = [gammadot, phidot,vdot]
@@ -82,7 +83,7 @@ class Example3 : public Problem {
                 state_derv(state_shift+5,0) = action(action_shift+1,0);
                 state_derv(state_shift+6,0) = action(action_shift+2,0);
             }   
-            next_state = state + state_derv * m_timestep;
+            next_state = state + state_derv * timestep;
 
             // wrap angles 
             for (int ii = 0; ii < m_num_robots; ii++){

@@ -10,8 +10,9 @@
 class Example1 : public Problem { 
     
     public:
-        Eigen::Matrix<float,2,2> m_F;
-        Eigen::Matrix<float,2,2> m_B;
+        Eigen::Matrix<float,2,2> m_Fc;
+        Eigen::Matrix<float,2,2> m_Bc;
+        Eigen::Matrix<float,2,2> m_I; 
         Eigen::Matrix<float,2,2> m_Q;
         Eigen::Matrix<float,2,2> m_R;  
         float m_r_max; 
@@ -39,36 +40,25 @@ class Example1 : public Problem {
 
             std::uniform_real_distribution<double> dist(0,1.0f); 
 
-            m_F(0,0) = 1.0f;
-            m_F(0,1) = 0.0f; 
-            m_F(1,0) = 0.0f; 
-            m_F(1,1) = 1.0f; 
+            m_Fc.setZero();
+            m_Bc.setIdentity();
+            m_I.setIdentity();
 
-            m_B(0,0) = 1.0f * m_timestep;
-            m_B(0,1) = 0.0f * m_timestep; 
-            m_B(1,0) = 0.0f * m_timestep; 
-            m_B(1,1) = 1.0f * m_timestep; 
-
-            m_Q(0,0) = 1.0f;
-            m_Q(0,1) = 0.0f; 
-            m_Q(1,0) = 0.0f; 
-            m_Q(1,1) = 1.0f; 
-
-            m_R(0,0) = 1.0f;
-            m_R(0,1) = 0.0f; 
-            m_R(1,0) = 0.0f; 
-            m_R(1,1) = 1.0f; 
-
+            m_Q.setIdentity();
+            m_R.setIdentity();
             m_R = m_R * m_state_control_weight;
         }
 
 
         Eigen::Matrix<float,-1,1> step(
             Eigen::Matrix<float,-1,1> state,
-            Eigen::Matrix<float,-1,1> action) override
+            Eigen::Matrix<float,-1,1> action,
+            float timestep) override
         {
             Eigen::Matrix<float,-1,1> next_state(m_state_dim,1); 
-            next_state = m_F * state + m_B * action; 
+            Eigen::Matrix<float,2,2> Fd = m_I + m_Fc * timestep;
+            Eigen::Matrix<float,2,2> Bd = m_Bc * timestep; 
+            next_state = Fd * state + Bd * action; 
             return next_state;
         }
 

@@ -46,7 +46,8 @@ public:
     // forward propagate dynamics 
     virtual Eigen::Matrix<float, -1, 1> step(
         Eigen::Matrix<float, -1, 1> state,
-        Eigen::Matrix<float, -1, 1> action)
+        Eigen::Matrix<float, -1, 1> action,
+        float timestep)
     {
         Eigen::Matrix<float, -1, 1> next_state;
         return next_state;
@@ -70,31 +71,6 @@ public:
         return reward;
     }
 
-    // // stop condition
-    // virtual bool is_terminal(Eigen::Matrix<float, -1, 1> state)
-    // {
-    //     return true;
-    // }
-
-    // // initialize state 
-    // virtual Eigen::Matrix<float, -1, 1> initialize(std::default_random_engine& generator)
-    // {
-    //     Eigen::Matrix<float, -1, 1> state;
-    //     return state;
-    // }
-
-    // // action sample  
-    // virtual Eigen::Matrix<float, -1, 1> sample_action(std::default_random_engine& generator)
-    // {
-    //     Eigen::Matrix<float, -1, 1> action;
-    //     return action;
-    // }
-
-    // // is valid 
-    // virtual bool is_valid(Eigen::Matrix<float, -1, 1> state)
-    // {
-    //     return false; 
-    // }
 
     Eigen::Matrix<float,-1,1> sample_state(std::default_random_engine & gen) 
     {
