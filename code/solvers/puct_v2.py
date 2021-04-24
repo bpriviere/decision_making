@@ -11,6 +11,10 @@ import plotter
 
 
 # Polynomial Upper Confidence Trees (PUCT) with adaptive timestep in tree action selection  
+# only changes from PUCT_V1 are: 
+#  - 'expand_node'
+#  - 'policy' 
+#  - calculating the reward in 'collect_data' of 'search'  
 class PUCT_V2(Solver):
 
 	def __init__(self,
