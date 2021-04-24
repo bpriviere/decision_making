@@ -104,6 +104,13 @@ public:
         return state;
     }
 
+    float sample_timestep(std::default_random_engine & gen, float dt) 
+    {
+        float alpha = dist(gen) - 1.0f; // (-1,0)
+        float timestep = dt * pow(10.0f,alpha);
+        return timestep; 
+    }
+
 
     bool is_terminal(Eigen::Matrix<float,-1,1> state)  
     {

@@ -23,7 +23,7 @@ int main()
     solver_settings.beta_value = 0.0f; 
     
     // solver wrapper 
-    Solver_Wrapper solver_wrapper("C_PUCT_V1",solver_settings);
+    Solver_Wrapper solver_wrapper("C_PUCT_V2",solver_settings);
     
     // problem stuff 
     std::string problem_name = "example1";

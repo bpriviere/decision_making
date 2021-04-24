@@ -92,7 +92,7 @@ def make_instance(param):
 			vis_on=param.vis_on
 			)
 
-	elif param.solver_name in ["C_PUCT_V0","C_PUCT_V1"]: 
+	elif param.solver_name in ["C_PUCT_V0","C_PUCT_V1","C_PUCT_V2"]: 
 		from solvers.c_puct import C_PUCT
 		solver = C_PUCT(
 			policy_oracle=param.policy_oracle,
