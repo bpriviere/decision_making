@@ -49,6 +49,7 @@ class C_PUCT(Solver):
 		self.solver_settings.alpha_exp = alpha_exp
 		self.solver_settings.beta_policy = beta_policy
 		self.solver_settings.beta_value = beta_value
+		self.solver_name = solver_name
 		self.solver_wrapper = Solver_Wrapper(solver_name,self.solver_settings)
 
 

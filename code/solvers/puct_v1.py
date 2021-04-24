@@ -10,9 +10,7 @@ from solvers.policy_solver import PolicySolver, ValueSolver
 import plotter
 
 
-# Polynomial Upper Confidence Trees (PUCT):
-# Progressive Widening (PW) 
-# Multi-Armed Bandit (MAB)
+# Polynomial Upper Confidence Trees (PUCT) pseudocode from PolyHOOT
 class PUCT_V1(Solver):
 
 	def __init__(self,
@@ -41,6 +39,7 @@ class PUCT_V1(Solver):
 		self.beta_policy = beta_policy 
 		self.beta_value = beta_value
 		self.vis_on = vis_on 
+		self.solver_name = "PUCT_V1"
 
 
 	def policy(self,problem,root_state):
@@ -58,7 +57,7 @@ class PUCT_V1(Solver):
 			action = self.policy_solver.policy(problem,parent_node.state)
 		else: 
 			action = problem.sample_action()
-		next_state = problem.step(parent_node.state,action)
+		next_state = problem.step(parent_node.state,action,problem.dt)
 		child_node = Node(next_state,parent_node,problem.num_robots)
 		parent_node.add_child(child_node,action)
 		return child_node
@@ -92,7 +91,7 @@ class PUCT_V1(Solver):
 			curr_state = node.state 
 			while not problem.is_terminal(curr_state) and depth < self.search_depth:
 				action = problem.sample_action()
-				next_state = problem.step(curr_state,action)
+				next_state = problem.step(curr_state,action,problem.dt)
 				value += (problem.gamma ** depth) * problem.normalized_reward(curr_state,action)
 				curr_state = next_state 
 				depth += 1
