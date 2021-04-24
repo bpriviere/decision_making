@@ -127,7 +127,7 @@ class PUCT_V0 : public Solver {
 		Node* expand_node(Problem * problem,Node* parent_node_ptr){
 			m_nodes.resize(m_nodes.size() + 1);
 			auto action = problem->sample_action(g_gen);
-			auto next_state = problem->step(parent_node_ptr->state,action);
+			auto next_state = problem->step(parent_node_ptr->state,action,problem->m_timestep);
 			auto& child_node = m_nodes[m_nodes.size()-1];
 			child_node.parent = parent_node_ptr;
 			child_node.resize_node(problem);
@@ -146,16 +146,13 @@ class PUCT_V0 : public Solver {
 			while (! problem->is_terminal(curr_state) && depth < m_search_depth) 
 			{
 				auto action = problem->sample_action(g_gen);
-				auto next_state = problem->step(curr_state,action);
+				auto next_state = problem->step(curr_state,action,problem->m_timestep);
 				float discount = powf(problem->m_gamma,depth); 
 				value += discount * problem->normalized_reward(curr_state,action);
 				total_discount += discount; 
 				curr_state = next_state;
 				depth += 1;
 			}
-			// if (total_discount > 0){
-			// 	value  = value / total_discount;
-			// }
 			return value; 
 		}
 
