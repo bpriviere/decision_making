@@ -64,8 +64,7 @@ class PUCT_V0 : public Solver {
 			}
 
 			for (int ii = 1; ii <= m_num_simulations; ii++){
-				int robot_turn = (ii + turn) % problem->m_num_robots; 
-				Node* parent_node_ptr = select_node(problem,root_node_ptr,robot_turn); 
+				Node* parent_node_ptr = select_node(problem,root_node_ptr,turn); 
 				Node* child_node_ptr = expand_node(problem,parent_node_ptr);
 				auto value = default_policy(problem, child_node_ptr);
 				backup(child_node_ptr,value); 
@@ -79,10 +78,13 @@ class PUCT_V0 : public Solver {
 		}
 
 
-		Node* select_node(Problem* problem,Node* node_ptr,int robot_turn){
+		Node* select_node(Problem* problem,Node* node_ptr,int turn){
+			int depth = 0;
 			while ( !problem->is_terminal(node_ptr->state) ){
+				int robot_turn = (depth + turn) % problem->m_num_robots; 
 				if ( is_expanded(node_ptr) ){
 					node_ptr = best_child(node_ptr,robot_turn);
+					depth = depth + 1; 
 				} else {
 					return node_ptr;
 				}

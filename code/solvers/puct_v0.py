@@ -51,11 +51,14 @@ class PUCT_V0(Solver):
 		return action
 
 
-	def select_node(self,root_node,problem,robot):
+	def select_node(self,root_node,problem,turn):
 		curr_node = root_node 
+		depth = 0 
 		while not problem.is_terminal(curr_node.state):
+			robot = (depth+turn) % problem.num_robots
 			if self.is_expanded(curr_node):
 				curr_node = self.best_child(curr_node,robot)
+				depth += 1 
 			else: 
 				return curr_node 
 		return curr_node
@@ -136,8 +139,7 @@ class PUCT_V0(Solver):
 
 		# search 
 		for t in range(self.number_simulations):
-			robot = (t+turn) % problem.num_robots
-			parent_node = self.select_node(root_node,problem,robot)
+			parent_node = self.select_node(root_node,problem,turn)
 			child_node = self.expand_node(parent_node,problem)
 			value = self.default_policy(child_node,problem)
 			self.backup(child_node,value)
