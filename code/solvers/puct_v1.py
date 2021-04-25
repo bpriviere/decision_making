@@ -86,8 +86,9 @@ class PUCT_V1(Solver):
 		if self.value_oracle is not None and np.random.uniform() < self.beta_value:
 			value = self.value_solver(problem,node.state) 
 		else: 
-			value = 0 
-			depth = node.calc_depth()
+			value = np.zeros((problem.num_robots,1))
+			depth = 0
+			# depth = node.calc_depth()
 			curr_state = node.state 
 			while not problem.is_terminal(curr_state) and depth < self.search_depth:
 				action = problem.sample_action()
@@ -130,20 +131,20 @@ class PUCT_V1(Solver):
 
 			# collect data
 			for d in range(self.search_depth):
-				path.append(curr_node)
 				robot = (d+turn) % problem.num_robots  
 				if self.is_expanded(curr_node):
 					child_node = self.best_child(curr_node,robot) 
 				else:
 					child_node = self.expand_node(curr_node,problem)
+				path.append(curr_node)
 				rewards.append(problem.gamma**d * problem.normalized_reward(curr_node.state,curr_node.edges[child_node]))
 				curr_node = child_node 
-			rewards.append(problem.gamma**self.search_depth * self.default_policy(child_node,problem))
+			rewards.append(problem.gamma ** self.search_depth * self.default_policy(child_node,problem))
 			path.append(curr_node)
 
 			# backpropagate 
 			for d,node in enumerate(path):
-				node.total_value += self.calc_value(rewards,d,self.search_depth,problem.gamma,problem.num_robots)
+				node.total_value += self.calc_value(rewards,d,self.search_depth+1,problem.gamma,problem.num_robots)
 				node.num_visits += 1 
 
 		if self.vis_on: 
