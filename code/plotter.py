@@ -229,14 +229,16 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 		fig.suptitle(title)
 
 
-def plot_regression_test(results):
+def plot_regression_test(results,render_on=True):
 	# results: list of (instance, sim_result) pairs 
 
 	# render each sim result 
-	for (param, sim_result) in results:
-		# fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
-		# fig.suptitle(param.key)
-		pass 
+	if render_on:
+		for (param, sim_result) in results:
+			fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
+			fig.suptitle(param.key)
+	else:
+		param, sim_result = results[0]
 
 	# for each problem, 
 	# 	- plot duration per timestep across number of simulations for each solver 

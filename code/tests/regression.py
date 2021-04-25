@@ -34,12 +34,12 @@ def worker(param):
 
 if __name__ == '__main__':
 
-    mode = 1
+    mode = 0
 
-    # fast 
+    # complete
     if mode == 0:
-        number_simulations_lst = [50,100,200,500,1000]
-        problem_name_lst = ["example4"]
+        number_simulations_lst = [50,100,200]
+        problem_name_lst = ["example1","example2","example4"]
         # solver_name_lst = ["PUCT","C_PUCT"]
         solver_name_lst = ["PUCT_V0","C_PUCT_V0","PUCT_V1","C_PUCT_V1"]
         num_trial = 20
@@ -47,16 +47,16 @@ if __name__ == '__main__':
     # speed test 
     elif mode == 1:
         number_simulations_lst = [10,50,100] #,500,1000] 
-        problem_name_lst = ["example1"] #,"example2","example4"]
-        solver_name_lst = ["PUCT_V1","PUCT_V2"]
+        problem_name_lst = ["example1","example2","example4"]
+        solver_name_lst = ["C_PUCT_V0","C_PUCT_V1"]
         num_trial = 10
 
     # custom 
-    elif mode == 3:
-        number_simulations_lst = [10,50,100,500]
-        problem_name_lst = ["example2"] #,"example5"]
-        solver_name_lst = ["PUCT","PUCT_PW_MAB"]
-        # solver_name_lst = ["PUCT"]
+    elif mode == 2:
+        number_simulations_lst = [100]
+        problem_name_lst = ["example4"] #,"example5"]
+        # solver_name_lst = ["PUCT","PUCT_PW_MAB"]
+        solver_name_lst = ["C_PUCT_V1"]
         num_trial = 5
 
     params = []
@@ -100,13 +100,7 @@ if __name__ == '__main__':
         sim_results = []  
         for i,(param,instance) in enumerate(params):
             sim_results.append(worker(param)) 
-            # print('running {}/{}: {}'.format(param.count,param.total,param.key))
-            # start = time.time()
-            # sim_result = run_instance(instance,verbose=False)
-            # duration = time.time() - start
-            # sim_result["duration_per_timestep"] = duration / len(sim_result["times"])
-            # sim_results.append((param,sim_result))
 
-    plotter.plot_regression_test(sim_results)
+    plotter.plot_regression_test(sim_results,render_on=True)
     plotter.save_figs("../../current/plots/regression.pdf")
     plotter.open_figs("../../current/plots/regression.pdf")
