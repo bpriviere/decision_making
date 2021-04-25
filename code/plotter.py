@@ -168,12 +168,11 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 			ln_coll = Line3DCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
 
-		if not zoom_on: 
-			lims = problem.state_lims
-			ax.set_xlim((lims[0,0],lims[0,1]))
-			ax.set_ylim((lims[1,0],lims[1,1]))
-			ax.set_zlim((lims[2,0],lims[2,1]))
-			ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
+		lims = problem.state_lims
+		ax.set_xlim((lims[0,0],lims[0,1]))
+		ax.set_ylim((lims[1,0],lims[1,1]))
+		ax.set_zlim((lims[2,0],lims[2,1]))
+		ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
 
 	else: 
 		print('tree plot dimension not supported')
