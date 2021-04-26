@@ -111,8 +111,8 @@ class Example4(Problem):
 		r_min = -r_max
 		r0 = np.clip(r0,r_min,r_max)
 		r0 = (r0 - r_min) / (r_max - r_min)
-		normmalized_reward = np.array([[r0],[1-r0]])
-		return normmalized_reward
+		_normalized_reward = np.array([[r0],[1-r0]])
+		return _normalized_reward
 
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
