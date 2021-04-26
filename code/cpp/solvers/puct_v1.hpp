@@ -86,7 +86,7 @@ class PUCT_V1 : public Solver {
 
 				for (int d = 0; d <= m_search_depth; d++){
 					path[d]->num_visits += 1;
-					path[d]->total_value += calc_value(rewards,d,m_search_depth,problem->m_gamma,problem->m_num_robots);
+					path[d]->total_value += calc_value(rewards,d,m_search_depth+1,problem->m_gamma,problem->m_num_robots);
 				}
 			};
 
@@ -100,7 +100,7 @@ class PUCT_V1 : public Solver {
 
 		Eigen::Matrix<float,-1,1> calc_value(std::vector<Eigen::Matrix<float,-1,1>> rewards, int start_depth, int total_depth, float gamma, int num_robots){
 			Eigen::Matrix<float,-1,1> value = Eigen::Matrix<float,-1,1>::Zero(num_robots,1);
-			for (int d = start_depth; d <= total_depth; d++){
+			for (int d = start_depth; d < total_depth; d++){
 				value = value + rewards[d] * powf(gamma,d); 
 			}
 			return value;
@@ -168,16 +168,15 @@ class PUCT_V1 : public Solver {
 
 		Eigen::Matrix<float,-1,1> default_policy(Problem * problem,Node* node_ptr){
 			Eigen::Matrix<float,-1,1> value = Eigen::Matrix<float,-1,1>::Zero(problem->m_num_robots,1);
-			float total_discount = 0.0;
-			int depth = node_ptr->calc_depth();
 			Eigen::Matrix<float,-1,1> curr_state = node_ptr->state; 
+			int depth = 0; 
+			// int depth = node_ptr->calc_depth(); 
 			while (! problem->is_terminal(curr_state) && depth < m_search_depth) 
 			{
 				auto action = problem->sample_action(g_gen);
 				auto next_state = problem->step(curr_state,action,problem->m_timestep);
 				float discount = powf(problem->m_gamma,depth); 
 				value += discount * problem->normalized_reward(curr_state,action);
-				total_discount += discount; 
 				curr_state = next_state;
 				depth += 1;
 			}
