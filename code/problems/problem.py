@@ -51,3 +51,25 @@ class Problem:
 		exit("render needs to be overwritten")
 
 
+def get_problem(param):
+	if param.problem_name == "example1":
+		from problems.example1 import Example1
+		problem = Example1()
+
+	elif param.problem_name == "example2":
+		from problems.example2 import Example2
+		problem = Example2()
+
+	elif param.problem_name == "example3":
+		from problems.example3 import Example3
+		problem = Example3()
+
+	elif param.problem_name == "example4":
+		from problems.example4 import Example4
+		problem = Example4() 
+
+	elif param.problem_name == "example5":
+		from problems.example5 import Example5
+		problem = Example5() 
+
+	return problem 
