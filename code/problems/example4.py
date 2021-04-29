@@ -124,37 +124,39 @@ class Example4(Problem):
 			s_tp1[state_idx,:] = np.dot(Fd,s[state_idx,:]) + np.dot(Bd,a[action_idx,:])
 		return s_tp1 
 
-	def render(self,states,fig=None,ax=None):
+	def render(self,states=None,fig=None,ax=None):
 		# states, np array in [nt x state_dim]
 		
 		if fig == None or ax == None:
 			fig,ax = plotter.make_3d_fig()
 
-		lims = self.state_lims
-		colors = plotter.get_n_colors(self.num_robots)
-		for robot in range(self.num_robots):
-			state_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+		if states is not None:
 
-			ax.plot(states[:,state_idxs[0]].squeeze(axis=1), states[:,state_idxs[1]].squeeze(axis=1),states[:,state_idxs[2]].squeeze(axis=1),color=colors[robot])
-			ax.plot(states[0,state_idxs[0]], states[0,state_idxs[1]], states[0,state_idxs[2]], color=colors[robot],marker='o')
-			ax.plot(states[-1,state_idxs[0]], states[-1,state_idxs[1]], states[-1,state_idxs[2]], color=colors[robot],marker='s')
-			
-			# projections 
-			ax.plot(lims[0,0]*np.ones(states.shape[0]),states[:,state_idxs[1]].squeeze(),states[:,state_idxs[2]].squeeze(),\
-				color=colors[robot],linewidth=1,linestyle="--")
-			ax.plot(states[:,state_idxs[0]].squeeze(),lims[1,1]*np.ones(states.shape[0]),states[:,state_idxs[2]].squeeze(),\
-				color=colors[robot],linewidth=1,linestyle="--")
-			ax.plot(states[:,state_idxs[0]].squeeze(),states[:,state_idxs[1]].squeeze(),lims[2,0]*np.ones(states.shape[0]),\
-				color=colors[robot],linewidth=1,linestyle="--")
+			lims = self.state_lims
+			colors = plotter.get_n_colors(self.num_robots)
+			for robot in range(self.num_robots):
+				state_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
 
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
-		ax.set_zlim((lims[2,0],lims[2,1]))
-		ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
+				ax.plot(states[:,state_idxs[0]].squeeze(axis=1), states[:,state_idxs[1]].squeeze(axis=1),states[:,state_idxs[2]].squeeze(axis=1),color=colors[robot])
+				ax.plot(states[0,state_idxs[0]], states[0,state_idxs[1]], states[0,state_idxs[2]], color=colors[robot],marker='o')
+				ax.plot(states[-1,state_idxs[0]], states[-1,state_idxs[1]], states[-1,state_idxs[2]], color=colors[robot],marker='s')
+				
+				# projections 
+				ax.plot(lims[0,0]*np.ones(states.shape[0]),states[:,state_idxs[1]].squeeze(),states[:,state_idxs[2]].squeeze(),\
+					color=colors[robot],linewidth=1,linestyle="--")
+				ax.plot(states[:,state_idxs[0]].squeeze(),lims[1,1]*np.ones(states.shape[0]),states[:,state_idxs[2]].squeeze(),\
+					color=colors[robot],linewidth=1,linestyle="--")
+				ax.plot(states[:,state_idxs[0]].squeeze(),states[:,state_idxs[1]].squeeze(),lims[2,0]*np.ones(states.shape[0]),\
+					color=colors[robot],linewidth=1,linestyle="--")
 
-		for robot in range(self.num_robots):
-			ax.scatter(np.nan,np.nan,np.nan,color=colors[robot],label="Robot {}".format(robot))
-		ax.legend(loc='best')
+			ax.set_xlim((lims[0,0],lims[0,1]))
+			ax.set_ylim((lims[1,0],lims[1,1]))
+			ax.set_zlim((lims[2,0],lims[2,1]))
+			ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
+
+			for robot in range(self.num_robots):
+				ax.scatter(np.nan,np.nan,np.nan,color=colors[robot],label="Robot {}".format(robot))
+			ax.legend(loc='best')
 
 		return fig,ax 
 

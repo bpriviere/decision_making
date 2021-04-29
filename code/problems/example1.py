@@ -18,7 +18,7 @@ class Example1(Problem):
 		self.dt = 0.1
 		self.r_max = 100
 		self.num_robots = 1
-		self.gamma = 1
+		self.gamma = 0.99
 		self.state_dim = 2
 		self.action_dim = 2
 		self.state_control_weight = 1.0
@@ -67,16 +67,17 @@ class Example1(Problem):
 		s_tp1 = np.dot(Fd,s) + np.dot(Bd,a)
 		return s_tp1 
 
-	def render(self,states,fig=None,ax=None):
+	def render(self,states=None,fig=None,ax=None):
 		if fig == None or ax == None: 
 			fig,ax = plotter.make_fig()	
-		states = np.array(states)
-		state_lims = self.state_lims
-		ax.plot(states[:,0],states[:,1])
-		ax.plot(states[0,0],states[0,1],'o')
-		ax.plot(states[-1,0],states[-1,1],'s')
-		ax.set_xlim([state_lims[0,0],state_lims[0,1]])
-		ax.set_ylim([state_lims[1,0],state_lims[1,1]])
+		if states is not None:
+			states = np.array(states)
+			state_lims = self.state_lims
+			ax.plot(states[:,0],states[:,1])
+			ax.plot(states[0,0],states[0,1],'o')
+			ax.plot(states[-1,0],states[-1,1],'s')
+			ax.set_xlim([state_lims[0,0],state_lims[0,1]])
+			ax.set_ylim([state_lims[1,0],state_lims[1,1]])
 		return fig,ax
 
 	def is_terminal(self,state):
