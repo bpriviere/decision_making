@@ -29,6 +29,7 @@ class Solver_Result
         Eigen::Matrix<float,-1,1> best_action;
         Eigen::Matrix<float,-1,-1> child_distribution;
         Eigen::MatrixXf tree;
+        Eigen::Matrix<float,-1,1> value; 
         bool success; 
 };
 

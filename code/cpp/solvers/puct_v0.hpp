@@ -74,6 +74,7 @@ class PUCT_V0 : public Solver {
 			solver_result.best_action = most_visited(root_node_ptr,0)->action_to_node; 
 			solver_result.child_distribution = export_child_distribution(problem);
 			solver_result.tree = export_tree(problem);
+			solver_result.value = root_node_ptr->total_value / root_node_ptr->num_visits;
 			return solver_result;
 		}
 

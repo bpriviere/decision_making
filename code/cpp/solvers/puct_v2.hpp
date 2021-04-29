@@ -54,7 +54,7 @@ class PUCT_V2 : public Solver {
 			Solver_Result solver_result;
 
 			m_nodes.clear();
-			m_nodes.reserve(m_num_simulations * m_search_depth +1);
+			m_nodes.reserve(m_num_simulations * (m_search_depth+1) + 1);
 			m_nodes.resize(1);
 
 			auto& root_node = m_nodes[0];
@@ -99,6 +99,7 @@ class PUCT_V2 : public Solver {
 			solver_result.best_action = most_visited(root_node_ptr,0)->action_to_node; 
 			solver_result.child_distribution = export_child_distribution(problem);
 			solver_result.tree = export_tree(problem);
+			solver_result.value = root_node_ptr->total_value / root_node_ptr->num_visits;
 			return solver_result;
 		}
 
