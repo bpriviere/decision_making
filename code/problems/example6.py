@@ -20,7 +20,7 @@ class Example6(Problem):
 		self.dt = 0.1
 		self.r_max = 100
 		self.num_robots = 1
-		self.gamma = 0.99
+		self.gamma = 0.8
 		self.state_dim = 2
 		self.action_dim = 2
 		self.state_control_weight = 1.0
@@ -50,6 +50,14 @@ class Example6(Problem):
 			np.array([
 				[1,2],
 				[-2,2],
+			]),
+			np.array([
+				[-2,2],
+				[1,2],
+			]),
+			np.array([
+				[-2,2],
+				[-2,-1],
 			])
 		]
 
