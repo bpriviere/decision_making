@@ -60,6 +60,10 @@ class C_PUCT(Solver):
 				np.arange(problem.action_dim_per_robot)
 			result = self.search(problem,root_state,turn=robot)
 			py_action[action_idxs,0] = result.best_action[action_idxs]
+
+		if self.solver_name in ["C_PUCT_V2"]:
+			py_action = np.append(py_action,np.array(result.best_action[-1],ndmin=2),axis=0)
+
 		return py_action
 
 	def search(self,problem,root_state,turn=0):
