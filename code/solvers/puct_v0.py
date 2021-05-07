@@ -130,6 +130,7 @@ class PUCT_V0(Solver):
 
 		# init tree 
 		root_node = Node(root_state,None,problem.num_robots)
+		root_node.success = False
 
 		# init heuristics
 		if self.policy_oracle is not None: 
@@ -148,6 +149,8 @@ class PUCT_V0(Solver):
 			tree_state = self.export_tree(root_node)
 			plotter.plot_tree_state(problem,tree_state,zoom_on=True)
 
+		root_node.success = True
+		root_node.value = root_node.total_value / root_node.num_visits
 		return root_node
 
 

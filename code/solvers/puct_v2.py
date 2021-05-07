@@ -6,7 +6,6 @@ import numpy as np
 
 # custom 
 from solvers.solver import Solver 
-from solvers.policy_solver import PolicySolver, ValueSolver
 import plotter
 
 
@@ -59,18 +58,21 @@ class PUCT_V2(Solver):
 
 
 	def expand_node(self,parent_node,problem):
-		if self.policy_oracle is not None and np.random.uniform() < self.beta_policy:
-			problem_action = self.policy_solver.policy(problem,parent_node.state)
-		else: 
-			problem_action = problem.sample_action()
+		valid = False
+		while not valid:
+			if self.policy_oracle is not None and np.random.uniform() < self.beta_policy:
+				problem_action = self.policy_solver.policy(problem,parent_node.state)
+			else: 
+				problem_action = problem.sample_action()
 
-		timestep_sample = problem.dt * (10 ** np.random.uniform(-1,0)) # from (0.1 to 10) * dt 
-		
-		tree_action = np.zeros((problem.action_dim+1,1))
-		tree_action[0:problem.action_dim,0] = problem_action[:,0]
-		tree_action[-1,0] = timestep_sample
-		
-		next_state = problem.step(parent_node.state,problem_action,timestep_sample)
+			timestep_sample = problem.dt * (10 ** np.random.uniform(-1,0)) # from (0.1 to 10) * dt 
+			
+			tree_action = np.zeros((problem.action_dim+1,1))
+			tree_action[0:problem.action_dim,0] = problem_action[:,0]
+			tree_action[-1,0] = timestep_sample
+			
+			next_state = problem.step(parent_node.state,problem_action,timestep_sample)
+			valid = problem.is_valid(next_state)
 		child_node = Node(next_state,parent_node,problem.num_robots)
 		parent_node.add_child(child_node,tree_action)
 		return child_node
@@ -97,17 +99,18 @@ class PUCT_V2(Solver):
 
 	def default_policy(self,node,problem):
 		if self.value_oracle is not None and np.random.uniform() < self.beta_value:
-			value = self.value_solver(problem,node.state) 
+			value = self.value_oracle.eval(problem,node.state) 
 		else: 
 			value = np.zeros((problem.num_robots,1))
-			depth = 0 
-			curr_state = node.state 
-			while not problem.is_terminal(curr_state) and depth < self.search_depth:
-				action = problem.sample_action()
-				next_state = problem.step(curr_state,action,problem.dt)
-				value += (problem.gamma ** depth) * problem.normalized_reward(curr_state,action)
-				curr_state = next_state 
-				depth += 1
+			if False:
+				depth = 0 
+				curr_state = node.state 
+				while not problem.is_terminal(curr_state) and depth < self.search_depth:
+					action = problem.sample_action()
+					next_state = problem.step(curr_state,action,problem.dt)
+					value += (problem.gamma ** depth) * problem.normalized_reward(curr_state,action)
+					curr_state = next_state 
+					depth += 1
 		return value 
 
 
@@ -120,19 +123,13 @@ class PUCT_V2(Solver):
 
 	def search(self,problem,root_state,turn=0): 
 		
-		# check validity
-		if problem.is_terminal(root_state):
-			# print('root node is terminal')
-			return None
-
 		# init tree 
 		root_node = Node(root_state,None,problem.num_robots)
+		root_node.success = False
 
-		# init heuristics
-		if self.policy_oracle is not None: 
-			self.policy_solver = PolicySolver(problem,self.policy_oracle)
-		if self.value_oracle is not None: 
-			self.value_solver = ValueSolver(problem,self.value_oracle)
+		# check validity
+		if problem.is_terminal(root_state):
+			return root_node
 
 		# search 
 		for t in range(self.number_simulations):
@@ -149,15 +146,18 @@ class PUCT_V2(Solver):
 				else:
 					child_node = self.expand_node(curr_node,problem)
 				path.append(curr_node)
-				rewards.append(problem.gamma**d * problem.normalized_reward(curr_node.state,curr_node.edges[child_node][0:-1,:]))
+				rewards.append(problem.normalized_reward(curr_node.state,curr_node.edges[child_node][0:-1,:]))
 				curr_node = child_node 
-			rewards.append(problem.gamma**self.search_depth * self.default_policy(child_node,problem))
+			rewards.append(self.default_policy(child_node,problem))
 			path.append(curr_node)
 
 			# backpropagate 
 			for d,node in enumerate(path):
 				node.total_value += self.calc_value(rewards,d,self.search_depth+1,problem.gamma,problem.num_robots)
 				node.num_visits += 1 
+
+		root_node.success = True
+		root_node.value = root_node.total_value / root_node.num_visits
 
 		if self.vis_on: 
 			tree_state = self.export_tree(root_node)

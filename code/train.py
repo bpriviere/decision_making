@@ -16,28 +16,34 @@ from torch.nn import MSELoss
 
 # custom
 import plotter 
-from param import Param 
-from run import make_instance, run_instance
-from solvers.c_puct import C_PUCT
-from solvers.puct import PUCT
-from solvers.policy_solver import PolicySolver
-from learning.policy_network import PolicyNetwork
-from learning.value_network import ValueNetwork
+from problems.problem import get_problem
+from solvers.solver import get_solver 
+from learning.oracles import get_oracles
+from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
-L = 2
-num_D_pi = 1000
-num_D_v = 10
-num_self_play_plots = 10
-num_simulations_expert = 10
-num_simulations_learner = 10
-learning_rate = 0.001
-num_epochs = 10
-batch_size = 2
-train_test_split = 0.8
-parallel_on = False
-solver_name = "C_PUCT"
+L = 20
+num_simulations = 500
+parallel_on = True
+solver_name = "PUCT_V1"
+problem_name = "example7"
+policy_oracle_name = "gaussian"
+value_oracle_name = "deterministic"
+beta_policy = 0.8
+beta_value = 1.0
 
+num_D_pi = 2000
+num_pi_eval = 2000
+num_D_v = 2000
+num_v_eval = 2000
+
+learning_rate = 0.001
+num_epochs = 1000
+batch_size = 128
+train_test_split = 0.8
+
+
+# MICE-like training
 class Dataset(torch.utils.data.Dataset):
 	
 	def __init__(self, src_file, encoding_dim, target_dim, device='cpu'):
@@ -81,154 +87,72 @@ def update_tqdm(rank,total_per_worker,queue,pbar):
 		queue.put_nowait(total_per_worker)
 
 
-# self play functions 
-def worker_sps_wrapper(arg):
-	return worker_sps(*arg)
-
-def worker_sps(rank,queue,fn,seed,problem,num_states,total_num_states,\
-	policy_oracle,value_oracle):
-
-	np.random.seed(seed)
-	pbar = init_tqdm(rank,total_num_states)
-	self_play_states = [] # num sim x nt_i x state_dim
-	sum_self_play_states = 0 
-	while sum_self_play_states < num_states: 
-		instance = dict()
-		instance["problem"] = problem 
-		instance["initial_state"] = problem.initialize()
-
-		if solver_name == "PUCT":
-			instance["solver"] = PUCT(\
-				policy_oracle=policy_oracle,
-				value_oracle=value_oracle,
-				number_simulations=num_simulations_learner)
-		elif solver_name == "C_PUCT":
-			instance["solver"] = C_PUCT(\
-				policy_oracle=policy_oracle,
-				value_oracle=value_oracle,
-				number_simulations=num_simulations_learner)
-
-		sim_result = run_instance(instance,verbose=False)
-		self_play_states.append(sim_result["states"])
-		count_self_play_states = len(sim_result["states"])
-		sum_self_play_states += count_self_play_states
-		update_tqdm(rank,count_self_play_states,queue,pbar)
-	np.save(fn,np.array(self_play_states))	
-	del sim_result["instance"]["solver"] 
-	return self_play_states
-
-def make_self_play_states(l,robot,name,problem,num_states,policy_oracle,value_oracle):
-	start_time = time.time()
-	print('making self play states...')
-
-	paths = []
-	if parallel_on: 
-		ncpu = mp.cpu_count() - 1
-		num_states_per_pool = int(num_states/ncpu)
-		seeds = [] 
-		for i in range(ncpu):
-			_, path = tempfile.mkstemp()
-			paths.append(path + '.npy')
-			seeds.append(np.random.randint(10000))
-		with mp.Pool(ncpu) as pool:
-			queue = mp.Manager().Queue()
-			args = list(zip(itertools.count(), itertools.repeat(queue),paths, \
-				seeds, itertools.repeat(problem), itertools.repeat(num_states_per_pool), \
-				itertools.repeat(num_states), itertools.repeat(policy_oracle), itertools.repeat(value_oracle)))
-			for _ in pool.imap_unordered(worker_sps_wrapper, args):
-				pass
-
-	else:
-		_,path = tempfile.mkstemp()
-		seed = np.random.randint(10000)
-		paths.append(path + '.npy')
-		worker_sps_wrapper((0,Queue(),path,seed,problem,num_states,num_states,policy_oracle,value_oracle))
-
-	self_play_states = []
-	plot_count = 0 
-	for path in paths:
-		self_play_states_i = list(np.load(path,allow_pickle=True))
-		for states in self_play_states_i:
-			self_play_states.extend(states)
-			if plot_count < num_self_play_plots:
-				problem.render(states)
-				plot_count += 1 
-		os.remove(path)
-	plotter.save_figs("../current/models/self_play_{}_l{}_i{}".format(name,l,robot))
-	print('completed self play states in {}s.'.format(time.time()-start_time))
-	return self_play_states
-
-
-# expert demonstration functions 
+# policy demonstration functions 
 def worker_edp_wrapper(arg):
 	return worker_edp(*arg)
 
-def worker_edp(rank,queue,fn,problem,robot,states,num_total_states,policy_oracle,value_oracle):
+def worker_edp(rank,queue,fn,problem,robot,num_per_pool,policy_oracle,value_oracle):
 
-	pbar = init_tqdm(rank,num_total_states)
+	# np.random.seed(seed)
+	pbar = init_tqdm(rank,num_D_pi)
 	datapoints = []
-	
-	if solver_name == "PUCT":
-		solver = PUCT(\
-			policy_oracle=policy_oracle,
-			value_oracle=value_oracle,
-			number_simulations=num_simulations_expert)
-	elif solver_name == "C_PUCT":
-		solver = C_PUCT(\
-			policy_oracle=policy_oracle,
-			value_oracle=value_oracle,
-			number_simulations=num_simulations_expert)
 
+	solver = get_solver(
+			solver_name,
+			policy_oracle=policy_oracle,
+			value_oracle=value_oracle,
+			number_simulations=num_simulations,
+			beta_policy= beta_policy,
+			beta_value = beta_value)
+	
 	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
 	robot_action_idx = action_dim_per_robot * robot + np.arange(action_dim_per_robot)
-	for state in states: 
-		print('state',state)
-		root_node = solver.search(problem,state)
-		print('root_node.child_distribution',root_node.child_distribution)
-		print('root_node.best_action',root_node.best_action)
-		if root_node is not None:
+	while len(datapoints) < num_per_pool:
+		state = problem.initialize()
+		root_node = solver.search(problem,state,turn=robot)
+		if root_node.success:
 			actions,num_visits = solver.get_child_distribution(root_node)
-			print('actions',actions)
 			encoding = problem.policy_encoding(state,robot).squeeze()
-			robot_actions = np.array(actions)[:,robot_action_idx]
-			target = np.average(robot_actions, weights=num_visits, axis=0)
+			if False:
+				robot_actions = np.array(actions)[:,robot_action_idx]
+				target = np.average(robot_actions, weights=num_visits, axis=0)
+			else:
+				most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
+				target = root_node.edges[most_visited_child][robot_action_idx,:]
 			datapoint = np.append(encoding,target)
 			datapoints.append(datapoint)
 			update_tqdm(rank,1,queue,pbar)
 	np.save(fn,np.array(datapoints))	
 	return datapoints
 
-def make_expert_demonstration_pi(problem,robot,states,policy_oracle,value_oracle):
+
+def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 	start_time = time.time()
 	print('making expert demonstration pi...')
 
 	paths = []
 	if parallel_on: 
 		ncpu = mp.cpu_count() - 1
-		num_states_per_pool = int(len(states)/ncpu)
+		num_per_pool = int(num_D_pi / ncpu)
 
 		paths = []
-		split_states = []
 		for i in range(ncpu):
 			_, path = tempfile.mkstemp()
 			path = path + ".npy"
 			paths.append(path)
-			split_states.append(states[i*num_states_per_pool:(i+1)*num_states_per_pool])
 
 		with mp.Pool(ncpu) as pool:
 			queue = mp.Manager().Queue()
 			args = list(zip(itertools.count(), itertools.repeat(queue), paths, itertools.repeat(problem), \
-				itertools.repeat(robot), split_states, itertools.repeat(len(states)), itertools.repeat(policy_oracle), \
-				itertools.repeat(value_oracle) ))
+				itertools.repeat(robot), itertools.repeat(num_per_pool), itertools.repeat(policy_oracle), itertools.repeat(value_oracle)))
 			for _ in pool.imap_unordered(worker_edp_wrapper, args):
 				pass
 
 	else: 
 		_,path = tempfile.mkstemp()
 		path = path + ".npy"
-		seed = 0 
 		paths.append(path)
-		worker_edp_wrapper((0,Queue(),path,problem,robot,states,len(states),policy_oracle,value_oracle))
+		worker_edp_wrapper((0,Queue(),path,problem,robot,num_D_pi,policy_oracle,value_oracle))
 
 	datapoints = []
 	for path in paths: 
@@ -241,7 +165,9 @@ def make_expert_demonstration_pi(problem,robot,states,policy_oracle,value_oracle
 		problem.policy_encoding_dim,action_dim_per_robot,robot=robot)
 	test_dataset = datapoints_to_dataset(datapoints[split:],"test_policy",\
 		problem.policy_encoding_dim,action_dim_per_robot,robot=robot)
-	plotter.plot_policy_dataset(problem,train_dataset,test_dataset)
+	plotter.plot_policy_dataset(problem,\
+		[[train_dataset.X_np,train_dataset.target_np],[test_dataset.X_np,test_dataset.target_np]],\
+		["Train","Test"],robot)
 	plotter.save_figs("../current/models/dataset_policy_l{}_i{}.pdf".format(l,robot))
 	print('expert demonstration pi completed in {}s.'.format(time.time()-start_time))	
 	return train_dataset, test_dataset
@@ -260,60 +186,89 @@ def worker_edv_wrapper(args):
 	return worker_edv(*args)
 
 
-def worker_edv(fn,problem,states,policy_oracle):
+def worker_edv(rank,queue,fn,seed,problem,num_states_per_pool,policy_oracle):
+
+	solver = get_solver(
+			"NeuralNetwork",
+			policy_oracle=policy_oracle)
+
+	instance = {
+		"problem" : problem,
+		"solver" : solver,
+	}
+	np.random.seed(seed)
+	
+	pbar = init_tqdm(rank,num_D_pi)
 	datapoints = []
-	for state in states: 
-		instance = dict()
-		instance["problem"] = problem 
+	while len(datapoints) < num_states_per_pool:	
+		state = problem.initialize()
 		instance["initial_state"] = state
-		instance["solver"] = PolicySolver(problem,policy_oracle)
 		sim_result = run_instance(instance,verbose=False)
 		value = calculate_value(problem,sim_result)
 		encoding = problem.value_encoding(state).squeeze()
-		datapoint = np.append(encoding,value)		
+		datapoint = np.append(encoding,value)
 		datapoints.append(datapoint)
-	np.save(fn,np.array(datapoints))	
+		update_tqdm(rank,1,queue,pbar)
+	np.save(fn,np.array(datapoints))
 	return datapoints
 
 
-def make_expert_demonstration_v(problem,states,policy_oracle):
+def make_expert_demonstration_v(problem, l): 
 	start_time = time.time()
-	print('making expert demonstration v...')
-	ncpu = mp.cpu_count() - 1
-	num_states_per_pool = int(len(states)/ncpu)
+	print('making value dataset...')
+
+	_, policy_oracle_paths = get_oracle_fn(l,problem.num_robots)
+	policy_oracle,_ = get_oracles(problem,
+		policy_oracle_name = policy_oracle_name, 
+		policy_oracle_paths = policy_oracle_paths
+		)
 
 	paths = []
-	split_states = []
-	for i in range(ncpu):
-		_, path = tempfile.mkstemp()
-		paths.append(path + '.npy')
-		split_states.append(states[i*num_states_per_pool:(i+1)*num_states_per_pool])
+	if parallel_on: 
+		ncpu = mp.cpu_count() - 1
+		num_states_per_pool = int(num_D_v/ncpu)
+		seeds = [] 
+		for i in range(ncpu):
+			_, path = tempfile.mkstemp()
+			paths.append(path + '.npy')
+			seeds.append(np.random.randint(10000))
+		with mp.Pool(ncpu) as pool:
+			queue = mp.Manager().Queue()
+			args = list(zip(itertools.count(), itertools.repeat(queue),paths, \
+				seeds, itertools.repeat(problem), itertools.repeat(num_states_per_pool), \
+				itertools.repeat(policy_oracle) ))
 
-	with mp.Pool(ncpu) as pool:
-		args = list(zip(paths, itertools.repeat(problem), split_states, \
-			itertools.repeat(policy_oracle) ))
-		for _ in pool.imap_unordered(worker_edv_wrapper, args):
-			pass
+			for _ in pool.imap_unordered(worker_edv_wrapper, args):
+				pass
+
+	else:
+		_,path = tempfile.mkstemp()
+		seed = np.random.randint(10000)
+		paths.append(path + '.npy')
+		worker_edv_wrapper((0,Queue(),path,seed,problem,num_D_v,policy_oracle))
 
 	datapoints = []
-	for path in paths: 
-		datapoints.extend(list(np.load(path)))
+	plot_count = 0 
+	for path in paths:
+		datapoints_i = np.load(path,allow_pickle=True)
+		datapoints.extend(datapoints_i)
 		os.remove(path)
 
-	random.shuffle(datapoints) 
 	split = int(len(datapoints)*train_test_split)
 	train_dataset = datapoints_to_dataset(datapoints[0:split],"train_value",\
-		problem.value_encoding_dim,1)
+		problem.value_encoding_dim,problem.num_robots)
 	test_dataset = datapoints_to_dataset(datapoints[split:],"test_value",\
-		problem.value_encoding_dim,1)
-	plotter.plot_value_dataset(problem,train_dataset,test_dataset)
+		problem.value_encoding_dim,problem.num_robots)
+	plotter.plot_value_dataset(problem,
+		[[train_dataset.X_np,train_dataset.target_np],[test_dataset.X_np,test_dataset.target_np]],
+		["Train","Test"])
 	plotter.save_figs("../current/models/dataset_value_l{}.pdf".format(l))
-	print('expert demonstration v completed in {}s.'.format(time.time()-start_time))
+	print('expert demonstration v completed in {}s.'.format(time.time()-start_time))	
 	return train_dataset, test_dataset
 
 
 def calculate_value(problem,sim_result):
-	value = np.zeros((problem.num_robots))
+	value = np.zeros((problem.num_robots,1))
 	states = sim_result["states"]
 	actions = sim_result["actions"]
 	for step,(state,action) in enumerate(zip(states,actions)):
@@ -328,12 +283,22 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 
 	# device = "cpu"
 	device = "cuda"
-	model_fn = get_oracle_fn(oracle_name,l,robot=robot)
+	value_oracle_path, policy_oracle_paths = get_oracle_fn(l,problem.num_robots)
 
 	if oracle_name == "policy":
-		model = PolicyNetwork(problem,device=device)
+		model_fn = policy_oracle_paths[robot]
+		model, _ = get_oracles(problem,
+			policy_oracle_name = policy_oracle_name,
+			policy_oracle_paths = [None for _ in range(problem.num_robots)],
+			force = True
+			)
+		model = model[robot]
 	elif oracle_name == "value":
-		model = ValueNetwork(problem,device=device)
+		model_fn = value_oracle_path
+		_, model = get_oracles(problem,
+			value_oracle_name = value_oracle_name,
+			force = True
+			)
 	model.to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
@@ -347,7 +312,7 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 
 	losses = []
 	best_test_loss = np.Inf
-	for epoch in range(num_epochs): 
+	for epoch in tqdm(range(num_epochs)): 
 		train_epoch_loss = train(model,optimizer,train_loader)
 		test_epoch_loss = test(model,test_loader)
 		scheduler.step(test_epoch_loss)
@@ -366,8 +331,7 @@ def train(model,optimizer,loader):
 	epoch_loss = 0
 	loss_by_components = []
 	for step, (x,target) in enumerate(loader):
-		mu, logvar = model(x,training=True)
-		loss = loss_fnc(mu,logvar,target)
+		loss = model.loss_fnc(x,target) 
 		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
@@ -379,25 +343,65 @@ def test(model,loader):
 	epoch_loss = 0
 	loss_by_components = []
 	for step, (x,target) in enumerate(loader):
-		mu, logvar = model(x,training=True)
-		loss = loss_fnc(mu,logvar,target)
+		loss = model.loss_fnc(x,target) 
 		epoch_loss += float(loss)
 	return epoch_loss/step
 
 
-def loss_fnc(mu,logvar,target):
-	criterion = MSELoss(reduction='none')
-	loss = torch.sum(criterion(mu, target) / (2 * torch.exp(logvar)) + 1/2 * logvar)
-	loss = loss / mu.shape[0]
-	return loss 
+def eval_value(problem,l):
+	
+	value_oracle_path, policy_oracle_paths = get_oracle_fn(l,problem.num_robots)
+
+	_, value_oracle = get_oracles(problem,
+		value_oracle_name = value_oracle_name,
+		value_oracle_path = value_oracle_path
+		)
+
+	states = []
+	values = []
+	for _ in range(num_v_eval):
+		state = problem.sample_state()
+		value = value_oracle.eval(problem,state)
+		states.append(state)
+		values.append(value)
+
+	states = np.array(states).squeeze(axis=2)
+	values = np.array(values).squeeze(axis=2)
+	plotter.plot_value_dataset(problem,[[states,values]],["Eval"])
+	plotter.save_figs("../current/models/value_eval_l{}.pdf".format(l))
+
+
+def eval_policy(problem,l,robot):
+
+	value_oracle_path, policy_oracle_paths = get_oracle_fn(l,problem.num_robots)
+	
+	policy_oracle, _ = get_oracles(problem,
+		policy_oracle_name = policy_oracle_name,
+		policy_oracle_paths = [policy_oracle_paths[robot]]
+		)
+
+	states = []
+	actions = []
+	for _ in range(num_pi_eval):
+		state = problem.sample_state()
+		action = policy_oracle[0].eval(problem,state,robot)
+		states.append(state)
+		actions.append(action)
+
+	states = np.array(states).squeeze(axis=2)
+	actions = np.array(actions).squeeze(axis=2)
+	plotter.plot_policy_dataset(problem,[[states,actions]],["Eval"],robot)
+	plotter.save_figs("../current/models/policy_eval_l{}_i{}.pdf".format(l,robot))
 
 
 if __name__ == '__main__':
 
-	param = Param()
-	instance = make_instance(param)
-	problem = instance["problem"]
+	problem = get_problem(problem_name) 
 	format_dir(clean_dirnames=["data","models"]) 
+
+	if batch_size > np.min((num_D_pi,num_D_v)) * (1-train_test_split):
+		batch_size = int(np.min((num_D_pi,num_D_v)) * train_test_split / 5)
+		print('changing batch size to {}'.format(batch_size))
 
 	# training 
 	for l in range(L):
@@ -406,24 +410,26 @@ if __name__ == '__main__':
 
 		if l == 0:
 			policy_oracle = [None for _ in range(problem.num_robots)]
-			# policy_oracle = None 
-			value_oracle = None 
+			value_oracle = None
 		else: 
-			policy_oracle = [get_oracle_fn("policy",l-1,robot=i) for i in range(problem.num_robots)]
-			value_oracle = get_oracle_fn("value",l-1)
+			value_oracle_path, policy_oracle_paths = get_oracle_fn(l-1,problem.num_robots)
+			policy_oracle,value_oracle = get_oracles(problem,
+				value_oracle_name = value_oracle_name,
+				value_oracle_path = value_oracle_path,
+				policy_oracle_name = policy_oracle_name, 
+				policy_oracle_paths = policy_oracle_paths
+				)
 
 		for robot in range(problem.num_robots): 
 			print('\t policy training iteration l/L, i/N: {}/{} {}/{}...'.format(\
 				l,L,robot,problem.num_robots))
-			states_pi = make_self_play_states(l,robot,"policy",problem,num_D_pi,policy_oracle,value_oracle)
 			train_dataset_pi, test_dataset_pi = make_expert_demonstration_pi(\
-				problem,robot,states_pi,policy_oracle,value_oracle)
-			exit('here')
+				problem,robot,policy_oracle,value_oracle)
 			train_model(problem,train_dataset_pi,test_dataset_pi,l,"policy",robot=robot)
+			eval_policy(problem,l,robot) 
 
 		print('\t value training l/L: {}/{}'.format(l,L))
-		states_v = make_self_play_states(l,robot,"value",problem,num_D_v,policy_oracle,value_oracle)
-		train_dataset_v, test_dataset_v = make_expert_demonstration_v(problem,states_v,policy_oracle)
+		train_dataset_v, test_dataset_v = make_expert_demonstration_v(problem, l) 
 		train_model(problem,train_dataset_v,test_dataset_v,l,"value") 
+		eval_value(problem,l)
 		print('complete learning iteration: {}/{} in {}s'.format(l,L,time.time()-start_time))
-

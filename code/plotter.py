@@ -117,36 +117,45 @@ def plot_sim_result(sim_result):
 def plot_loss(losses):
 	fig,ax = plt.subplots()
 	ax.plot(losses)
+	if np.amin(losses) > 0:
+		ax.set_yscale('log')
 	ax.set_title("Losses")
 
 
 def plot_tree_state(problem,tree_state,zoom_on=True):
 	# tree state : nd array in [num_nodes x state_dim + 1]
 
-	position_idxs = problem.position_idx
 
-	if len(position_idxs) == 2: 
+	if len(problem.position_idx) == 2: 
 		fig,ax = plt.subplots()
-		segments = []
-		nodes = [] 
-		for i_row,row in enumerate(tree_state):
-			parentIdx = int(row[-1])
-			nodes.append(row[position_idxs])
-			if parentIdx >= 0:
-				segments.append([row[position_idxs], tree_state[parentIdx][position_idxs]])
 
-		ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
-		nodes = np.array(nodes)
+		for robot in range(problem.num_robots):
 
-		ax.add_collection(ln_coll)
-		ax.scatter(nodes[0,0],nodes[0,1])
+			state_idxs = robot * problem.state_dim_per_robot + np.arange(problem.state_dim_per_robot)
+			position_idxs = state_idxs[problem.position_idx]
+
+			segments = []
+			nodes = [] 
+			for i_row,row in enumerate(tree_state):
+				parentIdx = int(row[-1])
+				nodes.append(row[position_idxs])
+				if parentIdx >= 0:
+					segments.append([row[position_idxs], tree_state[parentIdx][position_idxs]])
+
+			ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
+			nodes = np.array(nodes)
+
+			ax.add_collection(ln_coll)
+			ax.scatter(nodes[0,0],nodes[0,1])
 
 		if not zoom_on: 
 			lims = problem.state_lims
 			ax.set_xlim((lims[0,0],lims[0,1]))
 			ax.set_ylim((lims[1,0],lims[1,1]))
+			
+		problem.render(fig=fig,ax=ax)
 
-	elif len(position_idxs) == 3: 
+	elif len(problem.position_idx) == 3: 
 		
 		num_robots = problem.num_robots
 		state_dim_per_robot = int(problem.state_dim / num_robots)
@@ -173,21 +182,22 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 		ax.set_ylim((lims[1,0],lims[1,1]))
 		ax.set_zlim((lims[2,0],lims[2,1]))
 		ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
+		problem.render(fig=fig,ax=ax)
 
 	else: 
 		print('tree plot dimension not supported')
 
 
-def plot_value_dataset(problem,train_dataset,test_dataset):
+def plot_value_dataset(problem,datasets,dataset_names):
 	
 	encoding_dim = problem.policy_encoding_dim
 	target_dim = 1
 	state_lims = problem.state_lims
 	# action_lims = [0,1]
 
-	for title,dataset in zip(["Train","Test"],[train_dataset,test_dataset]):
-		encodings = dataset.X_np 
-		target = dataset.target_np 
+	for title,dataset in zip(dataset_names,datasets):
+		encodings = dataset[0]
+		target = dataset[1] 
 
 		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
 		for i_e in range(encoding_dim):
@@ -201,8 +211,11 @@ def plot_value_dataset(problem,train_dataset,test_dataset):
 		ax[1,0].set_ylabel("Target")
 		fig.suptitle(title)
 
+		problem.plot_value_dataset(dataset,title)
 
-def plot_policy_dataset(problem,train_dataset,test_dataset):
+
+
+def plot_policy_dataset(problem,datasets,dataset_names,robot):
 	# datapoints: [(encoding,target) ]
 	# encoding: problem.policy_encoding(state)
 	# target: robot_action 
@@ -212,9 +225,9 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 	state_lims = problem.state_lims
 	action_lims = problem.action_lims
 
-	for title,dataset in zip(["Train","Test"],[train_dataset,test_dataset]):
-		encodings = dataset.X_np 
-		target = dataset.target_np 
+	for title,dataset in zip(dataset_names,datasets):
+		encodings = dataset[0]
+		target = dataset[1]
 
 		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
 		for i_e in range(encoding_dim):
@@ -228,6 +241,8 @@ def plot_policy_dataset(problem,train_dataset,test_dataset):
 		ax[1,0].set_ylabel("Target")
 		fig.suptitle(title)
 
+		problem.plot_policy_dataset(dataset,title,robot)
+
 
 def plot_regression_test(results,render_on=True):
 	# results: list of (instance, sim_result) pairs 
@@ -235,7 +250,7 @@ def plot_regression_test(results,render_on=True):
 	# render each sim result 
 	if render_on:
 		for (param, sim_result) in results:
-			fig,ax = sim_result["instance"]["problem"].render(sim_result["states"])
+			fig,ax = sim_result["instance"]["problem"].render(states=sim_result["states"])
 			fig.suptitle(param.key)
 	else:
 		param, sim_result = results[0]
@@ -327,7 +342,7 @@ def make_movie(sim_result,instance,filename):
 		if i_t < 2:
 			return ln 
 		else:
-			instance["problem"].render(states_i,fig=fig,ax=ax)
+			instance["problem"].render(states=states_i,fig=fig,ax=ax)
 		return ln 
 
 	ln = ax.plot([],[],[])

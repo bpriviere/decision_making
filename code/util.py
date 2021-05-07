@@ -41,8 +41,17 @@ def get_dataset_fn(oracle_name,l,robot=0):
 	# return "../current/data/{}_l{}_i{}.pickle".format(oracle,l,robot)
 	return "../current/data/{}_l{}_i{}.npy".format(oracle_name,l,robot)
 
-def get_oracle_fn(oracle_name,l,robot=0):
-	return "../current/models/model_{}_l{}_i{}.pt".format(oracle_name,l,robot)
+# def get_oracle_fn(oracle_name,l,robot=0):
+	# return "../current/models/model_{}_l{}_i{}.pt".format(oracle_name,l,robot)
+
+def get_oracle_fn(l,num_robots):
+	value_oracle_path = "../current/models/model_value_l{}.pt".format(l)
+	policy_oracle_paths = []
+	for i in range(num_robots):
+		policy_oracle_paths.append("../current/models/model_policy_l{}_i{}.pt".format(l,i))
+	return value_oracle_path, policy_oracle_paths
+
+
 
 def format_dir(clean_dirnames=[]):
 	dirnames = ["plots","data","models"]

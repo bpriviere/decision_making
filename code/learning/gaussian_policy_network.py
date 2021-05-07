@@ -1,14 +1,15 @@
 
 # standard package
 import torch
+from torch.nn import MSELoss
 
 # my package
 from learning.feedforward import FeedForward
 
-class PolicyNetwork(torch.nn.Module):
+class GaussianPolicyNetwork(torch.nn.Module):
 
 	def __init__(self,problem,device="cpu",path=None):
-		super(PolicyNetwork, self).__init__()
+		super(GaussianPolicyNetwork, self).__init__()
 
 		h = 12
 
@@ -59,3 +60,15 @@ class PolicyNetwork(torch.nn.Module):
 			policy = mu + sd * eps
 			return policy 
 			
+	def loss_fnc(self,x,target):
+		mu,logvar = self.__call__(x,training=True)
+		criterion = MSELoss(reduction='none')
+		loss = torch.sum(criterion(mu, target) / (2 * torch.exp(logvar)) + 1/2 * logvar)
+		loss = loss / mu.shape[0]
+		return loss 
+
+	def eval(self,problem,root_state,robot):
+		policy_encoding = problem.policy_encoding(root_state,robot)
+		policy_encoding = torch.tensor(policy_encoding,dtype=torch.float32).squeeze().unsqueeze(0) # [batch_size x state_dim]
+		policy = self.__call__(policy_encoding).detach().numpy().reshape(int(self.output_dim/2),1) # [action_dim_per_robot x 1]
+		return policy 

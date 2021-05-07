@@ -13,7 +13,7 @@ int main()
     
     // solver settings 
     Solver_Settings solver_settings; 
-    solver_settings.num_simulations = 1000;
+    solver_settings.num_simulations = 5;
     solver_settings.search_depth = 10;
     solver_settings.C_exp = 1.0f;
     solver_settings.alpha_exp = 0.25f;

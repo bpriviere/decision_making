@@ -24,7 +24,11 @@ class Problem:
 		return sample_vector(self.state_lims)
 
 	def initialize(self):
-		return sample_vector(self.init_lims)
+		valid = False
+		while not valid:
+			state = sample_vector(self.init_lims)
+			valid = self.is_valid(state)
+		return state
 
 	def reward(self,state,action):
 		exit("reward needs to be overwritten")
@@ -75,5 +79,9 @@ def get_problem(problem_name):
 	elif problem_name == "example6":
 		from problems.example6 import Example6
 		problem = Example6() 
+
+	elif problem_name == "example7":
+		from problems.example7 import Example7
+		problem = Example7() 
 
 	return problem 

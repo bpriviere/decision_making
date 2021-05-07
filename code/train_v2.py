@@ -21,16 +21,16 @@ from solvers.solver import get_solver
 from learning.oracles import get_oracles
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
-L = 10
-num_D_v = 2000
-num_eval = 1000
+L = 20
+num_D_v = 100
+num_eval = 100
 num_simulations_expert = 100
 learning_rate = 0.001
-num_epochs = 2000
+num_epochs = 200
 batch_size = 128
 train_test_split = 0.8
 parallel_on = True
-beta_value = 1.0
+beta_value = 0.8
 value_oracle_name = "deterministic"
 solver_name = "PUCT_V1"
 problem_name = "example6"
@@ -80,7 +80,7 @@ def update_tqdm(rank,total_per_worker,queue,pbar):
 		queue.put_nowait(total_per_worker)
 
 
-# self play functions 
+# expert value demonstration functions 
 def worker_edv_wrapper(arg):
 	return worker_edv(*arg)
 

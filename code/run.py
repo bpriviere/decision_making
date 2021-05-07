@@ -6,6 +6,7 @@ import numpy as np
 from param import Param 
 from problems.problem import get_problem
 from solvers.solver import get_solver 
+from learning.oracles import get_oracles 
 import plotter 
 import util
 
@@ -14,8 +15,25 @@ def make_instance(param):
 
 	instance = dict() 
 
-	problem = get_problem(param)
-	solver = get_solver(param)
+	problem = get_problem(param.problem_name)
+	policy_oracle,value_oracle = get_oracles(problem,
+		value_oracle_name = param.value_oracle_name,
+		value_oracle_path = param.value_oracle_path,
+		policy_oracle_name = param.policy_oracle_name,
+		policy_oracle_paths = param.policy_oracle_paths
+		)
+	solver = get_solver(param.solver_name,
+		policy_oracle=policy_oracle,
+		value_oracle=value_oracle,
+		search_depth=param.search_depth,
+		number_simulations=param.number_simulations,
+		C_pw=param.C_pw,
+		alpha_pw=param.alpha_pw,
+		C_exp=param.C_exp,
+		alpha_exp=param.alpha_exp,
+		beta_policy=param.beta_policy,
+		beta_value=param.beta_value,
+		vis_on=param.vis_on)
 
 	instance["problem"] = problem 
 	instance["solver"] = solver 
@@ -71,7 +89,7 @@ def run_instance(instance,verbose=True):
 			curr_state = next_state
 
 	if verbose:	print('completed sim.')
-	if verbose: problem.render(np.array(states))
+	if verbose: problem.render(states=np.array(states))
 
 	sim_result = dict()
 	sim_result["instance"] = instance

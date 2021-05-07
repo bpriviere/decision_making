@@ -34,30 +34,40 @@ def worker(param):
 
 if __name__ == '__main__':
 
-    mode = 0
+    mode = 1
 
     # complete
     if mode == 0:
         number_simulations_lst = [50,100,200]
-        problem_name_lst = ["example1","example2","example4"]
+        # problem_name_lst = ["example1","example2",["example4"]
+        problem_name_lst = ["example4"]
         # solver_name_lst = ["PUCT","C_PUCT"]
-        solver_name_lst = ["PUCT_V0","C_PUCT_V0","PUCT_V1","C_PUCT_V1"]
+        # solver_name_lst = ["PUCT_V0","C_PUCT_V0","PUCT_V1","C_PUCT_V1"]
+        solver_name_lst = ["PUCT_V1","C_PUCT_V1"] #,"PUCT_V1","C_PUCT_V1"]
         num_trial = 20
     
     # speed test 
     elif mode == 1:
-        number_simulations_lst = [10,50,100] #,500,1000] 
-        problem_name_lst = ["example1","example2","example4"]
-        solver_name_lst = ["C_PUCT_V0","C_PUCT_V1"]
-        num_trial = 10
+        number_simulations_lst = [50,100] #,500,1000] 
+        problem_name_lst = ["example1","example2"] #,"example4"] #,"example2","example4"]
+        solver_name_lst = ["PUCT_V1","PUCT_V2","C_PUCT_V1"]
+        num_trial = 5
 
     # custom 
     elif mode == 2:
         number_simulations_lst = [100]
-        problem_name_lst = ["example4"] #,"example5"]
+        problem_name_lst = ["example6"] #,"example5"]
         # solver_name_lst = ["PUCT","PUCT_PW_MAB"]
-        solver_name_lst = ["C_PUCT_V1"]
-        num_trial = 5
+        solver_name_lst = ["PUCT_V1"]
+        num_trial = 20
+
+    # fast, complete test 
+    elif mode == 3:
+        problem_name_lst = ["example1","example2","example3","example4","example6"]
+        number_simulations_lst = [5]
+        solver_name_lst = ["PUCT_V0","PUCT_V1","C_PUCT_V0","C_PUCT_V1"]
+        num_trial = 1
+
 
     params = []
     total = len(problem_name_lst) * len(number_simulations_lst) * len(solver_name_lst) * num_trial

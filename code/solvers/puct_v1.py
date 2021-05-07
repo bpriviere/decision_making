@@ -6,7 +6,7 @@ import numpy as np
 
 # custom 
 from solvers.solver import Solver 
-from solvers.policy_solver import PolicySolver, ValueSolver
+from solvers.policy_solver import PolicySolver
 import plotter
 
 
@@ -48,16 +48,28 @@ class PUCT_V1(Solver):
 			action_idxs = robot * problem.action_dim_per_robot + \
 				np.arange(problem.action_dim_per_robot)
 			root_node = self.search(problem,root_state,turn=robot)
-			most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
-			action[action_idxs,0] = root_node.edges[most_visited_child][action_idxs,0]
+			if root_node.success:
+				most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
+				action[action_idxs,0] = root_node.edges[most_visited_child][action_idxs,0]
 		return action
 
 	def expand_node(self,parent_node,problem):
-		if self.policy_oracle is not None and np.random.uniform() < self.beta_policy:
+
+		# valid = False
+		# while not valid: 
+		# 	if not all(x is None for x in self.policy_oracle) and np.random.uniform() < self.beta_policy:
+		# 		action = self.policy_solver.policy(problem,parent_node.state)
+		# 	else: 
+		# 		action = problem.sample_action()
+		# 	next_state = problem.step(parent_node.state,action,problem.dt)
+		# 	valid = problem.is_valid(next_state)
+
+		if not all(x is None for x in self.policy_oracle) and np.random.uniform() < self.beta_policy:
 			action = self.policy_solver.policy(problem,parent_node.state)
 		else: 
 			action = problem.sample_action()
 		next_state = problem.step(parent_node.state,action,problem.dt)
+
 		child_node = Node(next_state,parent_node,problem.num_robots)
 		parent_node.add_child(child_node,action)
 		return child_node
@@ -84,18 +96,18 @@ class PUCT_V1(Solver):
 
 	def default_policy(self,node,problem):
 		if self.value_oracle is not None and np.random.uniform() < self.beta_value:
-			value = self.value_solver(problem,node.state) 
+			value = self.value_oracle.eval(problem,node.state) 
 		else: 
 			value = np.zeros((problem.num_robots,1))
-			depth = 0
-			# depth = node.calc_depth()
-			curr_state = node.state 
-			while not problem.is_terminal(curr_state) and depth < self.search_depth:
-				action = problem.sample_action()
-				next_state = problem.step(curr_state,action,problem.dt)
-				value += (problem.gamma ** depth) * problem.normalized_reward(curr_state,action)
-				curr_state = next_state 
-				depth += 1
+			if False:
+				depth = 0 
+				curr_state = node.state 
+				while not problem.is_terminal(curr_state) and depth < self.search_depth:
+					action = problem.sample_action()
+					next_state = problem.step(curr_state,action,problem.dt)
+					value += (problem.gamma ** depth) * problem.normalized_reward(curr_state,action)
+					curr_state = next_state 
+					depth += 1
 		return value 
 
 
@@ -108,19 +120,16 @@ class PUCT_V1(Solver):
 
 	def search(self,problem,root_state,turn=0): 
 		
-		# check validity
-		if problem.is_terminal(root_state):
-			# print('root node is terminal')
-			return None
-
 		# init tree 
 		root_node = Node(root_state,None,problem.num_robots)
+		root_node.success = False
 
-		# init heuristics
-		if self.policy_oracle is not None: 
-			self.policy_solver = PolicySolver(problem,self.policy_oracle)
-		if self.value_oracle is not None: 
-			self.value_solver = ValueSolver(problem,self.value_oracle)
+		# check validity
+		if problem.is_terminal(root_state):
+			return root_node
+
+		if not all(x is None for x in self.policy_oracle):
+			self.policy_solver = PolicySolver(self.policy_oracle)
 
 		# search 
 		for t in range(self.number_simulations):
@@ -136,16 +145,24 @@ class PUCT_V1(Solver):
 					child_node = self.best_child(curr_node,robot) 
 				else:
 					child_node = self.expand_node(curr_node,problem)
+
+				if problem.is_terminal(child_node.state):
+					break 
+
 				path.append(curr_node)
-				rewards.append(problem.gamma**d * problem.normalized_reward(curr_node.state,curr_node.edges[child_node]))
+				rewards.append(problem.normalized_reward(curr_node.state,curr_node.edges[child_node]))
 				curr_node = child_node 
-			rewards.append(problem.gamma ** self.search_depth * self.default_policy(child_node,problem))
+
+			rewards.append(self.default_policy(child_node,problem))
 			path.append(curr_node)
 
 			# backpropagate 
 			for d,node in enumerate(path):
-				node.total_value += self.calc_value(rewards,d,self.search_depth+1,problem.gamma,problem.num_robots)
+				node.total_value += self.calc_value(rewards,d,len(path),problem.gamma,problem.num_robots)
 				node.num_visits += 1 
+
+		root_node.success = True
+		root_node.value = root_node.total_value / root_node.num_visits
 
 		if self.vis_on: 
 			tree_state = self.export_tree(root_node)
