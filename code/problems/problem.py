@@ -84,4 +84,8 @@ def get_problem(problem_name):
 		from problems.example7 import Example7
 		problem = Example7() 
 
+	elif problem_name == "example8":
+		from problems.example8 import Example8
+		problem = Example8() 
+
 	return problem 
