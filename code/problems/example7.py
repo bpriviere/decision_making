@@ -19,9 +19,9 @@ class Example7(Problem):
 
 		self.t0 = 0
 		self.tf = 10
-		self.dt = 0.25
+		self.dt = 0.1
 		self.gamma = 0.99
-		self.desired_distance = 0.5
+		self.desired_distance = 1.0
 		self.num_robots = 2 
 		self.state_dim_per_robot = 2 
 		self.action_dim_per_robot = 2
@@ -39,23 +39,29 @@ class Example7(Problem):
 		self.state_lims = np.array((
 			(-2,2), 
 			(-2,2), 
+			# (-5,5), 
 			(-2,2), 
 			(-2,2),
+			# (-5,5),
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
 
 		self.action_lims = 0.5*np.array((
 			(-1,1),
 			(-1,1),
-			(-1,1),
-			(-1,1),
+			# (-1,1),
+			# (-1,1),
+			(0,0),
+			(0,0),
 			))
 
 		self.init_lims = np.array((
 			(-2,2), 
 			(-2,2), 
+			# (-5,5), 
 			(-2,2), 
 			(-2,2),
+			# (-5,5),
 			))
 
 		self.Fc = np.array((
@@ -119,7 +125,7 @@ class Example7(Problem):
 			# ax.set_aspect(lims[0,1]-lims[0,0] / lims[1,1]-lims[1,0])
 
 			for robot in range(self.num_robots):
-				ax.scatter(np.nan,np.nan,color=colors[robot],label="Robot {}".format(robot))
+				ax.plot(np.nan,np.nan,color=colors[robot],label="Robot {}".format(robot))
 			ax.legend(loc='best')
 
 		lims = self.state_lims
@@ -257,3 +263,54 @@ class Example7(Problem):
 
 	def isApprox(self,s1,s2):
 		return np.linalg.norm(s1-s2) < self.approx_dist 
+
+
+	def pretty_plot(self,sim_result):
+
+		for robot in [0,1]:
+
+			fig,ax = plt.subplots()
+			inital_state = sim_result["states"][0]
+
+			robot_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+			not_robot_idxs = []
+			for i in range(self.state_dim):
+				if i not in robot_idxs:
+					not_robot_idxs.append(i)
+
+			num_eval = 3000
+			states = []
+			for _ in range(num_eval):
+				state = self.initialize()
+				state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
+				states.append(state)
+			states = np.array(states).squeeze(axis=2)
+
+			# plot value func contours
+			if sim_result["instance"]["solver"].value_oracle is not None:
+
+				value_oracle = sim_result["instance"]["solver"].value_oracle
+				values = []
+				for state in states: 
+					value = value_oracle.eval(self,state)
+					values.append(value)
+				values = np.array(values).squeeze(axis=2)
+
+				pcm = ax.tricontourf(states[:,robot_idxs[0]],states[:,robot_idxs[1]],values[:,robot])
+				fig.colorbar(pcm,ax=ax)	
+
+			# plot policy function 
+			if sim_result["instance"]["solver"].policy_oracle is not [None for _ in range(self.num_robots)]:
+
+				policy_oracle = sim_result["instance"]["solver"].policy_oracle
+				actions = []
+				for state in states: 
+					action = policy_oracle[robot].eval(self,state,robot)
+					actions.append(action)
+				actions = np.array(actions).squeeze(axis=2)
+
+				ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
+
+			
+			# plot final trajectory , obstacles and limits 
+			self.render(fig=fig,ax=ax,states=sim_result["states"])

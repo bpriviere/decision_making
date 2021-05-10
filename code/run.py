@@ -122,5 +122,9 @@ if __name__ == '__main__':
 	# plotting 
 	print('plotting results...')
 	plotter.plot_sim_result(sim_result)
+
+	if param.pretty_plot_on:
+		instance["problem"].pretty_plot(sim_result)
+
 	plotter.save_figs("../current/plots/run.pdf")
 	plotter.open_figs("../current/plots/run.pdf")

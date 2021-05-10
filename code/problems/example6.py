@@ -17,7 +17,7 @@ class Example6(Problem):
 		super(Example6,self).__init__()
 
 		self.t0 = 0
-		self.tf = 20
+		self.tf = 10
 		self.dt = 0.5
 		self.r_max = 10
 		self.num_robots = 1
@@ -91,14 +91,16 @@ class Example6(Problem):
 		if fig == None or ax == None: 
 			fig,ax = plotter.make_fig()	
 
+		state_lims = self.state_lims
+		ax.set_xlim([state_lims[0,0],state_lims[0,1]])
+		ax.set_ylim([state_lims[1,0],state_lims[1,1]])
+		ax.set_aspect((state_lims[1,1]-state_lims[1,0])/(state_lims[0,1]-state_lims[0,0]))
+
 		if states is not None:
 			states = np.array(states)
-			state_lims = self.state_lims
 			ax.plot(states[:,0],states[:,1])
 			ax.plot(states[0,0],states[0,1],'o')
 			ax.plot(states[-1,0],states[-1,1],'s')
-			ax.set_xlim([state_lims[0,0],state_lims[0,1]])
-			ax.set_ylim([state_lims[1,0],state_lims[1,1]])
 
 		# plot obstacles 
 		for obstacle in self.obstacles:
@@ -171,3 +173,46 @@ class Example6(Problem):
 		ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
 		ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
 		self.render(fig=fig,ax=ax[0,robot])
+
+
+	def pretty_plot(self,sim_result):
+
+		fig,ax = plt.subplots()
+
+		num_eval = 3000
+		states = []
+		for _ in range(num_eval):
+			states.append(self.initialize())
+		states = np.array(states).squeeze(axis=2)
+
+		# plot value func contours
+		if sim_result["instance"]["solver"].value_oracle is not None:
+
+			value_oracle = sim_result["instance"]["solver"].value_oracle
+			values = []
+			for state in states: 
+				value = value_oracle.eval(self,state)
+				values.append(value)
+			values = np.array(values).squeeze(axis=2)
+
+			pcm = ax.tricontourf(states[:,0],states[:,1],values[:,0])
+			fig.colorbar(pcm,ax=ax)	
+
+		# plot policy function 
+		if sim_result["instance"]["solver"].policy_oracle is not [None for _ in range(self.num_robots)]:
+
+			policy_oracle = sim_result["instance"]["solver"].policy_oracle
+			actions = []
+			robot = 0 
+			for state in states: 
+				action = policy_oracle[robot].eval(self,state,robot)
+				actions.append(action)
+			actions = np.array(actions).squeeze(axis=2)
+
+			ax.quiver(states[:,0],states[:,1],actions[:,0],actions[:,1])
+
+		
+		# plot final trajectory , obstacles and limits 
+		self.render(fig=fig,ax=ax,states=sim_result["states"])
+
+		
