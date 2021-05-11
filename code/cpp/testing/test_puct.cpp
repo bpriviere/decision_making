@@ -10,23 +10,9 @@
 
 int main()
 {
-    
-    // solver settings 
-    Solver_Settings solver_settings; 
-    solver_settings.num_simulations = 5;
-    solver_settings.search_depth = 10;
-    solver_settings.C_exp = 1.0f;
-    solver_settings.alpha_exp = 0.25f;
-    solver_settings.C_pw = 2.0f;
-    solver_settings.alpha_pw = 0.5f;
-    solver_settings.beta_policy = 0.0f;
-    solver_settings.beta_value = 0.0f; 
-    
-    // solver wrapper 
-    Solver_Wrapper solver_wrapper("C_PUCT_V2",solver_settings);
-    
+
     // problem stuff 
-    std::string problem_name = "example1";
+    std::string problem_name = "example2";
 
     // 
     Problem_Settings problem_settings;
@@ -103,6 +89,33 @@ int main()
     problem_settings.init_lims = problem_settings.state_lims; 
 
     Problem_Wrapper problem_wrapper(problem_name,problem_settings);
+    
+    // solver settings 
+    Solver_Settings solver_settings; 
+    solver_settings.num_simulations = 5;
+    solver_settings.search_depth = 10;
+    solver_settings.C_exp = 1.0f;
+    solver_settings.alpha_exp = 0.25f;
+    solver_settings.C_pw = 2.0f;
+    solver_settings.alpha_pw = 0.5f;
+    solver_settings.beta_policy = 0.5f;
+    solver_settings.beta_value = 0.0f; 
+    
+    // oracles 
+    std::vector<Policy_Network_Wrapper> policy_network_wrappers(problem_wrapper.problem->m_num_robots);
+    int state_dim = problem_wrapper.problem->m_state_dim;
+    int action_dim = problem_wrapper.problem->m_action_dim;
+    Eigen::Matrix<float,-1,-1> weight(state_dim,action_dim);
+    // weight.setIdentity();
+    weight.setZero();
+    Eigen::Matrix<float,-1, 1> bias(action_dim); 
+    bias.setZero();
+
+    policy_network_wrappers[0].addLayer(weight,bias);
+
+    // solver wrapper 
+    Solver_Wrapper solver_wrapper("C_PUCT_V1",solver_settings,policy_network_wrappers);
+    
 
     auto root_state = problem_wrapper.problem->initialize(solver_wrapper.solver->g_gen); 
     Solver_Result solver_result = solver_wrapper.solver->search(problem_wrapper.problem,root_state,0);

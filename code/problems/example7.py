@@ -18,7 +18,7 @@ class Example7(Problem):
 		super(Example7,self).__init__()
 
 		self.t0 = 0
-		self.tf = 10
+		self.tf = 1
 		self.dt = 0.1
 		self.gamma = 0.99
 		self.desired_distance = 1.0

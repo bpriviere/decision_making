@@ -99,7 +99,7 @@ class PUCT_V1(Solver):
 			value = self.value_oracle.eval(problem,node.state) 
 		else: 
 			value = np.zeros((problem.num_robots,1))
-			if False:
+			if True:
 				depth = 0 
 				curr_state = node.state 
 				while not problem.is_terminal(curr_state) and depth < self.search_depth:

@@ -4,8 +4,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
+#include <pybind11/stl.h>
 #include "problems/problem_wrapper.hpp"
 #include "solvers/solver_wrapper.hpp"
+#include "learning/policy_network_wrapper.hpp"
+// #include "learning/value_network_wrapper.hpp"
 
 
 Solver_Result cpp_search(Problem_Wrapper problem_wrapper, Solver_Wrapper solver_wrapper, Eigen::Matrix<float,-1,1> state, int turn) {
@@ -38,7 +41,7 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("gamma", &Problem_Settings::gamma);
 
     pybind11::class_<Solver_Wrapper> (m, "Solver_Wrapper")
-        .def(pybind11::init<std::string,Solver_Settings>());
+        .def(pybind11::init<std::string,Solver_Settings,std::vector<Policy_Network_Wrapper>>());
 
     pybind11::class_<Solver_Settings> (m, "Solver_Settings")
         .def(pybind11::init())
@@ -58,5 +61,10 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("tree", &Solver_Result::tree)
         .def_readwrite("value", &Solver_Result::value)
         .def_readwrite("success", &Solver_Result::success);
+
+    pybind11::class_<Policy_Network_Wrapper> (m, "Policy_Network_Wrapper")
+        .def(pybind11::init())
+        .def("initialize", &Policy_Network_Wrapper::initialize)
+        .def("addLayer", &Policy_Network_Wrapper::addLayer);
 
 }

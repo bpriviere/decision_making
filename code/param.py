@@ -6,14 +6,14 @@ class Param:
 	def __init__(self):
 
 		# names 
-		self.problem_name = "example8" # e.g. example1, example2, example3, ...
-		self.solver_name = "PUCT_V1" # e.g. Empty, DARE, PUCT_V0, C_PUCT_V0, PUCT_V1, ...
+		self.problem_name = "example2" # e.g. example1, example2, example3, ...
+		self.solver_name = "C_PUCT_V1" # e.g. Empty, DARE, PUCT_V0, C_PUCT_V0, PUCT_V1, ...
 		self.value_oracle_name = "deterministic" # ["deterministic","gaussian"]
 		self.policy_oracle_name = "gaussian" # ["deterministic","gaussian"]
 
 		# oracles 
-		self.policy_oracle_paths = [None]  
-		# self.policy_oracle_paths = ["/home/ben/projects/decision_making/current/models/model_policy_l4_i{}.pt".format(i) for i in range(2)]
+		# self.policy_oracle_paths = [None]  
+		self.policy_oracle_paths = ["/home/ben/projects/decision_making/current/models/model_policy_l0_i{}.pt".format(i) for i in range(1)]
 		# self.policy_oracle_paths = ["/home/ben/projects/decision_making/current/models/model_policy_l19_i0.pt"] 
 		# self.policy_oracle_paths = ["/home/ben/projects/decision_making/saved/example6/models/model_policy_l19_i{}.pt".format(i) for i in range(1)] 
 		# self.policy_oracle_paths = ["/home/ben/projects/decision_making/saved/example7/models/model_policy_l8_i{}.pt".format(i) for i in range(2)] 
@@ -38,7 +38,7 @@ class Param:
 		self.alpha_exp = 0.25
 		self.beta_policy = 0.8
 		self.beta_value = 1.0
-		self.vis_on = False
+		self.vis_on = True
 
 	def to_dict(self):
 		return self.__dict__

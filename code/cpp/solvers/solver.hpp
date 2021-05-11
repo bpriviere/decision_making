@@ -5,9 +5,9 @@
 #include <random>
 #include <eigen3/Eigen/Dense>
 #include "../problems/problem.hpp"
+#include "../learning/policy_network_wrapper.hpp"
 
-
-// Solver settings holds all possible problem parameters 
+// Solver settings holds all possible solver parameters 
 class Solver_Settings
 {
     public: 
@@ -33,11 +33,12 @@ class Solver_Result
         bool success; 
 };
 
-// internal functions of problem need to be overloaded
+// internal functions of solver need to be overloaded
 class Solver
 {
     public:
 		std::default_random_engine g_gen;
+        std::vector<Policy_Network_Wrapper> m_policy_network_wrappers;
         virtual ~Solver() { }
 
         virtual Solver_Result search(Problem * problem, Eigen::Matrix<float,-1,1> root_state, int turn) 
@@ -46,7 +47,7 @@ class Solver
             return solver_result;
         }
 
-        virtual void set_params(Solver_Settings & solver_settings)
+        virtual void set_params(Solver_Settings & solver_settings, std::vector<Policy_Network_Wrapper> & policy_network_wrappers)
         {
             0; 
         }

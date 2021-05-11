@@ -9,7 +9,7 @@
 class PUCT_V2 : public Solver {
 
 	public: 
-		void set_params(Solver_Settings & solver_settings) override {
+		void set_params(Solver_Settings & solver_settings, std::vector<Policy_Network_Wrapper> & policy_network_wrappers) override {
 			std::random_device dev;
 			std::default_random_engine gen(dev());  
 			g_gen = gen;

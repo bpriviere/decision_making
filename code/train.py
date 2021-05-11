@@ -26,21 +26,21 @@ L = 20
 num_simulations = 100
 parallel_on = True
 solver_name = "PUCT_V1"
-problem_name = "example8"
+problem_name = "example2"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 beta_policy = 0.8
 beta_value = 1.0
 
-num_D_pi = 2000
-# num_D_pi = 20
+# num_D_pi = 2000
+num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 2000
 num_v_eval = 2000
 
 learning_rate = 0.001
-num_epochs = 1000
-# num_epochs = 10
+# num_epochs = 1000
+num_epochs = 100
 batch_size = 128
 train_test_split = 0.8
 

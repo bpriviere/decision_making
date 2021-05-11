@@ -3,6 +3,7 @@
 
 # standard 
 import numpy as np 
+import matplotlib.pyplot as plt 
 
 # custom 
 from problems.problem import Problem
@@ -112,3 +113,51 @@ class Example2(Problem):
 	def value_encoding(self,state):
 		return state 
 
+	def plot_value_dataset(self,dataset,title):
+		
+		encodings = dataset[0]
+		target = dataset[1] 
+		
+		# contour
+		if encodings.shape[0] > 100:
+			fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
+			state_idx_per_robot = int(self.state_dim / self.num_robots)
+			for robot in range(self.num_robots):
+				pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+				pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
+				fig.colorbar(pcm,ax=ax[0,robot])
+				ax[0,robot].set_title("{} Value for Robot {}".format(title,robot))
+				ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
+				ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
+				self.render(fig=fig,ax=ax[0,robot])
+
+		# scatter
+		fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
+		state_idx_per_robot = int(self.state_dim / self.num_robots)
+		for robot in range(self.num_robots):
+			pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+			pcm = ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=target[:,robot])
+			fig.colorbar(pcm,ax=ax[0,robot])
+			ax[0,robot].set_title("{} Value for Robot {}".format(title,robot))
+			ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
+			ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
+			self.render(fig=fig,ax=ax[0,robot])
+
+
+	def plot_policy_dataset(self,dataset,title,robot):
+
+		encodings = dataset[0]
+		target = dataset[1] 		
+
+		# quiver plot 
+		fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
+		state_idx_per_robot = int(self.state_dim / self.num_robots)
+		pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+		C = np.linalg.norm(target[:,0:1],axis=1)
+		ax[0,robot].quiver(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],\
+			target[:,0],target[:,1])
+		ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=C,s=2)
+		ax[0,robot].set_title("{} Policy for Robot {}".format(title,robot))
+		ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
+		ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
+		self.render(fig=fig,ax=ax[0,robot])

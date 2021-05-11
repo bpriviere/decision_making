@@ -14,6 +14,7 @@ class DeterministicPolicyNetwork(torch.nn.Module):
 		if output_dim is None:
 			output_dim = int(problem.action_dim / problem.num_robots)
 		self.output_dim = output_dim
+		self.path = path
 
 		self.state_dim = problem.state_dim 
 		self.action_dim = problem.action_dim 

@@ -18,6 +18,8 @@ class GaussianPolicyNetwork(torch.nn.Module):
 		self.state_dim = problem.state_dim 
 		self.action_dim = problem.action_dim 
 		self.device = torch.device(device)
+		self.path = path
+		self.name = "gaussian"
 
 		psi_network_architecture = [
 			["Linear", self.encoding_dim, h], 

@@ -1,11 +1,13 @@
 
 #pragma once 
 #include "solver.hpp"
+// #include "../learning/policy_network_wrapper.hpp"
 
 class PUCT_V1 : public Solver {
 
 	public: 
-		void set_params(Solver_Settings & solver_settings) override {
+
+		void set_params(Solver_Settings & solver_settings, std::vector<Policy_Network_Wrapper> & policy_network_wrappers) override {
 			std::random_device dev;
 			std::default_random_engine gen(dev());  
 			g_gen = gen;
@@ -17,6 +19,7 @@ class PUCT_V1 : public Solver {
 			m_alpha_pw = solver_settings.alpha_pw;
 			m_beta_policy = solver_settings.beta_policy;
 			m_beta_value = solver_settings.beta_value;
+			m_policy_network_wrappers = policy_network_wrappers;
 		}
 
 		struct Node { 
@@ -155,7 +158,19 @@ class PUCT_V1 : public Solver {
 
 		Node* expand_node(Problem * problem,Node* parent_node_ptr){
 			m_nodes.resize(m_nodes.size() + 1);
+
 			auto action = problem->sample_action(g_gen);
+			if (problem->dist(g_gen) < m_beta_policy){
+				int action_dim_per_robot = int(problem->m_action_dim / problem->m_num_robots);
+				for (int i = 0; i < problem->m_num_robots; i++) {
+					if (m_policy_network_wrappers[i].valid){
+						auto encoding = problem->policy_encoding(parent_node_ptr->state,i); 
+						action.block(action_dim_per_robot*i,0,action_dim_per_robot,1) = 
+							m_policy_network_wrappers[i].policy_network->eval(problem, encoding, g_gen);
+					}
+				} 
+			} 
+
 			auto next_state = problem->step(parent_node_ptr->state,action,problem->m_timestep);
 			auto& child_node = m_nodes[m_nodes.size()-1];
 			child_node.parent = parent_node_ptr;

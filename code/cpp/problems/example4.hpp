@@ -96,6 +96,7 @@ class Example4 : public Problem {
             for (int ii = 0; ii < m_num_robots; ii++){
                 state_shift = ii * m_state_dim_per_robot;
                 action_shift = ii * m_action_dim_per_robot;
+                // block(i,j,p,q): Block of size (p,q), starting at (i,j) 
                 next_state.block(state_shift,0,m_state_dim_per_robot,1) = 
                     Fd * state.block(state_shift,0,m_state_dim_per_robot,1) + 
                     Bd * action.block(action_shift,0,m_action_dim_per_robot,1);
