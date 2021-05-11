@@ -13,6 +13,7 @@ class DeterministicValueNetwork(torch.nn.Module):
 		self.encoding_dim = problem.value_encoding_dim
 		self.output_dim = problem.num_robots
 		self.path = path
+		self.name = "deterministic"
 
 		self.state_dim = problem.state_dim 
 		self.action_dim = problem.action_dim 

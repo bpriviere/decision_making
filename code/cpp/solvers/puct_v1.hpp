@@ -7,7 +7,9 @@ class PUCT_V1 : public Solver {
 
 	public: 
 
-		void set_params(Solver_Settings & solver_settings, std::vector<Policy_Network_Wrapper> & policy_network_wrappers) override {
+		void set_params(Solver_Settings & solver_settings, 
+				std::vector<Policy_Network_Wrapper> & policy_network_wrappers,
+				Value_Network_Wrapper & value_network_wrapper) override {
 			std::random_device dev;
 			std::default_random_engine gen(dev());  
 			g_gen = gen;
@@ -20,6 +22,7 @@ class PUCT_V1 : public Solver {
 			m_beta_policy = solver_settings.beta_policy;
 			m_beta_value = solver_settings.beta_value;
 			m_policy_network_wrappers = policy_network_wrappers;
+			m_value_network_wrapper = value_network_wrapper;
 		}
 
 		struct Node { 

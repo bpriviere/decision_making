@@ -25,7 +25,7 @@ from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 L = 20
 num_simulations = 100
 parallel_on = True
-solver_name = "PUCT_V1"
+solver_name = "C_PUCT_V1"
 problem_name = "example2"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
@@ -200,7 +200,7 @@ def worker_edv(rank,queue,fn,seed,problem,num_states_per_pool,policy_oracle):
 	}
 	np.random.seed(seed)
 	
-	pbar = init_tqdm(rank,num_D_pi)
+	pbar = init_tqdm(rank,num_D_v)
 	datapoints = []
 	while len(datapoints) < num_states_per_pool:	
 		state = problem.initialize()

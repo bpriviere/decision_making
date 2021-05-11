@@ -7,7 +7,8 @@ import torch
 # custom
 import plotter 
 from solvers.solver import Solver 
-from cpp.build.bindings import cpp_search, Solver_Result, Solver_Settings, Solver_Wrapper, Problem_Settings, Problem_Wrapper, Policy_Network_Wrapper
+from cpp.build.bindings import cpp_search, Solver_Result, Solver_Settings, Solver_Wrapper, Problem_Settings, Problem_Wrapper
+from cpp.build.bindings import Policy_Network_Wrapper, Value_Network_Wrapper
 
 
 class C_PUCT(Solver):
@@ -29,10 +30,7 @@ class C_PUCT(Solver):
 		super(C_PUCT, self).__init__()
 		
 		self.policy_oracle = self.create_cpp_policy_oracle(policy_oracle)
-
-
-		# if value_oracle is not None:
-		# 	self.value_oracle = self.create_cpp_value_oracle(value_oracle)
+		self.value_oracle = self.create_cpp_value_oracle(value_oracle)
 
 		self.vis_on = vis_on 
 
@@ -46,7 +44,7 @@ class C_PUCT(Solver):
 		self.solver_settings.beta_policy = beta_policy
 		self.solver_settings.beta_value = beta_value
 		self.solver_name = solver_name
-		self.solver_wrapper = Solver_Wrapper(solver_name,self.solver_settings,self.policy_oracle)
+		self.solver_wrapper = Solver_Wrapper(solver_name,self.solver_settings,self.policy_oracle,self.value_oracle)
 
 
 	def policy(self,problem,root_state):
@@ -120,6 +118,15 @@ class C_PUCT(Solver):
 				self.loadFeedForwardNetworkWeights(cpp_policy_wrapper,parameter_dict,"psi")
 			policy_wrappers.append(cpp_policy_wrapper)
 		return policy_wrappers
+
+	def create_cpp_value_oracle(self,value_oracle):
+		cpp_value_wrapper = Value_Network_Wrapper()
+		if value_oracle is not None:
+			cpp_value_wrapper.initialize(value_oracle.name)
+			parameter_dict = torch.load(value_oracle.path)
+			# assume only one feedforward neural network, named psi with weights
+			self.loadFeedForwardNetworkWeights(cpp_value_wrapper,parameter_dict,"psi")
+		return cpp_value_wrapper
 
 
 	def loadFeedForwardNetworkWeights(self, policy_wrapper, state_dict, name):
