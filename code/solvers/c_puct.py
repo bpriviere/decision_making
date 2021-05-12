@@ -70,21 +70,22 @@ class C_PUCT(Solver):
 		problem_settings.state_lims = problem.state_lims
 		problem_settings.action_lims = problem.action_lims 
 		problem_settings.init_lims = problem.init_lims 
+		problem_settings.state_control_weight = problem.state_control_weight
 
-		if problem.name == "example1":
-			problem_settings.state_control_weight = problem.state_control_weight
-		elif problem.name == "example2":
+		if problem.name == "example2":
 			problem_settings.mass = problem.mass
-			problem_settings.state_control_weight = problem.state_control_weight 
 		elif problem.name == "example3":
 			problem_settings.g = problem.g 		
 			problem_settings.desired_distance = problem.desired_distance
-			problem_settings.state_control_weight = problem.state_control_weight
 		elif problem.name == "example4":
 			problem_settings.mass = problem.mass
 			problem_settings.desired_distance = problem.desired_distance
-			problem_settings.state_control_weight = problem.state_control_weight
-		else: 
+		elif problem.name == "example6":
+			problem_settings.obstacles = problem.obstacles
+		elif problem.name == "example8":
+			problem_settings.desired_distance = problem.desired_distance
+		
+		if problem.name not in ["example{}".format(i) for i in [1,2,3,4,6,8]]:
 			print("problem not supported")
 			exit()
 

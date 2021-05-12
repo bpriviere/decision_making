@@ -77,11 +77,17 @@ class Example1 : public Problem {
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
         {
-            Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+            Eigen::Matrix<float,-1,1> r = Eigen::Matrix<float,-1,1>::Zero(m_num_robots,1);
             r = reward(state,action);
             r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
             r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
             return r;
+        }
+
+
+        bool is_valid(Eigen::Matrix<float,-1,1> state) override
+        {
+            return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
         }
         
 };

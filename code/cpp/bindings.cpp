@@ -38,6 +38,7 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("g", &Problem_Settings::g)
         .def_readwrite("mass", &Problem_Settings::mass)
         .def_readwrite("state_control_weight", &Problem_Settings::state_control_weight)
+        .def_readwrite("obstacles", &Problem_Settings::obstacles)
         .def_readwrite("gamma", &Problem_Settings::gamma);
 
     pybind11::class_<Solver_Wrapper> (m, "Solver_Wrapper")

@@ -75,6 +75,7 @@ class PUCT_V1 : public Solver {
 				std::vector< Eigen::Matrix<float,-1,1> > rewards(m_search_depth+1);
 				std::vector<Node*> path(m_search_depth+1);
 
+				int max_depth = m_search_depth;
 				for (int d = 0; d < m_search_depth; d++){
 					int robot_turn = (d + turn) % problem->m_num_robots;
 					Node* child_node_ptr;
@@ -86,13 +87,18 @@ class PUCT_V1 : public Solver {
 					path[d] = curr_node_ptr;
 					rewards[d] = powf(problem->m_gamma,d)*problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
 					curr_node_ptr = child_node_ptr; 
-				}
-				rewards[m_search_depth] = powf(problem->m_gamma,m_search_depth) * default_policy(problem,curr_node_ptr);
-				path[m_search_depth] = curr_node_ptr; 
 
-				for (int d = 0; d <= m_search_depth; d++){
+					if (problem->is_terminal(child_node_ptr->state)){
+						max_depth = d+1;
+						break;
+					}
+				}
+				rewards[max_depth] = powf(problem->m_gamma,max_depth) * default_policy(problem,curr_node_ptr);
+				path[max_depth] = curr_node_ptr; 
+
+				for (int d = 0; d <= max_depth; d++){
 					path[d]->num_visits += 1;
-					path[d]->total_value += calc_value(rewards,d,m_search_depth+1,problem->m_gamma,problem->m_num_robots);
+					path[d]->total_value += calc_value(rewards,d,max_depth+1,problem->m_gamma,problem->m_num_robots);
 				}
 			};
 
@@ -101,6 +107,7 @@ class PUCT_V1 : public Solver {
 			solver_result.child_distribution = export_child_distribution(problem);
 			solver_result.tree = export_tree(problem);
 			solver_result.value = root_node_ptr->total_value / root_node_ptr->num_visits;
+			solver_result.num_visits = root_node_ptr->num_visits;
 			return solver_result;
 		}
 

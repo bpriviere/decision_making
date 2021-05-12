@@ -12,7 +12,8 @@ int main()
 {
 
     // problem stuff 
-    std::string problem_name = "example2";
+    std::string problem_name = "example6";
+    std::string solver_name = "C_PUCT_V1";
 
     // 
     Problem_Settings problem_settings;
@@ -85,6 +86,69 @@ int main()
             problem_settings.action_lims(action_shift+2,0) = -acc_lim;
             problem_settings.action_lims(action_shift+2,1) = acc_lim;
         }
+    } else if (problem_name == "example6"){
+        problem_settings.state_lims.resize(2,2);
+        problem_settings.state_lims << 
+            -2.0,2.0,
+            -2.0,2.0;
+        problem_settings.action_lims.resize(2,2);
+        problem_settings.action_lims << 
+            -0.5,0.5,
+            -0.5,0.5;
+        problem_settings.init_lims.resize(2,2);
+        problem_settings.init_lims << 
+            -2.0,2.0,
+            -2.0,2.0;
+        // problem_settings.timestep = 0.1f;
+        problem_settings.timestep = 1.0f;
+        problem_settings.gamma = 0.99f;
+        problem_settings.r_max = 10;
+        problem_settings.state_control_weight = 1.0f;
+        
+        Eigen::Matrix<float,2,2> obstacle1;
+        Eigen::Matrix<float,2,2> obstacle2;
+        Eigen::Matrix<float,2,2> obstacle3;
+        obstacle1 <<
+             1.0, 2.0,
+            -2.0,-2.0;
+        obstacle2 << 
+            -2.0, 2.0,
+             1.0, 2.0;
+        obstacle3 << 
+            -2.0, 2.0,
+            -2.0,-1.0;
+
+        problem_settings.obstacles.resize(3);
+        problem_settings.obstacles[0] = obstacle1;
+        problem_settings.obstacles[1] = obstacle2;
+        problem_settings.obstacles[2] = obstacle3;
+
+    } else if (problem_name == "example8"){
+        problem_settings.state_lims.resize(4,2);
+        problem_settings.state_lims << 
+            -2.0,2.0,
+            -2.0,2.0,
+            -2.0,2.0,
+            -2.0,2.0;
+        problem_settings.action_lims.resize(4,2);
+        problem_settings.action_lims << 
+            -0.5,0.5,
+            -0.5,0.5,
+            -0.5,0.5,
+            -0.5,0.5;
+        problem_settings.init_lims.resize(4,2);
+        problem_settings.init_lims << 
+            -2.0,2.0,
+            -2.0,2.0,
+            -2.0,2.0,
+            -2.0,2.0;
+
+        problem_settings.timestep = 0.1f;
+        problem_settings.gamma = 0.99f;
+        problem_settings.r_max = 1.0f;
+        problem_settings.state_control_weight = 1.0f;
+        problem_settings.desired_distance = 0.2f;
+
     }
     problem_settings.init_lims = problem_settings.state_lims; 
 
@@ -92,7 +156,7 @@ int main()
     
     // solver settings 
     Solver_Settings solver_settings; 
-    solver_settings.num_simulations = 5;
+    solver_settings.num_simulations = 500;
     solver_settings.search_depth = 10;
     solver_settings.C_exp = 1.0f;
     solver_settings.alpha_exp = 0.25f;
@@ -102,27 +166,40 @@ int main()
     solver_settings.beta_value = 0.0f; 
     
     // oracles 
+    bool oracles_on = false;
+    // policy oracles 
     std::vector<Policy_Network_Wrapper> policy_network_wrappers(problem_wrapper.problem->m_num_robots);
-    int state_dim = problem_wrapper.problem->m_state_dim;
-    int action_dim = problem_wrapper.problem->m_action_dim;
-    Eigen::Matrix<float,-1,-1> weight(state_dim,action_dim);
-    // weight.setIdentity();
-    weight.setZero();
-    Eigen::Matrix<float,-1, 1> bias(action_dim); 
-    bias.setZero();
+    if (oracles_on){
+        Eigen::Matrix<float,-1,-1> policy_weight(problem_wrapper.problem->m_state_dim,problem_wrapper.problem->m_action_dim);
+        Eigen::Matrix<float,-1, 1> policy_bias(problem_wrapper.problem->m_action_dim); 
+        policy_weight.setZero();
+        policy_bias.setZero();
+        policy_network_wrappers[0].initialize("gaussian");
+        policy_network_wrappers[0].addLayer(policy_weight,policy_bias);
+    }
 
-    policy_network_wrappers[0].addLayer(weight,bias);
+    // value oracles
+    Value_Network_Wrapper value_network_wrapper;
+    if (oracles_on){
+        Eigen::Matrix<float,-1,-1> value_weight(problem_wrapper.problem->m_state_dim,problem_wrapper.problem->m_num_robots);
+        Eigen::Matrix<float,-1, 1> value_bias(problem_wrapper.problem->m_num_robots); 
+        value_weight.setZero();
+        value_bias.setZero();
+        value_network_wrapper.initialize("deterministic");
+        value_network_wrapper.addLayer(value_weight,value_bias);
+    }
 
     // solver wrapper 
-    Solver_Wrapper solver_wrapper("C_PUCT_V1",solver_settings,policy_network_wrappers);
+    Solver_Wrapper solver_wrapper(solver_name,solver_settings,policy_network_wrappers,value_network_wrapper);
     
 
     auto root_state = problem_wrapper.problem->initialize(solver_wrapper.solver->g_gen); 
     Solver_Result solver_result = solver_wrapper.solver->search(problem_wrapper.problem,root_state,0);
 
     std::cout << "solver_result.success: " << solver_result.success << std::endl;
-    std::cout << "solver_result.best_action: " << solver_result.best_action << std::endl;
-    std::cout << "solver_result.child_distribution: " << solver_result.child_distribution << std::endl;
+    std::cout << "solver_result.num_visits: " << solver_result.num_visits << std::endl;
+    // std::cout << "solver_result.best_action: " << solver_result.best_action << std::endl;
+    // std::cout << "solver_result.child_distribution: " << solver_result.child_distribution << std::endl;
 
     return 0;
 }

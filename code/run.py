@@ -35,6 +35,8 @@ def make_instance(param):
 		beta_value=param.beta_value,
 		vis_on=param.vis_on)
 
+	instance["policy_oracle"] = policy_oracle
+	instance["value_oracle"] = value_oracle
 	instance["problem"] = problem 
 	instance["solver"] = solver 
 	instance["initial_state"] = problem.initialize() 

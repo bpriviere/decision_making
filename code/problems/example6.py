@@ -17,8 +17,8 @@ class Example6(Problem):
 		super(Example6,self).__init__()
 
 		self.t0 = 0
-		self.tf = 1
-		self.dt = 0.2
+		self.tf = 20
+		self.dt = 0.5
 		self.r_max = 10
 		self.num_robots = 1
 		self.gamma = 0.99
@@ -186,9 +186,8 @@ class Example6(Problem):
 		states = np.array(states).squeeze(axis=2)
 
 		# plot value func contours
-		if sim_result["instance"]["solver"].value_oracle is not None:
-
-			value_oracle = sim_result["instance"]["solver"].value_oracle
+		if sim_result["instance"]["value_oracle"] is not None:
+			value_oracle = sim_result["instance"]["value_oracle"]
 			values = []
 			for state in states: 
 				value = value_oracle.eval(self,state)
@@ -199,9 +198,8 @@ class Example6(Problem):
 			fig.colorbar(pcm,ax=ax)	
 
 		# plot policy function 
-		if sim_result["instance"]["solver"].policy_oracle is not [None for _ in range(self.num_robots)]:
-
-			policy_oracle = sim_result["instance"]["solver"].policy_oracle
+		if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
+			policy_oracle = sim_result["instance"]["policy_oracle"]
 			actions = []
 			robot = 0 
 			for state in states: 

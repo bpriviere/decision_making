@@ -19,6 +19,7 @@ class Problem_Settings
         Eigen::Matrix<float,-1,2> state_lims;
         Eigen::Matrix<float,-1,2> action_lims;
         Eigen::Matrix<float,-1,2> init_lims;
+        std::vector<Eigen::Matrix<float,2,2>> obstacles;
 };
 
 
@@ -118,9 +119,14 @@ public:
     }
 
 
-    bool is_valid(Eigen::Matrix<float,-1,1> state)  
+    // bool is_valid(Eigen::Matrix<float,-1,1> state)  
+    // {
+    //     return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
+    // }
+
+    virtual bool is_valid(Eigen::Matrix<float,-1,1> state)  
     {
-        return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
+        return true;
     }
 
     Eigen::Matrix<float,-1,1> policy_encoding(Eigen::Matrix<float,-1,1> state, int robot){

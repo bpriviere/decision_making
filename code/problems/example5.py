@@ -9,7 +9,7 @@ from problems.problem import Problem
 from util import sample_vector, contains
 import plotter 
 
-# 2d double integrator , multi robot uncooperative target  
+# car on a hill problem
 class Example5(Problem):
 
 	def __init__(self): 

@@ -22,25 +22,32 @@ from learning.oracles import get_oracles
 from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
-L = 20
-num_simulations = 100
+# solver 
+num_simulations = 500
+search_depth = 20
+C_pw = 2.0
+alpha_pw = 0.5
+C_exp = 1.0
+alpha_exp = 0.25
+beta_policy = 0.5
+beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
-problem_name = "example2"
+problem_name = "example6"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
-beta_policy = 0.8
-beta_value = 1.0
 
-# num_D_pi = 2000
-num_D_pi = 200
+# learning 
+L = 20
+num_D_pi = 2000
+# num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 2000
 num_v_eval = 2000
 
 learning_rate = 0.001
-# num_epochs = 1000
-num_epochs = 100
+num_epochs = 1000
+# num_epochs = 100
 batch_size = 128
 train_test_split = 0.8
 
@@ -93,9 +100,9 @@ def update_tqdm(rank,total_per_worker,queue,pbar):
 def worker_edp_wrapper(arg):
 	return worker_edp(*arg)
 
-def worker_edp(rank,queue,fn,problem,robot,num_per_pool,policy_oracle,value_oracle):
+def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value_oracle):
 
-	# np.random.seed(seed)
+	np.random.seed(seed)
 	pbar = init_tqdm(rank,num_D_pi)
 	datapoints = []
 
@@ -112,6 +119,7 @@ def worker_edp(rank,queue,fn,problem,robot,num_per_pool,policy_oracle,value_orac
 	while len(datapoints) < num_per_pool:
 		state = problem.initialize()
 		root_node = solver.search(problem,state,turn=robot)
+		# print('rank: {}, completion: {}, success: {}'.format(rank,len(datapoints)/num_per_pool,root_node.success))
 		if root_node.success:
 			encoding = problem.policy_encoding(state,robot).squeeze()
 			if True:
@@ -138,14 +146,16 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 		num_per_pool = int(num_D_pi / ncpu)
 
 		paths = []
+		seeds = [] 
 		for i in range(ncpu):
 			_, path = tempfile.mkstemp()
 			path = path + ".npy"
 			paths.append(path)
+			seeds.append(np.random.randint(10000))
 
 		with mp.Pool(ncpu) as pool:
 			queue = mp.Manager().Queue()
-			args = list(zip(itertools.count(), itertools.repeat(queue), paths, itertools.repeat(problem), \
+			args = list(zip(itertools.count(), itertools.repeat(queue), seeds, paths, itertools.repeat(problem), \
 				itertools.repeat(robot), itertools.repeat(num_per_pool), itertools.repeat(policy_oracle), itertools.repeat(value_oracle)))
 			for _ in pool.imap_unordered(worker_edp_wrapper, args):
 				pass
@@ -153,8 +163,9 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 	else: 
 		_,path = tempfile.mkstemp()
 		path = path + ".npy"
+		seed = np.random.randint(10000)
 		paths.append(path)
-		worker_edp_wrapper((0,Queue(),path,problem,robot,num_D_pi,policy_oracle,value_oracle))
+		worker_edp_wrapper((0,Queue(),seed,path,problem,robot,num_D_pi,policy_oracle,value_oracle))
 
 	datapoints = []
 	for path in paths: 

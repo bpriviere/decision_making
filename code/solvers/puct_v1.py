@@ -55,15 +55,6 @@ class PUCT_V1(Solver):
 
 	def expand_node(self,parent_node,problem):
 
-		# valid = False
-		# while not valid: 
-		# 	if not all(x is None for x in self.policy_oracle) and np.random.uniform() < self.beta_policy:
-		# 		action = self.policy_solver.policy(problem,parent_node.state)
-		# 	else: 
-		# 		action = problem.sample_action()
-		# 	next_state = problem.step(parent_node.state,action,problem.dt)
-		# 	valid = problem.is_valid(next_state)
-
 		if not all(x is None for x in self.policy_oracle) and np.random.uniform() < self.beta_policy:
 			action = self.policy_solver.policy(problem,parent_node.state)
 		else: 
@@ -146,12 +137,12 @@ class PUCT_V1(Solver):
 				else:
 					child_node = self.expand_node(curr_node,problem)
 
-				if problem.is_terminal(child_node.state):
-					break 
-
 				path.append(curr_node)
 				rewards.append(problem.normalized_reward(curr_node.state,curr_node.edges[child_node]))
 				curr_node = child_node 
+
+				if problem.is_terminal(child_node.state):
+					break 
 
 			rewards.append(self.default_policy(child_node,problem))
 			path.append(curr_node)

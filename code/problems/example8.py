@@ -24,10 +24,11 @@ class Example8(Problem):
 		self.num_robots = 2 
 		self.state_dim_per_robot = 2 
 		self.action_dim_per_robot = 2
-		self.r_max = 100
+		self.r_max = 1
 		self.name = "example8"
 		self.position_idx = np.arange(2) 
 		self.state_control_weight = 1e-5 
+		self.desired_distance = 0.1
 
 		self.state_dim = self.num_robots * self.state_dim_per_robot
 		self.action_dim = self.num_robots * self.action_dim_per_robot
@@ -78,9 +79,14 @@ class Example8(Problem):
 		s_1 = s[0:self.state_dim_per_robot]
 		s_2 = s[self.state_dim_per_robot:]
 		a_1 = a[0:self.action_dim_per_robot]
-		r = -1 * (
-			np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2)) + \
-			a_1.T @ self.Ru @ a_1).squeeze()
+		
+		# r = -1 * (
+		# 	np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2)) + \
+		# 	a_1.T @ self.Ru @ a_1).squeeze()
+		
+		r = 0
+		if np.linalg.norm(s_1-s_2) < self.desired_distance:
+			r = 1
 		reward = np.array([[r],[-r]])
 		return reward
 
@@ -288,9 +294,8 @@ class Example8(Problem):
 			states = np.array(states).squeeze(axis=2)
 
 			# plot value func contours
-			if sim_result["instance"]["solver"].value_oracle is not None:
-
-				value_oracle = sim_result["instance"]["solver"].value_oracle
+			if sim_result["instance"]["value_oracle"] is not None:
+				value_oracle = sim_result["instance"]["value_oracle"]
 				values = []
 				for state in states: 
 					value = value_oracle.eval(self,state)
@@ -301,9 +306,8 @@ class Example8(Problem):
 				fig.colorbar(pcm,ax=ax)	
 
 			# plot policy function 
-			if not all([a is None for a in sim_result["instance"]["solver"].policy_oracle]):
-
-				policy_oracle = sim_result["instance"]["solver"].policy_oracle
+			if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
+				policy_oracle = sim_result["instance"]["policy_oracle"]
 				actions = []
 				for state in states: 
 					action = policy_oracle[robot].eval(self,state,robot)

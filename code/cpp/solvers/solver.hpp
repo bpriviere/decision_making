@@ -31,6 +31,7 @@ class Solver_Result
         Eigen::Matrix<float,-1,-1> child_distribution;
         Eigen::MatrixXf tree;
         Eigen::Matrix<float,-1,1> value; 
+        int num_visits;
         bool success; 
 };
 
