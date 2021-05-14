@@ -7,6 +7,7 @@
 #include "example2.hpp" 
 #include "example3.hpp" 
 #include "example4.hpp" 
+#include "example5.hpp" 
 #include "example6.hpp" 
 #include "example8.hpp" 
 
@@ -26,6 +27,8 @@ class Problem_Wrapper
                 problem = new Example3(); 
             } else if (string == "example4"){
                 problem = new Example4(); 
+            } else if (string == "example5"){
+                problem = new Example5(); 
             } else if (string == "example6"){
                 problem = new Example6(); 
             } else if (string == "example8"){

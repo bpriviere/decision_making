@@ -17,6 +17,7 @@ class Example1(Problem):
 		self.tf = 20
 		self.dt = 0.1
 		self.r_max = 100
+		self.r_min = -100
 		self.num_robots = 1
 		self.gamma = 0.99
 		self.state_dim = 2
@@ -56,10 +57,8 @@ class Example1(Problem):
 
 	def normalized_reward(self,s,a): 
 		reward = self.reward(s,a)
-		r_max = self.r_max
-		r_min = -r_max
-		reward = np.clip(reward,r_min,r_max)
-		return (reward - r_min) / (r_max - r_min)
+		reward = np.clip(reward,self.r_min,self.r_max)
+		return (reward - self.r_min) / (self.r_max - self.r_min)
 
 	def step(self,s,a,dt):
 		Fd = np.eye(self.state_dim) + self.Fc * dt 

@@ -16,6 +16,11 @@ class Problem_Settings
         float desired_distance;
         float state_control_weight; 
         float r_max; 
+        float r_min; 
+        float m1; 
+        float m2; 
+        float c1; 
+        float c2; 
         Eigen::Matrix<float,-1,2> state_lims;
         Eigen::Matrix<float,-1,2> action_lims;
         Eigen::Matrix<float,-1,2> init_lims;

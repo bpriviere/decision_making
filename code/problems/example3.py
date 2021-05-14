@@ -26,6 +26,7 @@ class Example3(Problem):
 		self.num_robots = 2 
 		self.position_idx = np.arange(3)
 		self.r_max = 100
+		self.r_min = -1 * self.r_max
 		self.name = "example3"
 
 		self.times = np.arange(self.t0,self.tf,self.dt)
@@ -104,12 +105,10 @@ class Example3(Problem):
 		return reward
 
 	def normalized_reward(self,s,a): 
-		r0 = self.reward(s,a)[0,0]
-		r_max = self.r_max
-		r_min = -r_max
-		r0 = np.clip(r0,r_min,r_max)
-		r0 = (r0 - r_min) / (r_max - r_min)
-		reward = np.array([[r0],[1-r0]])
+		reward = self.reward(s,a)
+		reward = np.clip(reward,self.r_min,self.r_max)
+		reward = (reward - self.r_min) / (self.r_max - self.r_min)
+		reward = np.array([[reward[0]],[1-reward[0]]])
 		return reward
 
 	def step(self,s,a,dt):

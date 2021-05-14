@@ -35,10 +35,15 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("init_lims", &Problem_Settings::init_lims)
         .def_readwrite("desired_distance", &Problem_Settings::desired_distance)
         .def_readwrite("r_max", &Problem_Settings::r_max)
+        .def_readwrite("r_min", &Problem_Settings::r_min)
         .def_readwrite("g", &Problem_Settings::g)
         .def_readwrite("mass", &Problem_Settings::mass)
         .def_readwrite("state_control_weight", &Problem_Settings::state_control_weight)
         .def_readwrite("obstacles", &Problem_Settings::obstacles)
+        .def_readwrite("m1", &Problem_Settings::m1)
+        .def_readwrite("m2", &Problem_Settings::m2)
+        .def_readwrite("c1", &Problem_Settings::c1)
+        .def_readwrite("c2", &Problem_Settings::c2)
         .def_readwrite("gamma", &Problem_Settings::gamma);
 
     pybind11::class_<Solver_Wrapper> (m, "Solver_Wrapper")

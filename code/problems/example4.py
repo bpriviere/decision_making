@@ -25,6 +25,7 @@ class Example4(Problem):
 		self.state_dim_per_robot = 6 
 		self.action_dim_per_robot = 3
 		self.r_max = 1000
+		self.r_min = -1 * self.r_max
 		self.name = "example4"
 		self.position_idx = np.arange(3) 
 		self.state_control_weight = 1e-5 
@@ -106,14 +107,12 @@ class Example4(Problem):
 		return reward
 
 	def normalized_reward(self,s,a): 
-		r0 = self.reward(s,a)[0,0]
-		r_max = self.r_max
-		r_min = -r_max
-		r0 = np.clip(r0,r_min,r_max)
-		r0 = (r0 - r_min) / (r_max - r_min)
-		_normalized_reward = np.array([[r0],[1-r0]])
-		return _normalized_reward
-
+		reward = self.reward(s,a)
+		reward = np.clip(reward,self.r_min,self.r_max)
+		reward = (reward - self.r_min) / (self.r_max - self.r_min)
+		reward = np.array([[reward[0]],[1-reward[0]]])
+		return reward
+		
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		for robot in range(self.num_robots):

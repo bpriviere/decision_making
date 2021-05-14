@@ -30,8 +30,8 @@ class Example3 : public Problem {
             m_action_dim = 6;
             m_action_dim_per_robot = 3; 
             m_num_robots = 2;
-            m_r_max = 100;
-            m_r_min = -1 * m_r_max;  
+            m_r_max = problem_settings.r_max;
+            m_r_min = problem_settings.r_min;
 
             problem_settings.state_lims.resize(m_state_dim,2);
             problem_settings.action_lims.resize(m_action_dim,2);

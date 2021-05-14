@@ -44,7 +44,7 @@ class Example4 : public Problem {
             m_desired_distance = problem_settings.desired_distance;
             m_mass = problem_settings.mass; 
             m_r_max = problem_settings.r_max;
-            m_r_min = -1 * m_r_max;  
+            m_r_min = problem_settings.r_min;
             m_state_control_weight = problem_settings.state_control_weight;
             m_state_lims = problem_settings.state_lims; 
             m_action_lims = problem_settings.action_lims; 

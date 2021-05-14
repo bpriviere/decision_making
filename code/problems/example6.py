@@ -17,9 +17,10 @@ class Example6(Problem):
 		super(Example6,self).__init__()
 
 		self.t0 = 0
-		self.tf = 20
-		self.dt = 0.5
-		self.r_max = 10
+		self.tf = 10
+		self.dt = 0.2
+		self.r_max = 1
+		self.r_min = 0 
 		self.num_robots = 1
 		self.gamma = 0.999
 		# self.gamma = 1.0
@@ -28,7 +29,7 @@ class Example6(Problem):
 		self.state_control_weight = 0.01 # 1.0
 		self.name = "example6"
 		self.position_idx = np.arange(2)
-		self.desired_distance = 0.1
+		self.desired_distance = 0.5
 
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
@@ -71,9 +72,9 @@ class Example6(Problem):
 
 	def reward(self,s,a):
 		reward = np.zeros((self.num_robots,1))
-		reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
-		# if np.linalg.norm(s) < self.desired_distance:
-		# 	reward[0,0] = 1
+		# reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
+		if np.linalg.norm(s) < self.desired_distance:
+			reward[0,0] = 1
 		return reward
 
 	def normalized_reward(self,s,a): 

@@ -77,7 +77,7 @@ def get_problem(problem_name):
 		from problems.example4 import Example4
 		problem = Example4() 
 
-	# car on a hill 
+	# game of atrition 
 	elif problem_name == "example5":
 		from problems.example5 import Example5
 		problem = Example5()
