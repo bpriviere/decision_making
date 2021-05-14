@@ -39,7 +39,11 @@ def make_instance(param):
 	instance["value_oracle"] = value_oracle
 	instance["problem"] = problem 
 	instance["solver"] = solver 
-	instance["initial_state"] = problem.initialize() 
+	# instance["initial_state"] = problem.initialize() 
+	instance["initial_state"] = np.array([
+		# [-1],[3],
+		[-3],[3],
+		])
 
 	return instance 
 

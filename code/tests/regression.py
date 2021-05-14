@@ -24,6 +24,7 @@ def worker(param):
     instance = make_instance(param)
     instance["initial_state"] = param.initial_state
     start = time.time()
+    
     sim_result = run_instance(instance,verbose=False)
     duration = time.time() - start
     sim_result["duration_per_timestep"] = duration / len(sim_result["times"])
@@ -34,7 +35,7 @@ def worker(param):
 
 if __name__ == '__main__':
 
-    mode = 1
+    mode = 3
 
     # complete
     if mode == 0:
@@ -61,11 +62,13 @@ if __name__ == '__main__':
         solver_name_lst = ["PUCT_V1"]
         num_trial = 20
 
-    # fast, complete test 
+    # test for bugs  
     elif mode == 3:
-        problem_name_lst = ["example1","example2","example3","example4","example6"]
-        number_simulations_lst = [5]
-        solver_name_lst = ["PUCT_V0","PUCT_V1","C_PUCT_V0","C_PUCT_V1"]
+        # problem_name_lst = ["example1","example2","example3","example4","example6","example8"]
+        problem_name_lst = ["example1","example2","example3","example4","example6","example8"]
+        number_simulations_lst = [1]
+        solver_name_lst = ["PUCT_V1","C_PUCT_V1"]
+        # solver_name_lst = ["PUCT_V0","PUCT_V1","C_PUCT_V0","C_PUCT_V1"]
         num_trial = 1
 
 

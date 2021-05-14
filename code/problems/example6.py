@@ -21,12 +21,14 @@ class Example6(Problem):
 		self.dt = 0.5
 		self.r_max = 10
 		self.num_robots = 1
-		self.gamma = 0.99
+		self.gamma = 0.999
+		# self.gamma = 1.0
 		self.state_dim = 2
 		self.action_dim = 2
-		self.state_control_weight = 1.0
+		self.state_control_weight = 0.01 # 1.0
 		self.name = "example6"
 		self.position_idx = np.arange(2)
+		self.desired_distance = 0.1
 
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
@@ -70,7 +72,7 @@ class Example6(Problem):
 	def reward(self,s,a):
 		reward = np.zeros((self.num_robots,1))
 		reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
-		# if np.linalg.norm(s) < 1:
+		# if np.linalg.norm(s) < self.desired_distance:
 		# 	reward[0,0] = 1
 		return reward
 
@@ -161,17 +163,28 @@ class Example6(Problem):
 		encodings = dataset[0]
 		target = dataset[1] 		
 
-		# quiver plot 
 		fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
+		
+		# quiver plot 
 		state_idx_per_robot = int(self.state_dim / self.num_robots)
 		pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-		C = np.linalg.norm(target[:,0:1],axis=1)
 		ax[0,robot].quiver(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],\
 			target[:,0],target[:,1])
-		ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=C,s=2)
+		ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],s=2)
 		ax[0,robot].set_title("{} Policy for Robot {}".format(title,robot))
 		ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
 		ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
+		
+		# uncertainty if evaluated from gaussian neural network 
+		if target.shape[1] > 2:
+			C = np.linalg.norm(target[:,2:],axis=1)
+			if encodings.shape[0] > 100:
+				pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],C,alpha=0.3)
+				fig.colorbar(pcm,ax=ax[0,robot])
+			else:
+				ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=C)
+		
+		# render
 		self.render(fig=fig,ax=ax[0,robot])
 
 

@@ -126,13 +126,12 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 	# tree state : nd array in [num_nodes x state_dim + 1]
 
 
+	position_idxs = problem.position_idx
+
 	if len(problem.position_idx) == 2: 
 		fig,ax = plt.subplots()
 
 		for robot in range(problem.num_robots):
-
-			state_idxs = robot * problem.state_dim_per_robot + np.arange(problem.state_dim_per_robot)
-			position_idxs = state_idxs[problem.position_idx]
 
 			segments = []
 			nodes = [] 

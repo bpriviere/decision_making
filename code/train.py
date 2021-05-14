@@ -23,23 +23,25 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
 # solver 
-num_simulations = 500
-search_depth = 20
+num_simulations = 1000
+search_depth = 100
 C_pw = 2.0
-alpha_pw = 0.5
+alpha_pw = 0.375
 C_exp = 1.0
 alpha_exp = 0.25
-beta_policy = 0.5
+beta_policy = 0.75
 beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
+# solver_name = "PUCT_V1"
+problem_name = "example6"
 problem_name = "example6"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
 # learning 
 L = 20
-num_D_pi = 2000
+num_D_pi = 500
 # num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 2000
@@ -116,21 +118,40 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 	
 	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
 	robot_action_idx = action_dim_per_robot * robot + np.arange(action_dim_per_robot)
-	while len(datapoints) < num_per_pool:
+	count = 0
+	while count < num_per_pool:
 		state = problem.initialize()
 		root_node = solver.search(problem,state,turn=robot)
 		# print('rank: {}, completion: {}, success: {}'.format(rank,len(datapoints)/num_per_pool,root_node.success))
 		if root_node.success:
 			encoding = problem.policy_encoding(state,robot).squeeze()
-			if True:
+
+			mode = 2
+			if mode == 0:
+				# weighted average of children 
 				actions,num_visits = solver.get_child_distribution(root_node)
 				robot_actions = np.array(actions)[:,robot_action_idx]
 				target = np.average(robot_actions, weights=num_visits, axis=0)
-			else:
+				datapoint = np.append(encoding,target)
+				datapoints.append(datapoint)
+			elif mode == 1:
+				# best child 
 				most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
 				target = root_node.edges[most_visited_child][robot_action_idx,:]
-			datapoint = np.append(encoding,target)
-			datapoints.append(datapoint)
+				datapoint = np.append(encoding,target)
+				datapoints.append(datapoint)
+			elif mode == 2: 
+				# subsampling of children method
+				num_subsamples = 10
+				actions,num_visits = solver.get_child_distribution(root_node)
+				choice_idxs = np.random.choice(len(actions),num_subsamples,p=num_visits/np.sum(num_visits))
+				
+				for choice_idx in choice_idxs: 
+					target = actions[choice_idx]
+					datapoint = np.append(encoding,target)
+					datapoints.append(datapoint)
+
+			count += 1
 			update_tqdm(rank,1,queue,pbar)
 	np.save(fn,np.array(datapoints))	
 	return datapoints
@@ -395,9 +416,15 @@ def eval_policy(problem,l,robot):
 
 	states = []
 	actions = []
+	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
 	for _ in range(num_pi_eval):
 		state = problem.sample_state()
-		action = policy_oracle[0].eval(problem,state,robot)
+		encoding = problem.policy_encoding(state,robot)
+		encoding = torch.tensor(encoding,dtype=torch.float32).squeeze().unsqueeze(0) # [batch_size x state_dim]
+		mu, logvar = policy_oracle[robot](encoding,training=True) # mu in [1 x action_dim_per_robot]
+		mu = mu.detach().numpy().reshape((action_dim_per_robot,1))
+		sd = np.sqrt(np.exp(logvar.detach().numpy().reshape((action_dim_per_robot,1))))
+		action = np.concatenate((mu,sd),axis=0)
 		states.append(state)
 		actions.append(action)
 

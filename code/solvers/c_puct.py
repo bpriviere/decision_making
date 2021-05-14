@@ -82,6 +82,7 @@ class C_PUCT(Solver):
 			problem_settings.desired_distance = problem.desired_distance
 		elif problem.name == "example6":
 			problem_settings.obstacles = problem.obstacles
+			problem_settings.desired_distance = problem.desired_distance
 		elif problem.name == "example8":
 			problem_settings.desired_distance = problem.desired_distance
 		

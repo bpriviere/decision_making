@@ -11,7 +11,7 @@ class GaussianPolicyNetwork(torch.nn.Module):
 	def __init__(self,problem,device="cpu",path=None):
 		super(GaussianPolicyNetwork, self).__init__()
 
-		h = 12
+		h = 24
 
 		self.encoding_dim = problem.policy_encoding_dim
 		self.output_dim = 2*int(problem.action_dim/problem.num_robots) 
@@ -23,6 +23,7 @@ class GaussianPolicyNetwork(torch.nn.Module):
 
 		psi_network_architecture = [
 			["Linear", self.encoding_dim, h], 
+			["Linear", h, h],
 			["Linear", h, h],
 			["Linear", h, self.output_dim] 
 		]
@@ -63,9 +64,17 @@ class GaussianPolicyNetwork(torch.nn.Module):
 			return policy 
 			
 	def loss_fnc(self,x,target):
+		# mu,logvar = self.__call__(x,training=True)
+		# criterion = MSELoss(reduction='none')
+		# loss = torch.sum(criterion(mu, target) / (2*torch.exp(logvar)) + 1/2*logvar)
+		
+		# https://people.eecs.berkeley.edu/~jordan/courses/260-spring10/other-readings/chapter13.pdf
+		# likelihood = -N/2 log det(Var) - 1/2 sum_{i=0}^{N} (x_i - mu)^T Var^{-1} (x_i - mu)
+		# 	- log( det(Var)) = log( Var(0,0) * Var(1,1) * ... ) = log(Var(0,0)) + log(Var(1,1)) + ... 
+		# 		- for diagonal matrix, det(Var) = Var(0,0) * Var(1,1) * ... 
+
 		mu,logvar = self.__call__(x,training=True)
-		criterion = MSELoss(reduction='none')
-		loss = torch.sum(criterion(mu, target) / (2 * torch.exp(logvar)) + 1/2 * logvar)
+		loss = torch.sum((mu - target).pow(2) / (2*torch.exp(logvar)) + mu.shape[0]/2 * logvar)
 		loss = loss / mu.shape[0]
 		return loss 
 

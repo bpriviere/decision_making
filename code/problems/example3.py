@@ -99,16 +99,18 @@ class Example3(Problem):
 		a_1 = a[0:self.action_dim_per_robot]
 		r = -1 * (
 			np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2) - self.desired_distance) + \
-			a_1.T @ self.Ru @ a_1)
-		return np.array([r,-r]).squeeze() 
+			a_1.T @ self.Ru @ a_1).squeeze()
+		reward = np.array([[r],[-r]])
+		return reward
 
 	def normalized_reward(self,s,a): 
-		r0 = self.reward(s,a)[0]
+		r0 = self.reward(s,a)[0,0]
 		r_max = self.r_max
 		r_min = -r_max
 		r0 = np.clip(r0,r_min,r_max)
 		r0 = (r0 - r_min) / (r_max - r_min)
-		return np.array([r0,1-r0]).squeeze()
+		reward = np.array([[r0],[1-r0]])
+		return reward
 
 	def step(self,s,a,dt):
 		# s = [x,y,z,psi,gamma,phi,v]
@@ -135,9 +137,10 @@ class Example3(Problem):
 
 		return s_tp1 
 
-	def render(self,states=None):
+	def render(self,states=None,fig=None,ax=None):
 		# states, np array in [nt x state_dim]
-		fig,ax = plotter.make_3d_fig()
+		if fig is None and ax is None:
+			fig,ax = plotter.make_3d_fig()
 
 		if states is not None:
 			lims = self.state_lims

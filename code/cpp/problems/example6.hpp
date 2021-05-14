@@ -19,6 +19,7 @@ class Example6 : public Problem {
 		float m_r_max; 
 		float m_r_min; 
 		float m_state_control_weight;
+		float m_desired_distance;
 
 		void set_params(Problem_Settings & problem_settings) override 
 		{
@@ -39,6 +40,7 @@ class Example6 : public Problem {
 			m_action_lims = problem_settings.action_lims; 
 			m_init_lims = problem_settings.init_lims;
 			m_obstacles = problem_settings.obstacles; 
+			m_desired_distance = problem_settings.desired_distance;
 
 			std::uniform_real_distribution<double> dist(0,1.0f); 
 
@@ -71,6 +73,11 @@ class Example6 : public Problem {
 		{ 
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
 			r = -1 * (state.transpose() * m_Q * state + action.transpose() * m_R * action); 
+			// if (state.norm() < m_desired_distance) {
+			// 	r(0,0) = 1;
+			// } else {
+			// 	r(0,0) = 0; 
+			// }
 			return r;
 		}
 

@@ -21,22 +21,40 @@ from solvers.solver import get_solver
 from learning.oracles import get_oracles
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
+
+parallel_on = True
+
+# solver settings 
+# number_simulations = 50
+number_simulations = 500
+search_depth = 50
+C_pw = 10.0
+alpha_pw = 0.25
+C_exp = 10.0
+alpha_exp = 0.5
+beta_policy = 0.0
+beta_value = 0.7
+vis_on = True
+
+solver_name = "C_PUCT_V1"
+# solver_name = "PUCT_V1"
+problem_name = "example6"
+value_oracle_name = "deterministic"
+
+# learning 
 L = 20
-num_D_v = 100
-num_eval = 100
-num_simulations_expert = 100
+num_D_v = 2000
+# num_D_v = 200
+num_v_eval = 2000
+
 learning_rate = 0.001
-num_epochs = 200
+num_epochs = 1000
+# num_epochs = 100
 batch_size = 128
 train_test_split = 0.8
-parallel_on = True
-beta_value = 0.8
-value_oracle_name = "deterministic"
-solver_name = "PUCT_V1"
-problem_name = "example6"
+
 
 # Shah-like training 
-
 class Dataset(torch.utils.data.Dataset):
 	
 	def __init__(self, src_file, encoding_dim, target_dim, device='cpu'):
@@ -96,7 +114,7 @@ def worker_edv(rank,queue,fn,seed,problem,num_states,total_num_states,\
 				solver_name,
 				policy_oracle=policy_oracle,
 				value_oracle=value_oracle,
-				number_simulations=num_simulations_expert,
+				number_simulations=number_simulations,
 				beta_value = beta_value)
 		root_state = problem.sample_state()
 		root_node = solver.search(problem,root_state)
@@ -171,7 +189,7 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 
 	# device = "cpu"
 	device = "cuda"
-	model_fn = get_oracle_fn(oracle_name,l,robot=robot)
+	model_fn, _ = get_oracle_fn(l,problem.num_robots)
 
 	_, model = get_oracles(problem,value_oracle_name=value_oracle_name,force=True)
 	model.to(device)
@@ -223,16 +241,38 @@ def test(model,loader):
 	return epoch_loss/step
 
 
-def eval_model(problem,model_fn,l):
+# def eval_model(problem,model_fn,l):
 	
+# 	_, value_oracle = get_oracles(problem,
+# 		value_oracle_name = value_oracle_name,
+# 		value_oracle_path = model_fn
+# 		)
+
+# 	states = []
+# 	values = []
+# 	for _ in range(num_eval):
+# 		state = problem.sample_state()
+# 		value = value_oracle.eval(problem,state)
+# 		states.append(state)
+# 		values.append(value)
+
+# 	states = np.array(states).squeeze(axis=2)
+# 	values = np.array(values).squeeze(axis=2)
+# 	plotter.plot_value_dataset(problem,[[states,values]],["Eval"])
+# 	plotter.save_figs("../current/models/model_eval_l{}.pdf".format(l))
+
+def eval_value(problem,l):
+	
+	value_oracle_path, policy_oracle_paths = get_oracle_fn(l,problem.num_robots)
+
 	_, value_oracle = get_oracles(problem,
 		value_oracle_name = value_oracle_name,
-		value_oracle_path = model_fn
+		value_oracle_path = value_oracle_path
 		)
 
 	states = []
 	values = []
-	for _ in range(num_eval):
+	for _ in range(num_v_eval):
 		state = problem.sample_state()
 		value = value_oracle.eval(problem,state)
 		states.append(state)
@@ -241,7 +281,7 @@ def eval_model(problem,model_fn,l):
 	states = np.array(states).squeeze(axis=2)
 	values = np.array(values).squeeze(axis=2)
 	plotter.plot_value_dataset(problem,[[states,values]],["Eval"])
-	plotter.save_figs("../current/models/model_eval_l{}.pdf".format(l))
+	plotter.save_figs("../current/models/value_eval_l{}.pdf".format(l))
 
 
 if __name__ == '__main__':
@@ -264,7 +304,7 @@ if __name__ == '__main__':
 			value_oracle_path = None 
 			value_oracle = None
 		else: 
-			value_oracle_path = get_oracle_fn("value",l-1)
+			value_oracle_path,_ = get_oracle_fn(l-1,problem.num_robots)
 			_,value_oracle = get_oracles(problem,
 				value_oracle_name = value_oracle_name,
 				value_oracle_path = value_oracle_path
@@ -273,6 +313,6 @@ if __name__ == '__main__':
 		print('\t value training l/L: {}/{}'.format(l,L))
 		train_dataset_v, test_dataset_v = make_expert_demonstration_v(problem, num_D_v, value_oracle, policy_oracle)
 		train_model(problem,train_dataset_v,test_dataset_v,l,"value") 
-		eval_model(problem,get_oracle_fn("value",l),l) 
+		eval_value(problem,l) 
 		print('complete learning iteration: {}/{} in {}s'.format(l,L,time.time()-start_time))
 

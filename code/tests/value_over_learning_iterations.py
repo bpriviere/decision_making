@@ -94,15 +94,7 @@ if __name__ == '__main__':
 
 	problem = get_problem(problem_name)
 	model_fns = [
-		"/home/ben/projects/decision_making/current/models/model_value_l0_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l1_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l2_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l3_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l4_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l5_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l6_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l7_i0.pt",
-		"/home/ben/projects/decision_making/current/models/model_value_l8_i0.pt",
-	]
+		"/home/ben/projects/decision_making/current/models/model_value_l{}.pt".format(i) for i in range(20)
+		]
 
 	eval_models(problem,model_fns,value_oracle_name,num_eval)
