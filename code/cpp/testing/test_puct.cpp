@@ -102,8 +102,10 @@ int main()
         // problem_settings.timestep = 0.1f;
         problem_settings.timestep = 1.0f;
         problem_settings.gamma = 0.99f;
-        problem_settings.r_max = 10;
+        // problem_settings.r_max = 10;
+        problem_settings.r_max = 1;
         problem_settings.state_control_weight = 1.0f;
+        problem_settings.desired_distance = 0.2;
         
         Eigen::Matrix<float,2,2> obstacle1;
         Eigen::Matrix<float,2,2> obstacle2;
