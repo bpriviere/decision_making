@@ -82,7 +82,7 @@ class Example5(Problem):
 		reward = self.reward(s,a)
 		reward = np.clip(reward,self.r_min,self.r_max)
 		reward = (reward - self.r_min) / (self.r_max - self.r_min)
-		reward = np.array([[reward[0]],[1-reward[0]]])
+		reward = np.array([[reward[0,0]],[1-reward[0,0]]])
 		return reward
 
 	def step(self,s,a,dt):
