@@ -14,7 +14,7 @@
  from ~/code/cpp:
   `mkdir build`
   `cd build`
-  `cmake -DCMAKE_BUILD_TYPE=Release ..`
+  `cmake -DPYTHON_EXECUTABLE=$(which python) -DCMAKE_BUILD_TYPE=Release ..`
   `make`
 
 
