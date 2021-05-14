@@ -65,11 +65,11 @@ if __name__ == '__main__':
     # test for bugs  
     elif mode == 3:
         # problem_name_lst = ["example1","example2","example3","example4","example6","example8"]
-        problem_name_lst = ["example1","example2","example3","example4","example6","example8"]
+        problem_name_lst = ["example1","example2","example3","example4","example5","example6","example8"]
         number_simulations_lst = [1]
         solver_name_lst = ["PUCT_V1","C_PUCT_V1"]
-        # solver_name_lst = ["PUCT_V0","PUCT_V1","C_PUCT_V0","C_PUCT_V1"]
         num_trial = 1
+        # solver_name_lst = ["PUCT_V0","PUCT_V1","C_PUCT_V0","C_PUCT_V1"]
 
 
     params = []
