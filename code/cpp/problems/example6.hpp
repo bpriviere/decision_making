@@ -72,12 +72,12 @@ class Example6 : public Problem {
 			Eigen::Matrix<float,-1,1> action) override
 		{ 
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-			// r = -1 * (state.transpose() * m_Q * state + action.transpose() * m_R * action); 
-			if (state.norm() < m_desired_distance) {
-				r(0,0) = 1;
-			} else {
-				r(0,0) = 0; 
-			}
+			r = -1 * (state.transpose() * m_Q * state + action.transpose() * m_R * action); 
+			// if (state.norm() < m_desired_distance) {
+			// 	r(0,0) = 1;
+			// } else {
+			// 	r(0,0) = 0; 
+			// }
 			return r;
 		}
 

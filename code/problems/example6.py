@@ -17,10 +17,10 @@ class Example6(Problem):
 		super(Example6,self).__init__()
 
 		self.t0 = 0
-		self.tf = 10
+		self.tf = 100
 		self.dt = 0.2
-		self.r_max = 1
-		self.r_min = 0 
+		self.r_max = 100
+		self.r_min = -self.r_max
 		self.num_robots = 1
 		self.gamma = 0.999
 		# self.gamma = 1.0
@@ -72,9 +72,9 @@ class Example6(Problem):
 
 	def reward(self,s,a):
 		reward = np.zeros((self.num_robots,1))
-		# reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
-		if np.linalg.norm(s) < self.desired_distance:
-			reward[0,0] = 1
+		reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
+		# if np.linalg.norm(s) < self.desired_distance:
+		# 	reward[0,0] = 1
 		return reward
 
 	def normalized_reward(self,s,a): 
