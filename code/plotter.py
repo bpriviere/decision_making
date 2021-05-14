@@ -88,7 +88,7 @@ def plot_sim_result(sim_result):
 	state_lims = problem["state_lims"]
 	action_lims = problem["action_lims"]
 
-	ncols = np.max((state_dim_per_robot,action_dim))
+	ncols = np.max((state_dim_per_robot,action_dim,2))
 
 	# plot trajectories (over time)
 	fig,axs = plt.subplots(nrows=int(num_robots+2),ncols=int(ncols))
@@ -109,6 +109,7 @@ def plot_sim_result(sim_result):
 	# reward 
 	for i_robot in range(num_robots):
 		axs[num_robots+1,0].plot(times[1:],rewards[:,i_robot])
+		axs[num_robots+1,1].plot(times[1:],np.cumsum(rewards[:,i_robot]))
 	axs[num_robots+1,0].set_ylabel("Rewards")
 
 	# fig.tight_layout()
@@ -128,7 +129,27 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 
 	position_idxs = problem.position_idx
 
-	if len(problem.position_idx) == 2: 
+	if len(position_idxs) == 1: 
+		fig,ax = plt.subplots() 
+
+		plot_idx = np.arange(2)
+		segments = []
+		nodes = [] 
+		for i_row,row in enumerate(tree_state):
+			parentIdx = int(row[-1])
+			nodes.append(row[plot_idx])
+			# print('row',row)
+			# print('row[plot_idx]',row[plot_idx])
+			if parentIdx >= 0:
+				segments.append([row[plot_idx], tree_state[parentIdx][plot_idx]])
+			# print('segments',segments)
+			# exit()
+
+		ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
+		ax.add_collection(ln_coll)
+		problem.render(fig=fig,ax=ax)
+
+	elif len(problem.position_idx) == 2: 
 		fig,ax = plt.subplots()
 
 		for robot in range(problem.num_robots):
