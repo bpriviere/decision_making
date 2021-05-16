@@ -111,6 +111,7 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 			solver_name,
 			policy_oracle=policy_oracle,
 			value_oracle=value_oracle,
+			search_depth=search_depth,
 			number_simulations=num_simulations,
 			search_depth=search_depth,
 			C_pw=C_pw,
