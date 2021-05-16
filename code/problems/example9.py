@@ -1,6 +1,5 @@
 
 
-
 # standard 
 import numpy as np 
 import matplotlib.patches as patches
@@ -11,44 +10,57 @@ from problems.problem import Problem
 from util import sample_vector, contains
 import plotter 
 
-# 2d single integrator pursuit evasion 1v1   
-class Example8(Problem):
+# homicidal chauffeur problem - isaacs page 27    
+class Example9(Problem):
 
 	def __init__(self): 
-		super(Example8,self).__init__()
+		super(Example9,self).__init__()
+		# state: [x1,y1,x2,y2,theta2]
+		# actions: [psi,phi]
 
 		self.t0 = 0
 		self.tf = 10
-		self.dt = 0.5
+		self.dt = 0.2
 		self.gamma = 0.99
 		self.num_robots = 2 
-		self.state_dim = 4
-		self.action_dim = 4
-		self.r_max = 1
-		self.r_min = -1
-		self.name = "example8"
+		self.state_idxs = [
+			np.arange(2),
+			2 + np.arange(3)
+		]
+		self.action_idxs = [ 
+			np.arange(1),
+			1+np.arange(1)
+		]
+		self.r_max = 1.0 
+		self.r_min = -self.r_max 
+		self.name = "example9"
 		self.position_idx = np.arange(2) 
 		self.state_control_weight = 0.01 
-		self.desired_distance = 0.1
+		
+		# problem specific parameters 
+		self.desired_distance = 1.0
+		self.w1 = 1.0 
+		self.w2 = 2.0
+		self.R = 0.5 
 
-		self.state_idxs = [np.arange(2),2+np.arange(2)] 
-		self.action_idxs = [np.arange(2),2+np.arange(2)] 
+		self.state_dim = 1 + self.state_idxs[-1][-1] 
+		self.action_dim = 1 + self.action_idxs[-1][-1] 
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
 
 		self.state_lims = np.array((
-			(-2,2), 
-			( 0,10), 
-			(-2,2), 
-			( 0,10),
+			(-10,10), 
+			(-10,10), 
+			(-10,10), 
+			(-10,10), 
+			(-np.pi,np.pi), 
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
 
-		self.action_lims = 0.5*np.array((
-			(-1,1),
-			(-1,1),
-			(-1,1),
+		self.action_lims = np.array((
+			(-np.pi,np.pi),
+			(-np.pi,np.pi),
 			(-1,1),
 			))
 
@@ -57,30 +69,11 @@ class Example8(Problem):
 			(-2,2), 
 			(-2,2), 
 			(-2,2),
+			(-np.pi,np.pi),
 			))
-
-		self.Fc = np.array((
-			(0,0), 
-			(0,0), 
-			))
-
-		self.Bc = np.array((
-			(1,0),
-			(0,1),
-			))
-
-		self.Q = np.eye(2)
-		self.Ru = self.state_control_weight * np.eye(2)
 
 	def reward(self,s,a):
-		s_1 = s[self.state_idxs[0]]
-		s_2 = s[self.state_idxs[1]]
-		a_1 = a[self.action_idxs[0]]
-		
-		r = -1 * (
-			np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2)) + \
-			a_1.T @ self.Ru @ a_1).squeeze()
-		
+		r = 1 # time until capture reward 
 		reward = np.array([[r],[-r]])
 		return reward
 
@@ -93,10 +86,17 @@ class Example8(Problem):
 
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
-		for robot in range(self.num_robots):
-			Fd = np.eye(len(self.state_idxs[robot])) +  dt * self.Fc 
-			Bd = dt * self.Bc 
-			s_tp1[self.state_idxs[robot],:] = np.dot(Fd,s[self.state_idxs[robot],:]) + np.dot(Bd,a[self.action_idxs[robot],:])
+		s_dot = np.zeros(s.shape)
+		s_dot[0,0] = self.w1 * np.sin(a[0,0])
+		s_dot[1,0] = self.w1 * np.cos(a[0,0])
+		s_dot[2,0] = self.w2 * np.sin(s[4,0])
+		s_dot[3,0] = self.w2 * np.cos(s[4,0])
+		s_dot[4,0] = self.w2 / self.R * a[1,0]
+		s_tp1 = s + s_dot * dt 
+
+		# wrap angles
+		s_tp1[4,0] = ((s_tp1[4,0] + np.pi) % (2*np.pi)) - np.pi 
+
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):
@@ -109,19 +109,18 @@ class Example8(Problem):
 
 			colors = plotter.get_n_colors(self.num_robots)
 			for robot in range(self.num_robots):
-				robot_state_idxs = self.state_idxs[robot] 
 
-				ax.plot(states[:,robot_state_idxs[0]], states[:,robot_state_idxs[1]], color=colors[robot])
-				ax.plot(states[0,robot_state_idxs[0]], states[0,robot_state_idxs[1]], color=colors[robot],marker='o')
-				ax.plot(states[-1,robot_state_idxs[0]], states[-1,robot_state_idxs[1]], color=colors[robot],marker='s')
+				robot_idxs = self.state_idxs[robot]
+
+				ax.plot(states[:,robot_idxs[0]], states[:,robot_idxs[1]], color=colors[robot])
+				ax.plot(states[0,robot_idxs[0]], states[0,robot_idxs[1]], color=colors[robot],marker='o')
+				ax.plot(states[-1,robot_idxs[0]], states[-1,robot_idxs[1]], color=colors[robot],marker='s')
 				
-			# ax.set_aspect(lims[0,1]-lims[0,0] / lims[1,1]-lims[1,0])
-
 			for robot in range(self.num_robots):
 				if robot == 0:
-					label = "Pursuer"
-				elif robot == 1:
 					label = "Evader"
+				elif robot == 1:
+					label = "Pursuer"
 				ax.plot(np.nan,np.nan,color=colors[robot],label=label)
 			ax.legend(loc='best')
 
@@ -133,7 +132,9 @@ class Example8(Problem):
 		return fig,ax 
 
 	def is_terminal(self,state):
-		return not self.is_valid(state)
+		capture = np.linalg.norm(state[0:2,0] - state[2:4,0]) < self.desired_distance
+		valid = self.is_valid(state)
+		return (not valid) or capture
 
 	def is_valid(self,state):
 		return contains(state,self.state_lims)
@@ -162,8 +163,9 @@ class Example8(Problem):
 				# contour
 				if encodings.shape[0] > 100:
 					fig,ax = plt.subplots() 
-					robot_idxs = self.state_idxs[robot]
-					pcm = ax.tricontourf(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],target[:,robot])
+					state_idx_per_robot = int(self.state_dim / self.num_robots)
+					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+					pcm = ax.tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
 					fig.colorbar(pcm,ax=ax)
 					ax.set_title("{} Value for Robot {}".format(title,robot))
 					ax.set_xlim(self.state_lims[self.position_idx[0],:])
@@ -172,8 +174,9 @@ class Example8(Problem):
 				else:
 					# scatter
 					fig,ax = plt.subplots() 
-					robot_idxs = self.state_idxs[robot]
-					pcm = ax.scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],c=target[:,robot])
+					state_idx_per_robot = int(self.state_dim / self.num_robots)
+					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+					pcm = ax.scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=target[:,robot])
 					fig.colorbar(pcm,ax=ax)
 					ax.set_title("{} Value for Robot {}".format(title,robot))
 					ax.set_xlim(self.state_lims[self.position_idx[0],:])
@@ -190,6 +193,7 @@ class Example8(Problem):
 						ax.add_patch(circ)
 			
 				self.render(fig=fig,ax=ax)
+
 
 	def plot_policy_dataset(self,dataset,title,robot):
 
@@ -233,7 +237,7 @@ class Example8(Problem):
 
 		num_datapoints = encoding.shape[0]
 		groups = [] # list of list of lists
-		robot_idxs = self.state_idxs[robot] 
+		robot_idxs = self.state_idxs[robot]
 		not_robot_idxs = []
 		for i in range(self.state_dim):
 			if i not in robot_idxs:
@@ -256,6 +260,7 @@ class Example8(Problem):
 				groups.append([np.concatenate((encoding[i],target[i]))])
 		return groups 
 
+
 	def isApprox(self,s1,s2):
 		return np.linalg.norm(s1-s2) < self.approx_dist 
 
@@ -267,7 +272,7 @@ class Example8(Problem):
 			fig,ax = plt.subplots()
 			inital_state = sim_result["states"][0]
 
-			robot_idxs = self.state_idxs[robot]
+			robot_idxs = self.state_idxs[robot] 
 			not_robot_idxs = []
 			for i in range(self.state_dim):
 				if i not in robot_idxs:

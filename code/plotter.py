@@ -83,21 +83,21 @@ def plot_sim_result(sim_result):
 	problem = problem.__dict__ 
 
 	num_robots = problem["num_robots"]
-	state_dim_per_robot = int(np.shape(states)[1] / num_robots)
+	robot_state_dims = [len(robot_state_idx) for robot_state_idx in problem["state_idxs"]]
 	action_dim = np.shape(actions)[1]
 	state_lims = problem["state_lims"]
 	action_lims = problem["action_lims"]
 
-	ncols = np.max((state_dim_per_robot,action_dim,2))
+	ncols = np.max((np.max(robot_state_dims),action_dim,2))
 
 	# plot trajectories (over time)
 	fig,axs = plt.subplots(nrows=int(num_robots+2),ncols=int(ncols))
 	# state 
 	for i_robot in range(num_robots):
-		for i_state in range(state_dim_per_robot):
-			idx = i_state + state_dim_per_robot * i_robot 
-			axs[i_robot,i_state].plot(times,states[:,idx])
-			axs[i_robot,i_state].set_ylim((state_lims[idx,0],state_lims[idx,1]))
+		robot_state_idx = problem["state_idxs"][i_robot]
+		for i_ax,i_state in enumerate(robot_state_idx):
+			axs[i_robot,i_ax].plot(times,states[:,i_state])
+			axs[i_robot,i_ax].set_ylim((state_lims[i_state,0],state_lims[i_state,1]))
 		axs[i_robot,0].set_ylabel("Robot State {}".format(i_robot))
 
 	# action
@@ -138,12 +138,8 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 		for i_row,row in enumerate(tree_state):
 			parentIdx = int(row[-1])
 			nodes.append(row[plot_idx])
-			# print('row',row)
-			# print('row[plot_idx]',row[plot_idx])
 			if parentIdx >= 0:
 				segments.append([row[plot_idx], tree_state[parentIdx][plot_idx]])
-			# print('segments',segments)
-			# exit()
 
 		ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
 		ax.add_collection(ln_coll)
@@ -152,21 +148,24 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 	elif len(problem.position_idx) == 2: 
 		fig,ax = plt.subplots()
 
-		for robot in range(problem.num_robots):
+		segments = [[] for _ in range(problem.num_robots)]
+		nodes = [[] for _ in range(problem.num_robots)]
+		for i_row,row in enumerate(tree_state):
+			parentIdx = int(row[-1])
 
-			segments = []
-			nodes = [] 
-			for i_row,row in enumerate(tree_state):
-				parentIdx = int(row[-1])
-				nodes.append(row[position_idxs])
+			for robot in range(problem.num_robots):
+				robot_state_idxs = problem.state_idxs[robot]
+				robot_position_idx = robot_state_idxs[position_idxs]
+				nodes[robot].append(row[robot_position_idx])
 				if parentIdx >= 0:
-					segments.append([row[position_idxs], tree_state[parentIdx][position_idxs]])
+					segments[robot].append([row[robot_position_idx], tree_state[parentIdx][robot_position_idx]])
 
-			ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
-			nodes = np.array(nodes)
-
+		# nodes = np.array(nodes[robot])
+		for robot in range(problem.num_robots):
+			ln_coll = matplotlib.collections.LineCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
-			ax.scatter(nodes[0,0],nodes[0,1])
+			ax.scatter(nodes[robot][0][0],nodes[robot][0][1])
+
 
 		if not zoom_on: 
 			lims = problem.state_lims
@@ -178,7 +177,6 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 	elif len(problem.position_idx) == 3: 
 		
 		num_robots = problem.num_robots
-		state_dim_per_robot = int(problem.state_dim / num_robots)
 
 		fig,ax = make_3d_fig()
 		segments = [[] for _ in range(num_robots)]
@@ -187,8 +185,8 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 			parentIdx = int(row[-1])
 
 			for robot in range(num_robots):
-				robot_state_idx = robot * state_dim_per_robot + np.arange(state_dim_per_robot)
-				robot_position_idx = robot_state_idx[position_idxs]
+				robot_state_idxs = problem.state_idxs[robot]
+				robot_position_idx = robot_state_idxs[position_idxs]
 				nodes[robot].append(row[robot_position_idx])
 				if parentIdx >= 0:
 					segments[robot].append([row[robot_position_idx], tree_state[parentIdx][robot_position_idx]])

@@ -29,8 +29,8 @@ class Example1(Problem):
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
-		self.state_dim_per_robot = self.state_dim
-		self.action_dim_per_robot = self.action_dim
+		self.state_idxs = [np.arange(self.state_dim)]
+		self.action_idxs = [np.arange(self.action_dim)]
 
 		self.state_lims = np.array([
 			[-5,5],

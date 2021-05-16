@@ -8,13 +8,13 @@ from learning.feedforward import FeedForward
 
 class GaussianPolicyNetwork(torch.nn.Module):
 
-	def __init__(self,problem,device="cpu",path=None):
+	def __init__(self,problem,robot,device="cpu",path=None):
 		super(GaussianPolicyNetwork, self).__init__()
 
 		h = 24
 
 		self.encoding_dim = problem.policy_encoding_dim
-		self.output_dim = 2*int(problem.action_dim/problem.num_robots) 
+		self.output_dim = 2*len(problem.action_idxs[robot]) 
 		self.state_dim = problem.state_dim 
 		self.action_dim = problem.action_dim 
 		self.device = torch.device(device)

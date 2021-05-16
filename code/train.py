@@ -121,8 +121,7 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 			beta_value = beta_value
 			)
 	
-	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
-	robot_action_idx = action_dim_per_robot * robot + np.arange(action_dim_per_robot)
+	robot_action_idx = problem.action_idxs[robot]
 	count = 0
 	while count < num_per_pool:
 		state = problem.initialize()
@@ -199,11 +198,11 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 		os.remove(path)
 
 	split = int(len(datapoints)*train_test_split)
-	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
+	robot_action_dim = len(problem.action_idxs[robot])
 	train_dataset = datapoints_to_dataset(datapoints[0:split],"train_policy",\
-		problem.policy_encoding_dim,action_dim_per_robot,robot=robot)
+		problem.policy_encoding_dim,robot_action_dim,robot=robot)
 	test_dataset = datapoints_to_dataset(datapoints[split:],"test_policy",\
-		problem.policy_encoding_dim,action_dim_per_robot,robot=robot)
+		problem.policy_encoding_dim,robot_action_dim,robot=robot)
 	plotter.plot_policy_dataset(problem,\
 		[[train_dataset.X_np,train_dataset.target_np],[test_dataset.X_np,test_dataset.target_np]],\
 		["Train","Test"],robot)
@@ -413,23 +412,26 @@ def eval_value(problem,l):
 def eval_policy(problem,l,robot):
 
 	value_oracle_path, policy_oracle_paths = get_oracle_fn(l,problem.num_robots)
+	for robot_i,path in enumerate(policy_oracle_paths):
+		if robot_i != robot:
+			policy_oracle_paths[robot_i] = None
 	
-	policy_oracle, _ = get_oracles(problem,
+	policy_oracles, _ = get_oracles(problem,
 		policy_oracle_name = policy_oracle_name,
-		policy_oracle_paths = [policy_oracle_paths[robot]]
+		policy_oracle_paths = policy_oracle_paths
 		)
-	policy_oracle = policy_oracle[0]
+	policy_oracle = policy_oracles[robot]
 
 	states = []
 	actions = []
-	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
+	robot_action_dim = len(problem.action_idxs[robot]) 
 	for _ in range(num_pi_eval):
 		state = problem.sample_state()
 		encoding = problem.policy_encoding(state,robot)
 		encoding = torch.tensor(encoding,dtype=torch.float32).squeeze().unsqueeze(0) # [batch_size x state_dim]
-		mu, logvar = policy_oracle(encoding,training=True) # mu in [1 x action_dim_per_robot]
-		mu = mu.detach().numpy().reshape((action_dim_per_robot,1))
-		sd = np.sqrt(np.exp(logvar.detach().numpy().reshape((action_dim_per_robot,1))))
+		mu, logvar = policy_oracle(encoding,training=True) # mu in [1 x robot_action_dim]
+		mu = mu.detach().numpy().reshape((robot_action_dim,1))
+		sd = np.sqrt(np.exp(logvar.detach().numpy().reshape((robot_action_dim,1))))
 		action = np.concatenate((mu,sd),axis=0)
 		states.append(state)
 		actions.append(action)
