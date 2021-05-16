@@ -23,7 +23,7 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
 # solver 
-num_simulations = 1000
+num_simulations = 2000
 search_depth = 100
 C_pw = 2.0
 alpha_pw = 0.5
@@ -34,12 +34,12 @@ beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example8"
+problem_name = "example6"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
 # learning 
-L = 20
+L = 40
 num_D_pi = 500
 # num_D_pi = 200
 num_pi_eval = 2000
