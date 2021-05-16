@@ -23,10 +23,10 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
 # solver 
-num_simulations = 100
-search_depth = 10
+num_simulations = 1000
+search_depth = 100
 C_pw = 2.0
-alpha_pw = 0.375
+alpha_pw = 0.5
 C_exp = 1.0
 alpha_exp = 0.25
 beta_policy = 0.75
