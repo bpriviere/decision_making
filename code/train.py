@@ -23,8 +23,8 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
 
 # solver 
-num_simulations = 1000
-search_depth = 100
+num_simulations = 100
+search_depth = 10
 C_pw = 2.0
 alpha_pw = 0.375
 C_exp = 1.0
@@ -34,8 +34,7 @@ beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example6"
-problem_name = "example6"
+problem_name = "example8"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
@@ -48,7 +47,7 @@ num_D_v = 2000
 num_v_eval = 2000
 
 learning_rate = 0.001
-num_epochs = 1000
+num_epochs = 100
 # num_epochs = 100
 batch_size = 128
 train_test_split = 0.8
@@ -113,8 +112,14 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 			policy_oracle=policy_oracle,
 			value_oracle=value_oracle,
 			number_simulations=num_simulations,
+			search_depth=search_depth,
+			C_pw=C_pw,
+			alpha_pw=alpha_pw,
+			C_exp=C_exp,
+			alpha_exp=alpha_exp,
 			beta_policy= beta_policy,
-			beta_value = beta_value)
+			beta_value = beta_value
+			)
 	
 	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
 	robot_action_idx = action_dim_per_robot * robot + np.arange(action_dim_per_robot)
@@ -147,7 +152,7 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 				choice_idxs = np.random.choice(len(actions),num_subsamples,p=num_visits/np.sum(num_visits))
 				
 				for choice_idx in choice_idxs: 
-					target = actions[choice_idx]
+					target = np.array(actions[choice_idx])[robot_action_idx]
 					datapoint = np.append(encoding,target)
 					datapoints.append(datapoint)
 
@@ -413,6 +418,7 @@ def eval_policy(problem,l,robot):
 		policy_oracle_name = policy_oracle_name,
 		policy_oracle_paths = [policy_oracle_paths[robot]]
 		)
+	policy_oracle = policy_oracle[0]
 
 	states = []
 	actions = []
@@ -421,7 +427,7 @@ def eval_policy(problem,l,robot):
 		state = problem.sample_state()
 		encoding = problem.policy_encoding(state,robot)
 		encoding = torch.tensor(encoding,dtype=torch.float32).squeeze().unsqueeze(0) # [batch_size x state_dim]
-		mu, logvar = policy_oracle[robot](encoding,training=True) # mu in [1 x action_dim_per_robot]
+		mu, logvar = policy_oracle(encoding,training=True) # mu in [1 x action_dim_per_robot]
 		mu = mu.detach().numpy().reshape((action_dim_per_robot,1))
 		sd = np.sqrt(np.exp(logvar.detach().numpy().reshape((action_dim_per_robot,1))))
 		action = np.concatenate((mu,sd),axis=0)
