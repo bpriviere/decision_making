@@ -31,7 +31,7 @@ class Example9(Problem):
 			np.arange(1),
 			1+np.arange(1)
 		]
-		self.r_max = 1.0 
+		self.r_max = 2.0 
 		self.r_min = -self.r_max 
 		self.name = "example9"
 		self.position_idx = np.arange(2) 
@@ -41,7 +41,7 @@ class Example9(Problem):
 		self.desired_distance = 1.0
 		self.w1 = 1.0 
 		self.w2 = 2.0
-		self.R = 0.5 
+		self.R = 1.0
 
 		self.action_dim_per_robot = 1 
 
@@ -66,10 +66,10 @@ class Example9(Problem):
 			))
 
 		self.init_lims = np.array((
-			(-2,2), 
-			(-2,2), 
-			(-2,2), 
-			(-2,2),
+			(-5,5), 
+			(-5,5), 
+			(-5,5), 
+			(-5,5),
 			(-np.pi,np.pi),
 			))
 
@@ -139,9 +139,11 @@ class Example9(Problem):
 		return fig,ax 
 
 	def is_terminal(self,state):
-		capture = np.linalg.norm(state[0:2,0] - state[2:4,0]) < self.desired_distance
+		# capture = np.linalg.norm(state[0:2,0] - state[2:4,0]) < self.desired_distance
+		# valid = self.is_valid(state)
+		# return (not valid) or capture
 		valid = self.is_valid(state)
-		return (not valid) or capture
+		return not valid 
 
 	def is_valid(self,state):
 		return contains(state,self.state_lims)

@@ -98,7 +98,8 @@ class Example9 : public Problem {
 
         bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
         {
-            return (!is_valid(state)) || is_captured(state);
+            return !is_valid(state);
+            // return (!is_valid(state)) || is_captured(state);
         }
 
         bool is_captured(Eigen::Matrix<float,-1,1> state) {
