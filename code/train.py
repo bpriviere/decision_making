@@ -45,7 +45,7 @@ num_D_pi = 500
 num_pi_eval = 2000
 num_D_v = 2000
 num_v_eval = 2000
-
+num_subsamples = 10
 learning_rate = 0.001
 num_epochs = 100
 # num_epochs = 100
@@ -147,7 +147,6 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 				datapoints.append(datapoint)
 			elif mode == 2: 
 				# subsampling of children method
-				num_subsamples = 10
 				actions,num_visits = solver.get_child_distribution(root_node)
 				choice_idxs = np.random.choice(len(actions),num_subsamples,p=num_visits/np.sum(num_visits))
 				
@@ -446,7 +445,7 @@ if __name__ == '__main__':
 	format_dir(clean_dirnames=["data","models"]) 
 
 	if batch_size > np.min((num_D_pi,num_D_v)) * (1-train_test_split):
-		batch_size = int(np.floor((np.min((num_D_pi,num_D_v)) * train_test_split / 10)))
+		batch_size = int(np.floor((np.min((num_D_pi*num_subsamples,num_D_v)) * train_test_split / 10)))
 		print('changing batch size to {}'.format(batch_size))
 
 	# training 
