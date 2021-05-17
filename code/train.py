@@ -20,7 +20,7 @@ from problems.problem import get_problem
 from solvers.solver import get_solver 
 from learning.oracles import get_oracles
 from run import run_instance
-from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir
+from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn
 
 # solver 
 num_simulations = 2000
@@ -166,17 +166,18 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 	print('making expert demonstration pi...')
 
 	paths = []
-	fds = []
+	# fds = []
 	if parallel_on: 
 		ncpu = mp.cpu_count() - 1
 		num_per_pool = int(num_D_pi / ncpu)
 
 		seeds = [] 
 		for i in range(ncpu):
-			fd, path = tempfile.mkstemp()
-			path = path + ".npy"
+			# fd, path = tempfile.mkstemp()
+			# path = path + ".npy"
+			# fds.append(fd)
+			path = get_temp_fn(i)
 			paths.append(path)
-			fds.append(fd)
 			seeds.append(np.random.randint(10000))
 
 		with mp.Pool(ncpu) as pool:
@@ -187,17 +188,19 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 				pass
 
 	else: 
-		fd,path = tempfile.mkstemp()
-		path = path + ".npy"
+		# fd,path = tempfile.mkstemp()
+		# path = path + ".npy"
+		# fds.append(fd)
+		path = get_temp_fn(0)
 		seed = np.random.randint(10000)
 		paths.append(path)
-		fds.append(fd)
 		worker_edp_wrapper((0,Queue(),seed,path,problem,robot,num_D_pi,policy_oracle,value_oracle))
 
 	datapoints = []
-	for fd,path in list(zip(fds,paths)): 
+	for path in paths: 
+	# for fd,path in list(zip(fds,paths)): 
+		# os.close(fd) 
 		datapoints.extend(list(np.load(path)))
-		os.close(fd) 
 		os.remove(path)
 
 	split = int(len(datapoints)*train_test_split)
@@ -270,8 +273,9 @@ def make_expert_demonstration_v(problem, l):
 		num_states_per_pool = int(num_D_v/ncpu)
 		seeds = [] 
 		for i in range(ncpu):
-			_, path = tempfile.mkstemp()
-			paths.append(path + '.npy')
+			# _, path = tempfile.mkstemp()
+			# paths.append(path + '.npy')
+			path = get_temp_fn(i)
 			seeds.append(np.random.randint(10000))
 		with mp.Pool(ncpu) as pool:
 			queue = mp.Manager().Queue()
@@ -283,9 +287,10 @@ def make_expert_demonstration_v(problem, l):
 				pass
 
 	else:
-		_,path = tempfile.mkstemp()
+		# _,path = tempfile.mkstemp()
+		# paths.append(path + '.npy')
+		path = get_temp_fn(0)
 		seed = np.random.randint(10000)
-		paths.append(path + '.npy')
 		worker_edv_wrapper((0,Queue(),path,seed,problem,num_D_v,policy_oracle))
 
 	datapoints = []
