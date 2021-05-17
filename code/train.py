@@ -166,16 +166,17 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 	print('making expert demonstration pi...')
 
 	paths = []
+	fds = []
 	if parallel_on: 
 		ncpu = mp.cpu_count() - 1
 		num_per_pool = int(num_D_pi / ncpu)
 
-		paths = []
 		seeds = [] 
 		for i in range(ncpu):
-			_, path = tempfile.mkstemp()
+			fd, path = tempfile.mkstemp()
 			path = path + ".npy"
 			paths.append(path)
+			fds.append(fd)
 			seeds.append(np.random.randint(10000))
 
 		with mp.Pool(ncpu) as pool:
@@ -186,15 +187,17 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 				pass
 
 	else: 
-		_,path = tempfile.mkstemp()
+		fd,path = tempfile.mkstemp()
 		path = path + ".npy"
 		seed = np.random.randint(10000)
 		paths.append(path)
+		fds.append(fd)
 		worker_edp_wrapper((0,Queue(),seed,path,problem,robot,num_D_pi,policy_oracle,value_oracle))
 
 	datapoints = []
-	for path in paths: 
+	for fd,path in list(zip(fds,paths)): 
 		datapoints.extend(list(np.load(path)))
+		os.close(fd) 
 		os.remove(path)
 
 	split = int(len(datapoints)*train_test_split)
