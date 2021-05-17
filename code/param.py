@@ -32,15 +32,12 @@ class Param:
 		# solver settings 
 		self.number_simulations = 100
 		self.search_depth = 50
-		self.C_pw = 10.0
-		# self.C_pw = 2.0
-		self.alpha_pw = 0.25
-		# self.C_exp = 10.0
-		# self.alpha_exp = 0.5
+		self.C_pw = 2.0
+		self.alpha_pw = 0.5
 		self.C_exp = 1.0
 		self.alpha_exp = 0.25
-		self.beta_policy = 0.8
-		self.beta_value = 1.0
+		self.beta_policy = 0.75
+		self.beta_value = 0.75
 		self.vis_on = True
 
 	def to_dict(self):
