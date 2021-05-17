@@ -71,8 +71,8 @@ class Example9 : public Problem {
 			r(0,0) = 1;
 			r(1,0) = -1;
 			if (is_captured(state)) {
-				r(1,0) = -1;
-				r(0,0) = 1;
+				r(0,0) = -1;
+				r(1,0) = 1;
 			}
 			return r;
 		}
