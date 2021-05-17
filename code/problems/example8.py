@@ -18,8 +18,8 @@ class Example8(Problem):
 		super(Example8,self).__init__()
 
 		self.t0 = 0
-		self.tf = 10
-		self.dt = 0.2
+		self.tf = 20
+		self.dt = 1.0
 		self.gamma = 0.99
 		self.num_robots = 2 
 		self.state_dim_per_robot = 2 
