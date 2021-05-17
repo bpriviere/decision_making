@@ -149,24 +149,28 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 		ax.add_collection(ln_coll)
 		problem.render(fig=fig,ax=ax)
 
+
 	elif len(problem.position_idx) == 2: 
 		fig,ax = plt.subplots()
 
-		for robot in range(problem.num_robots):
+		segments = [[] for _ in range(problem.num_robots)]
+		nodes = [[] for _ in range(problem.num_robots)]
+		for i_row,row in enumerate(tree_state):
+			parentIdx = int(row[-1])
 
-			segments = []
-			nodes = [] 
-			for i_row,row in enumerate(tree_state):
-				parentIdx = int(row[-1])
-				nodes.append(row[position_idxs])
+			for robot in range(problem.num_robots):
+				robot_state_idxs = problem.state_idxs[robot]
+				robot_position_idx = robot_state_idxs[position_idxs]
+				nodes[robot].append(row[robot_position_idx])
 				if parentIdx >= 0:
-					segments.append([row[position_idxs], tree_state[parentIdx][position_idxs]])
+					segments[robot].append([row[robot_position_idx], tree_state[parentIdx][robot_position_idx]])
 
-			ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
-			nodes = np.array(nodes)
-
+		# nodes = np.array(nodes[robot])
+		for robot in range(problem.num_robots):
+			ln_coll = matplotlib.collections.LineCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
-			ax.scatter(nodes[0,0],nodes[0,1])
+			ax.scatter(nodes[robot][0][0],nodes[robot][0][1])
+
 
 		if not zoom_on: 
 			lims = problem.state_lims
@@ -174,6 +178,7 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 			ax.set_ylim((lims[1,0],lims[1,1]))
 			
 		problem.render(fig=fig,ax=ax)
+
 
 	elif len(problem.position_idx) == 3: 
 		
