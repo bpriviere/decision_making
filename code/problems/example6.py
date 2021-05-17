@@ -178,10 +178,10 @@ class Example6(Problem):
 		if target.shape[1] > 2:
 			C = np.linalg.norm(target[:,2:],axis=1)
 			if encodings.shape[0] > 100:
-				pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],C,alpha=0.3)
+				pcm = ax[0,robot].tricontourf(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],C,alpha=0.3)
 				fig.colorbar(pcm,ax=ax[0,robot])
 			else:
-				ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=C)
+				ax[0,robot].scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],c=C)
 		
 		# render
 		self.render(fig=fig,ax=ax[0,robot])

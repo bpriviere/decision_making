@@ -34,7 +34,7 @@ beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example8"
+problem_name = "example6"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
@@ -45,6 +45,7 @@ num_D_pi = 500
 num_pi_eval = 2000
 num_D_v = 2000
 num_v_eval = 2000
+num_subsamples = 10
 
 learning_rate = 0.001
 num_epochs = 100
@@ -146,7 +147,6 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 				datapoints.append(datapoint)
 			elif mode == 2: 
 				# subsampling of children method
-				num_subsamples = 10
 				actions,num_visits = solver.get_child_distribution(root_node)
 				choice_idxs = np.random.choice(len(actions),num_subsamples,p=num_visits/np.sum(num_visits))
 				
@@ -327,7 +327,6 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 		model_fn = policy_oracle_paths[robot]
 		model, _ = get_oracles(problem,
 			policy_oracle_name = policy_oracle_name,
-			policy_oracle_paths = [None for _ in range(problem.num_robots)],
 			force = True
 			)
 		model = model[robot]
@@ -448,7 +447,7 @@ if __name__ == '__main__':
 	format_dir(clean_dirnames=["data","models"]) 
 
 	if batch_size > np.min((num_D_pi,num_D_v)) * (1-train_test_split):
-		batch_size = int(np.floor((np.min((num_D_pi,num_D_v)) * train_test_split / 10)))
+		batch_size = int(np.floor((np.min((num_D_pi * num_subsamples,num_D_v)) * train_test_split / 10)))
 		print('changing batch size to {}'.format(batch_size))
 
 	# training 
