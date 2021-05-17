@@ -7,8 +7,14 @@ Developed on Ubuntu 20.04. Python dependencies in `~/environment.yml`, can be ba
 ```
 conda env create -f environment.yml
 ```
-If package install fails, try removing specific versions in `.yml` file: e.g. if `ResolvePackageNotFound: 
-  - libgfortran-ng==7.5.0=hdf63c60_6`  then change `libgfortran-ng==7.5.0=hdf63c60_6` to `libgfortran-ng=7.5.0`. Then:
+If package install fails, try removing specific versions in `.yml` file: e.g. if 
+```
+ResolvePackageNotFound: 
+  - libgfortran-ng==7.5.0=hdf63c60_6
+```  
+change `libgfortran-ng==7.5.0=hdf63c60_6` to `libgfortran-ng=7.5.0`. 
+
+Then:
 ```
 conda activate dm_env
 ```
