@@ -21,6 +21,7 @@ class Problem_Settings
         float m2; 
         float c1; 
         float c2; 
+        float R; 
         Eigen::Matrix<float,-1,2> state_lims;
         Eigen::Matrix<float,-1,2> action_lims;
         Eigen::Matrix<float,-1,2> init_lims;
@@ -118,9 +119,14 @@ public:
     }
 
 
-    bool is_terminal(Eigen::Matrix<float,-1,1> state)  
+    // bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
+    // {
+    //     return !is_valid(state);
+    // }
+
+    virtual is_terminal(Eigen::Matrix<float,-1,1> state) 
     {
-        return !is_valid(state);
+        return true; 
     }
 
 

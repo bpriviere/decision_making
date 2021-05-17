@@ -123,5 +123,10 @@ class Example8 : public Problem {
         {
             return (state.array() >= m_state_lims.col(0).array()).all() && (state.array() <= m_state_lims.col(1).array()).all();
         }
+
+        bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
+        {
+            return !is_valid(state);
+        }
 		
 };

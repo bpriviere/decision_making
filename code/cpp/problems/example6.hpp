@@ -114,5 +114,10 @@ class Example6 : public Problem {
 			
 			return stateInBounds && collisionFree;
 		}
+
+        bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
+        {
+            return !is_valid(state);
+        }
 		
 };
