@@ -38,6 +38,8 @@ problem_name = "example6"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
+dirname = "../current/models"
+
 # learning 
 L = 40
 num_D_pi = 500
@@ -176,7 +178,7 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 			# fd, path = tempfile.mkstemp()
 			# path = path + ".npy"
 			# fds.append(fd)
-			path = get_temp_fn(i)
+			path = get_temp_fn(dirname,i)
 			paths.append(path)
 			seeds.append(np.random.randint(10000))
 
@@ -191,7 +193,7 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 		# fd,path = tempfile.mkstemp()
 		# path = path + ".npy"
 		# fds.append(fd)
-		path = get_temp_fn(0)
+		path = get_temp_fn(dirname,0)
 		seed = np.random.randint(10000)
 		paths.append(path)
 		worker_edp_wrapper((0,Queue(),seed,path,problem,robot,num_D_pi,policy_oracle,value_oracle))
@@ -212,7 +214,7 @@ def make_expert_demonstration_pi(problem,robot,policy_oracle,value_oracle):
 	plotter.plot_policy_dataset(problem,\
 		[[train_dataset.X_np,train_dataset.target_np],[test_dataset.X_np,test_dataset.target_np]],\
 		["Train","Test"],robot)
-	plotter.save_figs("../current/models/dataset_policy_l{}_i{}.pdf".format(l,robot))
+	plotter.save_figs("{}/dataset_policy_l{}_i{}.pdf".format(dirname,l,robot))
 	print('expert demonstration pi completed in {}s.'.format(time.time()-start_time))	
 	return train_dataset, test_dataset
 
@@ -275,7 +277,7 @@ def make_expert_demonstration_v(problem, l):
 		for i in range(ncpu):
 			# _, path = tempfile.mkstemp()
 			# paths.append(path + '.npy')
-			path = get_temp_fn(i)
+			path = get_temp_fn(dirname,i)
 			seeds.append(np.random.randint(10000))
 		with mp.Pool(ncpu) as pool:
 			queue = mp.Manager().Queue()
@@ -289,7 +291,7 @@ def make_expert_demonstration_v(problem, l):
 	else:
 		# _,path = tempfile.mkstemp()
 		# paths.append(path + '.npy')
-		path = get_temp_fn(0)
+		paths = [get_temp_fn(dirname,0)]
 		seed = np.random.randint(10000)
 		worker_edv_wrapper((0,Queue(),path,seed,problem,num_D_v,policy_oracle))
 
@@ -308,7 +310,7 @@ def make_expert_demonstration_v(problem, l):
 	plotter.plot_value_dataset(problem,
 		[[train_dataset.X_np,train_dataset.target_np],[test_dataset.X_np,test_dataset.target_np]],
 		["Train","Test"])
-	plotter.save_figs("../current/models/dataset_value_l{}.pdf".format(l))
+	plotter.save_figs("{}/dataset_value_l{}.pdf".format(dirname,l))
 	print('expert demonstration v completed in {}s.'.format(time.time()-start_time))	
 	return train_dataset, test_dataset
 
@@ -368,7 +370,7 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 			torch.save(model.to('cpu').state_dict(),model_fn)
 			model.to(device)
 	plotter.plot_loss(losses)
-	plotter.save_figs("../current/models/losses_{}_l{}_i{}.pdf".format(oracle_name,l,robot))
+	plotter.save_figs("{}/losses_{}_l{}_i{}.pdf".format(dirname,oracle_name,l,robot))
 	print('training model completed in {}s.'.format(time.time()-start_time))
 	return 
 
@@ -414,7 +416,7 @@ def eval_value(problem,l):
 	states = np.array(states).squeeze(axis=2)
 	values = np.array(values).squeeze(axis=2)
 	plotter.plot_value_dataset(problem,[[states,values]],["Eval"])
-	plotter.save_figs("../current/models/value_eval_l{}.pdf".format(l))
+	plotter.save_figs("{}/value_eval_l{}.pdf".format(dirname,l))
 
 
 def eval_policy(problem,l,robot):
@@ -444,7 +446,7 @@ def eval_policy(problem,l,robot):
 	states = np.array(states).squeeze(axis=2)
 	actions = np.array(actions).squeeze(axis=2)
 	plotter.plot_policy_dataset(problem,[[states,actions]],["Eval"],robot)
-	plotter.save_figs("../current/models/policy_eval_l{}_i{}.pdf".format(l,robot))
+	plotter.save_figs("{}/policy_eval_l{}_i{}.pdf".format(dirname,l,robot))
 
 
 if __name__ == '__main__':
