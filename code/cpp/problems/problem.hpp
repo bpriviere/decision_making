@@ -145,7 +145,7 @@ public:
         return state;
     }
 
-    Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state, int robot){
+    Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state){
         return state;
     }
 

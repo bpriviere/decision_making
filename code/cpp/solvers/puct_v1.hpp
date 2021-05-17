@@ -196,14 +196,19 @@ class PUCT_V1 : public Solver {
 			Eigen::Matrix<float,-1,1> curr_state = node_ptr->state; 
 			int depth = 0; 
 			// int depth = node_ptr->calc_depth(); 
-			while (! problem->is_terminal(curr_state) && depth < m_search_depth) 
-			{
-				auto action = problem->sample_action(g_gen);
-				auto next_state = problem->step(curr_state,action,problem->m_timestep);
-				float discount = powf(problem->m_gamma,depth); 
-				value += discount * problem->normalized_reward(curr_state,action);
-				curr_state = next_state;
-				depth += 1;
+
+			if (m_value_network_wrapper.valid && problem->dist(g_gen) < m_beta_value) {
+				auto encoding = problem->value_encoding(curr_state);
+				value = m_value_network_wrapper.value_network->eval(problem,encoding,g_gen);
+			} else { 
+				while (! problem->is_terminal(curr_state) && depth < m_search_depth) {
+					auto action = problem->sample_action(g_gen);
+					auto next_state = problem->step(curr_state,action,problem->m_timestep);
+					float discount = powf(problem->m_gamma,depth); 
+					value += discount * problem->normalized_reward(curr_state,action);
+					curr_state = next_state;
+					depth += 1;
+				}
 			}
 			return value; 
 		}
