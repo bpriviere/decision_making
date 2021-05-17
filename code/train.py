@@ -277,7 +277,7 @@ def make_expert_demonstration_v(problem, l):
 		for i in range(ncpu):
 			# _, path = tempfile.mkstemp()
 			# paths.append(path + '.npy')
-			path = get_temp_fn(dirname,i)
+			paths.append(get_temp_fn(dirname,i))
 			seeds.append(np.random.randint(10000))
 		with mp.Pool(ncpu) as pool:
 			queue = mp.Manager().Queue()
