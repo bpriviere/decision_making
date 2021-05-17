@@ -124,7 +124,7 @@ public:
     //     return !is_valid(state);
     // }
 
-    virtual is_terminal(Eigen::Matrix<float,-1,1> state) 
+    virtual bool is_terminal(Eigen::Matrix<float,-1,1> state) 
     {
         return true; 
     }
