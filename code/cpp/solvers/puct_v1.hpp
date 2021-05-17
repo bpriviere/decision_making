@@ -85,7 +85,8 @@ class PUCT_V1 : public Solver {
 						child_node_ptr = expand_node(problem,curr_node_ptr); 
 					}
 					path[d] = curr_node_ptr;
-					rewards[d] = powf(problem->m_gamma,d)*problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
+					// rewards[d] = powf(problem->m_gamma,d)*problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
+					rewards[d] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
 					curr_node_ptr = child_node_ptr; 
 
 					if (problem->is_terminal(child_node_ptr->state)){
