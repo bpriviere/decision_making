@@ -121,7 +121,6 @@ class Example9(Problem):
 					circ = patches.Circle((states[-1,robot_idxs[0]], states[-1,robot_idxs[1]]), \
 						self.desired_distance,facecolor='green',alpha=0.5)
 					ax.add_patch(circ)
-
 				
 			for robot in range(self.num_robots):
 				if robot == 0:
@@ -154,90 +153,55 @@ class Example9(Problem):
 
 	def plot_value_dataset(self,dataset,title):
 
-		max_plots_per_robot = 10
+		# get data 
+		new_state = self.isaacs_transformation(dataset[0]) # in [num datapoints x 2] 
+		target = dataset[1] # in [num_datapoints x 2] 
 
 		for robot in range(self.num_robots):
-			groups = self.make_groups(dataset[0],dataset[1],robot)
-			if len(groups) > max_plots_per_robot:
-				groups = groups[0:max_plots_per_robot]
-
-			for group in groups: 
-
-				data = np.array([np.array(xi) for xi in group])
-				encodings = data[:,0:self.state_dim]
-				target = data[:,self.state_dim:]
-
-				# contour
-				if encodings.shape[0] > 100:
-					fig,ax = plt.subplots() 
-					state_idx_per_robot = int(self.state_dim / self.num_robots)
-					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-					pcm = ax.tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
-					fig.colorbar(pcm,ax=ax)
-					ax.set_title("{} Value for Robot {}".format(title,robot))
-					ax.set_xlim(self.state_lims[self.position_idx[0],:])
-					ax.set_ylim(self.state_lims[self.position_idx[0],:])
-
-				else:
-					# scatter
-					fig,ax = plt.subplots() 
-					state_idx_per_robot = int(self.state_dim / self.num_robots)
-					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-					pcm = ax.scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=target[:,robot])
-					fig.colorbar(pcm,ax=ax)
-					ax.set_title("{} Value for Robot {}".format(title,robot))
-					ax.set_xlim(self.state_lims[self.position_idx[0],:])
-					ax.set_ylim(self.state_lims[self.position_idx[0],:])
-
-				# plot other agents 
-				state = group[0][0:self.state_dim]
-				for other_robot in range(self.num_robots):
-					if other_robot != robot:
-						other_robot_idxs = self.state_idxs[other_robot] 
-						# Circle((x,y),radius)
-						circ = patches.Circle((state[other_robot_idxs[0]], state[other_robot_idxs[1]]), \
-							self.approx_dist,facecolor='gray',alpha=0.5)
-						ax.add_patch(circ)
-			
-				self.render(fig=fig,ax=ax)
-
+			fig,ax = plt.subplots()
+			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],target[:,robot])
+			fig.colorbar(pcm,ax=ax)
+			ax.set_title("{} Value for Robot {}".format(title,robot))
+			self.render(fig=fig,ax=ax)
 
 	def plot_policy_dataset(self,dataset,title,robot):
 
-		max_plots = 10
+		# get data 
+		new_state = self.isaacs_transformation(dataset[0]) # in [num datapoints x 2] 
+		target = dataset[1] # in [num_datapoints x 2] 
 
-		robot_idxs = self.state_idxs[robot]
+		fig,ax = plt.subplots()
+		ax.quiver(new_state[:,0],new_state[:,1],np.sin(target[:,0]),np.cos(target[:,0]))
+		ax.set_title("{} Policy for Robot {}".format(title,robot))
+		if title == "Eval":
+			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],target[:,1],alpha=0.3)
+			fig.colorbar(pcm,ax=ax)
+		self.render(fig=fig,ax=ax)
 
-		groups = self.make_groups(dataset[0],dataset[1],robot)
-		if len(groups) > max_plots:
-			groups = groups[0:max_plots]
+		
+	def isaacs_transformation(self,states):
+		# states in [num datapoints x 5] 
 
-		for group in groups: 
-			fig,ax = plt.subplots() 
+		# helper
+		def rot(th):
+			gamma = th + np.pi/2 
+			r = np.array([
+				[np.cos(gamma), -np.sin(gamma)],
+				[np.sin(gamma), np.cos(gamma)],
+				])
+			return r
 
-			data = np.array([np.array(xi) for xi in group])
-			encodings = data[:,0:self.state_dim]
-			target = data[:,self.state_dim:]
-
-			# quiver 
-			C = np.linalg.norm(target[:,0:1],axis=1)
-			ax.quiver(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],\
-				np.sin(target[:,0]),np.cos(target[:,0]))
-			ax.scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],c=C,s=2)
-			ax.set_title("{} Policy for Robot {}".format(title,robot))
-			ax.set_xlim(self.state_lims[self.position_idx[0],:])
-			ax.set_ylim(self.state_lims[self.position_idx[0],:])
-
-			# plot other agents 
-			state = group[0][0:self.state_dim]
-			for other_robot in range(self.num_robots):
-				if other_robot != robot:
-					other_robot_idxs = self.state_idxs[other_robot] 
-					# Circle((x,y),radius)
-					circ = patches.Circle((state[other_robot_idxs[0]], state[other_robot_idxs[1]]), \
-						self.approx_dist,facecolor='gray',alpha=0.5)
-					ax.add_patch(circ)
-			self.render(fig=fig,ax=ax)
+		# transform state for planar representation
+		# 	- shift 
+		ref = np.zeros(states.shape)
+		ref[:,2] = states[:,2] 
+		ref[:,3] = states[:,3] 
+		states = states - ref 
+		# 	- rotate 
+		a = np.expand_dims(states[:,0:2],axis=2) # in [num datapoints x 2 x 1]
+		b = np.transpose(rot(states[:,4]),(2,0,1)) # in [num datapoints x 2 x 2]
+		new_states = np.matmul(b,a).squeeze(axis=2) # in [num_datapoints x 2] 		
+		return new_states 
 
 
 	def make_groups(self,encoding,target,robot):
