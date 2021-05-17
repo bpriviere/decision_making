@@ -28,7 +28,7 @@ cmake -DPYTHON_EXECUTABLE=$(which python) -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
 
-### Script Examples 
+## Script Examples:  
 Run individual problems and solvers from `~\code` by modifying `code/param.py` and then:
 ```
 python run.py
