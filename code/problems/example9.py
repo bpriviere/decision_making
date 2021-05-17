@@ -222,7 +222,7 @@ class Example9(Problem):
 			# quiver 
 			C = np.linalg.norm(target[:,0:1],axis=1)
 			ax.quiver(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],\
-				target[:,0],target[:,1])
+				np.sin(target[:,0]),np.cos(target[:,0]))
 			ax.scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],c=C,s=2)
 			ax.set_title("{} Policy for Robot {}".format(title,robot))
 			ax.set_xlim(self.state_lims[self.position_idx[0],:])
