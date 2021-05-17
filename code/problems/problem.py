@@ -27,7 +27,7 @@ class Problem:
 		valid = False
 		while not valid:
 			state = sample_vector(self.init_lims)
-			valid = self.is_valid(state)
+			valid = not self.is_terminal(state)
 		return state
 
 	def reward(self,state,action):
