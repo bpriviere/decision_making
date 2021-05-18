@@ -75,6 +75,8 @@ class Example9(Problem):
 
 	def reward(self,s,a):
 		r = 1 # time until capture reward 
+		if self.is_captured(s):
+			r = 0.5
 		reward = np.array([[r],[-r]])
 		return reward
 
@@ -138,11 +140,14 @@ class Example9(Problem):
 		return fig,ax 
 
 	def is_terminal(self,state):
-		# capture = np.linalg.norm(state[0:2,0] - state[2:4,0]) < self.desired_distance
-		# valid = self.is_valid(state)
-		# return (not valid) or capture
+		capture = self.is_captured(state)
 		valid = self.is_valid(state)
-		return not valid 
+		return (not valid) or capture
+		# valid = self.is_valid(state)
+		# return not valid 
+
+	def is_captured(self,state):
+		return np.linalg.norm(state[0:2,0] - state[2:4,0]) < self.desired_distance
 
 	def is_valid(self,state):
 		return contains(state,self.state_lims)

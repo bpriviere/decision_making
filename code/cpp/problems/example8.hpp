@@ -93,13 +93,12 @@ class Example8 : public Problem {
 			// r(0,0) = -1.0f * (s1-s2).transpose() * m_Q * (s1-s2);
    			// r(1,0) = -1.0f * r(0,0); 
 
-            float dist = (s1-s2).norm();
-            if (dist < m_dist) {
-            	r(0,0) = 1.0;
-            	r(1,0) = 0.0;
-            } else { 
-            	r(0,0) = 0.0;
-            	r(1,0) = 0.0;
+            // float dist = (s1-s2).norm();
+            r(0,0) = 1;
+            r(1,0) = 0.5;
+            if (is_captured(state)) {
+            	r(0,0) = 0.5;
+            	r(1,0) = 1.0;
             }
 
             return r;
@@ -126,7 +125,12 @@ class Example8 : public Problem {
 
         bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
         {
-            return !is_valid(state);
+            // return !is_valid(state);
+            return (!is_valid(state)) || is_captured(state);
+        }
+
+        bool is_captured(Eigen::Matrix<float,-1,1> state) {
+        	return (state.block(0,0,2,1) - state.block(2,0,2,1)).norm() < m_dist;
         }
 		
 };

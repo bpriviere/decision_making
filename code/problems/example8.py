@@ -18,18 +18,18 @@ class Example8(Problem):
 		super(Example8,self).__init__()
 
 		self.t0 = 0
-		self.tf = 20
-		self.dt = 1.0
+		self.tf = 80
+		self.dt = 0.5
 		self.gamma = 0.99
 		self.num_robots = 2 
 		self.state_dim_per_robot = 2 
 		self.action_dim_per_robot = 2
-		self.r_max = 1
-		self.r_min = -1
+		self.r_max = 2
+		self.r_min = -2
 		self.name = "example8"
 		self.position_idx = np.arange(2) 
 		self.state_control_weight = 1e-5 
-		self.desired_distance = 0.1
+		self.desired_distance = 1.0
 
 		self.state_dim = self.num_robots * self.state_dim_per_robot
 		self.action_dim = self.num_robots * self.action_dim_per_robot
@@ -37,7 +37,7 @@ class Example8(Problem):
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
 
-		self.state_lims = np.array((
+		self.state_lims = 5*np.array((
 			(-2,2), 
 			(-2,2), 
 			(-2,2), 
@@ -85,11 +85,16 @@ class Example8(Problem):
 		# 	np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2)) + \
 		# 	a_1.T @ self.Ru @ a_1).squeeze()
 		
-		r = 0
-		if np.linalg.norm(s_1-s_2) < self.desired_distance:
-			r = 1
+		r = 1.0
+		if self.is_captured(s):
+			r = 0.5
 		reward = np.array([[r],[-r]])
 		return reward
+
+	def is_captured(self,s):
+		s_1 = s[0:self.state_dim_per_robot]
+		s_2 = s[self.state_dim_per_robot:]
+		return np.linalg.norm(s_1-s_2) < self.desired_distance
 
 	def normalized_reward(self,s,a): 
 		reward = self.reward(s,a)
@@ -126,11 +131,16 @@ class Example8(Problem):
 				
 			# ax.set_aspect(lims[0,1]-lims[0,0] / lims[1,1]-lims[1,0])
 
+				if robot == 0:
+					circ = patches.Circle((states[-1,0], states[-1,1]), \
+						self.desired_distance,facecolor='green',alpha=0.5)
+					ax.add_patch(circ)
+
 			for robot in range(self.num_robots):
 				if robot == 0:
-					label = "Pursuer"
-				elif robot == 1:
 					label = "Evader"
+				elif robot == 1:
+					label = "Pursuer"
 				ax.plot(np.nan,np.nan,color=colors[robot],label=label)
 			ax.legend(loc='best')
 
@@ -142,7 +152,8 @@ class Example8(Problem):
 		return fig,ax 
 
 	def is_terminal(self,state):
-		return not self.is_valid(state)
+		# return not self.is_valid(state)
+		return (not self.is_valid(state)) or self.is_captured(state)
 
 	def is_valid(self,state):
 		return contains(state,self.state_lims)

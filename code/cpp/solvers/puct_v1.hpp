@@ -90,7 +90,12 @@ class PUCT_V1 : public Solver {
 					curr_node_ptr = child_node_ptr; 
 
 					if (problem->is_terminal(child_node_ptr->state)){
-						max_depth = d+1;
+						// max_depth = d+1;
+						// break;
+						for (int dj = d+1; dj < m_search_depth; dj++) {
+							path[dj] = curr_node_ptr;
+							rewards[dj] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
+						}
 						break;
 					}
 				}
@@ -170,6 +175,26 @@ class PUCT_V1 : public Solver {
 		Node* expand_node(Problem * problem,Node* parent_node_ptr){
 			m_nodes.resize(m_nodes.size() + 1);
 
+			// Eigen::Matrix<float,-1,1> action;
+			// Eigen::Matrix<float,-1,1> next_state;
+			// bool valid;
+			// do {
+			// 	auto action = problem->sample_action(g_gen);
+			// 	if (problem->dist(g_gen) < m_beta_policy){
+			// 		int action_dim_per_robot = int(problem->m_action_dim / problem->m_num_robots);
+			// 		for (int i = 0; i < problem->m_num_robots; i++) {
+			// 			if (m_policy_network_wrappers[i].valid){
+			// 				auto encoding = problem->policy_encoding(parent_node_ptr->state,i); 
+			// 				action.block(action_dim_per_robot*i,0,action_dim_per_robot,1) = 
+			// 					m_policy_network_wrappers[i].policy_network->eval(problem, encoding, g_gen);
+			// 			}
+			// 		} 
+			// 	} 
+			// 	auto next_state = problem->step(parent_node_ptr->state,action,problem->m_timestep);
+			// 	bool valid = problem->is_valid(next_state);
+			// } while (!valid);
+
+			
 			auto action = problem->sample_action(g_gen);
 			if (problem->dist(g_gen) < m_beta_policy){
 				int action_dim_per_robot = int(problem->m_action_dim / problem->m_num_robots);

@@ -69,9 +69,9 @@ class Example9 : public Problem {
 		{ 
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
 			r(0,0) = 1;
-			r(1,0) = -1;
+			r(1,0) = 0.5;
 			if (is_captured(state)) {
-				r(0,0) = -1;
+				r(0,0) = 0.5;
 				r(1,0) = 1;
 			}
 			return r;
@@ -98,8 +98,8 @@ class Example9 : public Problem {
 
         bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
         {
-            return !is_valid(state);
-            // return (!is_valid(state)) || is_captured(state);
+            // return !is_valid(state);
+            return (!is_valid(state)) || is_captured(state);
         }
 
         bool is_captured(Eigen::Matrix<float,-1,1> state) {
