@@ -23,8 +23,8 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
-num_simulations = 2000
-search_depth = 50
+num_simulations = 10000
+search_depth = 100
 C_pw = 2.0
 alpha_pw = 0.5
 C_exp = 1.0
@@ -34,7 +34,7 @@ beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example6"
+problem_name = "example9"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
@@ -42,16 +42,16 @@ dirname = "../current/models"
 
 # learning 
 L = 40
-num_D_pi = 500
+num_D_pi = 1000
 # num_D_pi = 200
 num_pi_eval = 2000
-num_D_v = 2000
-num_v_eval = 2000
+num_D_v = 10000
+num_v_eval = 10000
 num_subsamples = 10
 learning_rate = 0.001
-num_epochs = 200
+num_epochs = 500
 # num_epochs = 100
-batch_size = 128
+batch_size = 512
 train_test_split = 0.8
 
 
@@ -432,7 +432,7 @@ if __name__ == '__main__':
 	problem = get_problem(problem_name) 
 	format_dir(clean_dirnames=["data","models"]) 
 
-	if batch_size > np.min((num_D_pi,num_D_v)) * (1-train_test_split):
+	if batch_size > np.min((num_D_pi*num_subsamples,num_D_v)) * (1-train_test_split):
 		batch_size = int(np.floor((np.min((num_D_pi*num_subsamples,num_D_v)) * train_test_split / 10)))
 		print('changing batch size to {}'.format(batch_size))
 

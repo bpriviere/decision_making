@@ -32,8 +32,8 @@ class Param:
 		self.pretty_plot_on = True
 
 		# solver settings 
-		self.number_simulations = 1000
-		self.search_depth = 50
+		self.number_simulations = 10000
+		self.search_depth = 100
 		self.C_pw = 2.0
 		self.alpha_pw = 0.5
 		self.C_exp = 1.0

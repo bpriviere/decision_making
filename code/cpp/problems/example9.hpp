@@ -89,18 +89,32 @@ class Example9 : public Problem {
 			// r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
 			// r(1,0) = 1 - r(0,0);
 
+			// Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+			// if (is_terminal(state)) {
+			// 	float r1 = (float) (state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
+			// 		(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all();
+			// 	float r2 = (float) (state.block(2,0,2,1).array() >= m_state_lims.block(2,0,2,1).array()).all() && 
+			// 		(state.block(2,0,2,1).array() <= m_state_lims.block(2,1,2,1).array()).all();
+			// 	float r3 = 1.0f; 
+
+			// 	r(0,0) = (0.1 * r1 + 0.1 * (1-r2) + 0.8 * r3);
+			// 	r(1,0) = 1 - r(0,0);
+			// } else {
+			// 	r(0,0) = 0.0f ;
+			// 	r(1,0) = 0.0f;
+			// };
+
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
 			float r1 = (float) (state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
 				(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all();
 			float r2 = (float) (state.block(2,0,2,1).array() >= m_state_lims.block(2,0,2,1).array()).all() && 
 				(state.block(2,0,2,1).array() <= m_state_lims.block(2,1,2,1).array()).all();
-			float r3 = 1; 
+			float r3 = 1.0f; 
 
 			r(0,0) = (0.1 * r1 + 0.1 * (1-r2) + 0.8 * r3);
 			r(1,0) = 1 - r(0,0);
+
 			return r;
-
-
 		}
 
 

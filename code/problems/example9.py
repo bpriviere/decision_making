@@ -56,6 +56,10 @@ class Example9(Problem):
 			(-10,10), 
 			(-10,10), 
 			(-10,10), 
+			# (-5,5), 
+			# (-5,5), 
+			# (-5,5), 
+			# (-5,5), 
 			(-np.pi,np.pi), 
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
@@ -65,6 +69,7 @@ class Example9(Problem):
 			(-1,1),
 			))
 
+		# self.init_lims = self.state_lims 
 		self.init_lims = np.array((
 			(-5,5), 
 			(-5,5), 
@@ -73,15 +78,15 @@ class Example9(Problem):
 			(-np.pi,np.pi),
 			))
 
-	def initialize(self):
-		valid = False
-		while not valid:
-			state = sample_vector(self.init_lims)
-			state[2,0] = 0.0
-			state[3,0] = 0.0
-			state[4,0] = 0.0
-			valid = not self.is_terminal(state)
-		return state
+	# def initialize(self):
+	# 	valid = False
+	# 	while not valid:
+	# 		state = sample_vector(self.init_lims)
+	# 		state[2,0] = 0.0
+	# 		state[3,0] = 0.0
+	# 		state[4,0] = 0.0
+	# 		valid = not self.is_terminal(state)
+	# 	return state
 
 
 	# def reward(self,s,a):
@@ -303,6 +308,9 @@ class Example9(Problem):
 			states = []
 			for _ in range(num_eval):
 				state = self.initialize()
+				state[2,0] = 0
+				state[3,0] = 0
+				state[4,0] = 0
 				states.append(state)
 			states = np.array(states).squeeze(axis=2)
 
