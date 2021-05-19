@@ -14,7 +14,7 @@ def eval_models(problem,model_fns,value_oracle_name,num_eval):
 	
 	states = []
 	for _ in range(num_eval):
-		state = problem.sample_state()
+		state = problem.initialize()
 		states.append(state)
 	states = np.array(states).squeeze(axis=2)
 

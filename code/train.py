@@ -386,7 +386,7 @@ def eval_value(problem,l):
 	states = []
 	values = []
 	for _ in range(num_v_eval):
-		state = problem.sample_state()
+		state = problem.initialize()
 		value = value_oracle.eval(problem,state)
 		states.append(state)
 		values.append(value)
@@ -411,7 +411,7 @@ def eval_policy(problem,l,robot):
 	actions = []
 	action_dim_per_robot = int(problem.action_dim / problem.num_robots)
 	for _ in range(num_pi_eval):
-		state = problem.sample_state()
+		state = problem.initialize()
 		encoding = problem.policy_encoding(state,robot)
 		encoding = torch.tensor(encoding,dtype=torch.float32).squeeze().unsqueeze(0) # [batch_size x state_dim]
 		mu, logvar = policy_oracle(encoding,training=True) # mu in [1 x action_dim_per_robot]
