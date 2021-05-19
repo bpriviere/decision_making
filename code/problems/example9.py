@@ -73,6 +73,17 @@ class Example9(Problem):
 			(-np.pi,np.pi),
 			))
 
+	def initialize(self):
+		valid = False
+		while not valid:
+			state = sample_vector(self.init_lims)
+			state[2,0] = 0.0
+			state[3,0] = 0.0
+			state[4,0] = 0.0
+			valid = not self.is_terminal(state)
+		return state
+
+
 	def reward(self,s,a):
 		r = 1 # time until capture reward 
 		if self.is_captured(s):
@@ -192,9 +203,13 @@ class Example9(Problem):
 		# helper
 		def rot(th):
 			gamma = th - np.pi/2 
+			# r = np.array([
+			# 	[np.cos(gamma), -np.sin(gamma)],
+			# 	[np.sin(gamma), np.cos(gamma)],
+			# 	])
 			r = np.array([
-				[np.cos(gamma), -np.sin(gamma)],
-				[np.sin(gamma), np.cos(gamma)],
+				[1.0, 0.0],
+				[0.0, 1.0],
 				])
 			return r
 
