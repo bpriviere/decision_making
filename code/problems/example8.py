@@ -18,14 +18,14 @@ class Example8(Problem):
 		super(Example8,self).__init__()
 
 		self.t0 = 0
-		self.tf = 80
+		self.tf = 20
 		self.dt = 0.5
 		self.gamma = 0.99
 		self.num_robots = 2 
 		self.state_dim_per_robot = 2 
 		self.action_dim_per_robot = 2
-		self.r_max = 2
-		self.r_min = -2
+		self.r_max = 1
+		self.r_min = 0
 		self.name = "example8"
 		self.position_idx = np.arange(2) 
 		self.state_control_weight = 1e-5 
@@ -87,7 +87,7 @@ class Example8(Problem):
 		
 		r = 1.0
 		if self.is_captured(s):
-			r = 0.5
+			r = 0.0
 		reward = np.array([[r],[-r]])
 		return reward
 

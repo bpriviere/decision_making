@@ -31,8 +31,8 @@ class Example9(Problem):
 			np.arange(1),
 			1+np.arange(1)
 		]
-		self.r_max = 2.0 
-		self.r_min = -self.r_max 
+		self.r_max = 1.0 
+		self.r_min = 0.0
 		self.name = "example9"
 		self.position_idx = np.arange(2) 
 		self.state_control_weight = 0.01 
@@ -76,7 +76,7 @@ class Example9(Problem):
 	def reward(self,s,a):
 		r = 1 # time until capture reward 
 		if self.is_captured(s):
-			r = 0.5
+			r = 0.0
 		reward = np.array([[r],[-r]])
 		return reward
 

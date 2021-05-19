@@ -94,10 +94,10 @@ class Example8 : public Problem {
    			// r(1,0) = -1.0f * r(0,0); 
 
             // float dist = (s1-s2).norm();
-            r(0,0) = 1;
-            r(1,0) = 0.5;
+            r(0,0) = 1.0;
+            r(1,0) = 0.0;
             if (is_captured(state)) {
-            	r(0,0) = 0.5;
+            	r(0,0) = 0.0;
             	r(1,0) = 1.0;
             }
 

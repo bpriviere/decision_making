@@ -69,9 +69,9 @@ class Example9 : public Problem {
 		{ 
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
 			r(0,0) = 1;
-			r(1,0) = 0.5;
+			r(1,0) = 0.0;
 			if (is_captured(state)) {
-				r(0,0) = 0.5;
+				r(0,0) = 0.0;
 				r(1,0) = 1;
 			}
 			return r;
