@@ -1,6 +1,8 @@
 
 # standard 
 import numpy as np 
+import multiprocessing as mp
+import itertools
 
 # custom 
 from param import Param 
@@ -48,7 +50,7 @@ def make_instance(param):
 	return instance 
 
 
-def run_instance(instance,verbose=True):
+def run_instance(instance,verbose=False):
 	# input: 
 	#	- 
 	# outputs:
@@ -106,20 +108,36 @@ def run_instance(instance,verbose=True):
 
 	return sim_result
 
+def worker(param):
+	# print('running worker')
+	instance = make_instance(param)
+	sim_result = run_instance(instance)
+	del sim_result["instance"]["solver"]
+	# print('completed worker')
+	return sim_result
+
 
 if __name__ == '__main__':
 
 	param = Param()
 
-	# make instance 
-	instance = make_instance(param)
+	# run instance 
+	if param.parallel_on:
+		# instances = [make_instance(param) for _ in range(param.num_trials)]
+		ncpu = mp.cpu_count() - 1
+		pool = mp.Pool(ncpu)
+		sim_results = pool.map(worker, [Param() for _ in range(param.num_trials)])
+		pool.close()
+		pool.join()
 
-	# # run instance 
-	sim_result = run_instance(instance)
+	else:
+		instance = make_instance(param)
+		sim_results = [run_instance(instance,verbose=True)]
+
 
 	if param.movie_on: 
 		print('making movie...')
-		plotter.make_movie(sim_result,instance,"../current/plots/vid.mp4")
+		plotter.make_movie(sim_results[0],sim_result[0]["instance"],"../current/plots/vid.mp4")
 		plotter.open_figs("../current/plots/vid.mp4")	
 
 	# save/load results
@@ -127,10 +145,11 @@ if __name__ == '__main__':
 
 	# plotting 
 	print('plotting results...')
-	plotter.plot_sim_result(sim_result)
-
-	if param.pretty_plot_on and hasattr(instance["problem"], 'pretty_plot') :
-		instance["problem"].pretty_plot(sim_result)
+	for sim_result in sim_results:
+		plotter.plot_sim_result(sim_result)
+		sim_result["instance"]["problem"].render(states=sim_result["states"])
+		if param.pretty_plot_on and hasattr(sim_result["instance"]["problem"], 'pretty_plot') :
+			sim_result["instance"]["problem"].pretty_plot(sim_result)
 
 	plotter.save_figs("../current/plots/run.pdf")
 	plotter.open_figs("../current/plots/run.pdf")

@@ -5,6 +5,10 @@ class Param:
 
 	def __init__(self):
 
+		# 
+		self.parallel_on = True
+		self.num_trials = 5 
+
 		# names 
 		self.problem_name = "example6" # e.g. example1, example2, example3, ...
 		self.solver_name = "C_PUCT_V1" # e.g. Empty, DARE, PUCT_V0, C_PUCT_V0, PUCT_V1, ...
