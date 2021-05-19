@@ -3,6 +3,7 @@
 import numpy as np 
 import multiprocessing as mp
 import itertools
+from queue import Queue
 
 # custom 
 from param import Param 
@@ -10,7 +11,7 @@ from problems.problem import get_problem
 from solvers.solver import get_solver 
 from learning.oracles import get_oracles 
 import plotter 
-import util
+from util import init_tqdm, update_tqdm
 
 
 def make_instance(param):
@@ -50,7 +51,7 @@ def make_instance(param):
 	return instance 
 
 
-def run_instance(instance,verbose=False):
+def run_instance(rank,queue,total,instance,verbose=False):
 	# input: 
 	#	- 
 	# outputs:
@@ -68,6 +69,10 @@ def run_instance(instance,verbose=False):
 	problem = instance["problem"] 
 	solver = instance["solver"] 
 	curr_state = instance["initial_state"]
+
+	# print('rank',rank)
+	# print('total',total)
+	pbar = init_tqdm(rank,total)
 
 	states.append(curr_state)
 	times.append(problem.times[0])
@@ -91,6 +96,8 @@ def run_instance(instance,verbose=False):
 		actions.append(action)
 		rewards.append(reward)
 
+		update_tqdm(rank,1,queue,pbar)
+
 		if done: 
 			break 
 		else: 
@@ -108,32 +115,36 @@ def run_instance(instance,verbose=False):
 
 	return sim_result
 
-def worker(param):
-	# print('running worker')
+def worker(rank,queue,num_trials,param):
 	instance = make_instance(param)
-	sim_result = run_instance(instance)
-	del sim_result["instance"]["solver"]
-	# print('completed worker')
+	total = num_trials * len(instance["problem"].times)
+	sim_result = run_instance(rank,queue,total,instance)
+	del sim_result["instance"]["solver"] # can't pickle bindings 
 	return sim_result
+
+def _worker(arg):
+	return worker(*arg)
 
 
 if __name__ == '__main__':
 
 	param = Param()
 
-	# run instance 
+	print('running sim...')
 	if param.parallel_on:
-		# instances = [make_instance(param) for _ in range(param.num_trials)]
-		ncpu = mp.cpu_count() - 1
-		pool = mp.Pool(ncpu)
-		sim_results = pool.map(worker, [Param() for _ in range(param.num_trials)])
+		pool = mp.Pool(mp.cpu_count() - 1)
+		args = list(zip(
+			itertools.count(), 
+			itertools.repeat(mp.Manager().Queue()),
+			itertools.repeat(param.num_trials),
+			[Param() for _ in range(param.num_trials)] ))
+		sim_results = pool.imap_unordered(_worker, args)
+		# sim_results = pool.map(_worker, args)
 		pool.close()
 		pool.join()
-
 	else:
 		instance = make_instance(param)
-		sim_results = [run_instance(instance,verbose=True)]
-
+		sim_results = [run_instance(0,Queue(),len(instance["problem"].times),instance,verbose=True)]
 
 	if param.movie_on: 
 		print('making movie...')

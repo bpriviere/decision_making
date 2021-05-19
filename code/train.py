@@ -20,7 +20,7 @@ from problems.problem import get_problem
 from solvers.solver import get_solver 
 from learning.oracles import get_oracles
 from run import run_instance
-from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn
+from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
 num_simulations = 2000
@@ -78,25 +78,25 @@ class Dataset(torch.utils.data.Dataset):
 		self.target_torch = self.target_torch.to(device)
 
 
-# utility 
-def init_tqdm(rank,total):
-	pbar = None 
-	if rank == 0:
-		pbar = tqdm(total=total)
-	return pbar
+# # utility 
+# def init_tqdm(rank,total):
+# 	pbar = None 
+# 	if rank == 0:
+# 		pbar = tqdm(total=total)
+# 	return pbar
 
 
-def update_tqdm(rank,total_per_worker,queue,pbar):
-	if rank == 0:
-		count = total_per_worker
-		try:
-			while True:
-				count += queue.get_nowait()
-		except Empty:
-			pass
-		pbar.update(count)
-	else:
-		queue.put_nowait(total_per_worker)
+# def update_tqdm(rank,total_per_worker,queue,pbar):
+# 	if rank == 0:
+# 		count = total_per_worker
+# 		try:
+# 			while True:
+# 				count += queue.get_nowait()
+# 		except Empty:
+# 			pass
+# 		pbar.update(count)
+# 	else:
+# 		queue.put_nowait(total_per_worker)
 
 
 # policy demonstration functions 
