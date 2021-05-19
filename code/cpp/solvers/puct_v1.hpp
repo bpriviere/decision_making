@@ -90,13 +90,13 @@ class PUCT_V1 : public Solver {
 					curr_node_ptr = child_node_ptr; 
 
 					if (problem->is_terminal(child_node_ptr->state)){
-						// max_depth = d+1;
-						// break;
-						for (int dj = d+1; dj < m_search_depth; dj++) {
-							path[dj] = curr_node_ptr;
-							rewards[dj] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
-						}
+						max_depth = d+1;
 						break;
+						// for (int dj = d+1; dj < m_search_depth; dj++) {
+						// 	path[dj] = curr_node_ptr;
+						// 	rewards[dj] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
+						// }
+						// break;
 					}
 				}
 				rewards[max_depth] = powf(problem->m_gamma,max_depth) * default_policy(problem,curr_node_ptr);
@@ -228,14 +228,22 @@ class PUCT_V1 : public Solver {
 				auto encoding = problem->value_encoding(curr_state);
 				value = m_value_network_wrapper.value_network->eval(problem,encoding,g_gen);
 			} else { 
-				while (! problem->is_terminal(curr_state) && depth < m_search_depth) {
+				// while (! problem->is_terminal(curr_state) && depth < m_search_depth) {
+				// 	auto action = problem->sample_action(g_gen);
+				// 	auto next_state = problem->step(curr_state,action,problem->m_timestep);
+				// 	float discount = powf(problem->m_gamma,depth); 
+				// 	value += discount * problem->normalized_reward(curr_state,action);
+				// 	curr_state = next_state;
+				// 	depth += 1;
+				// }
+				do {
 					auto action = problem->sample_action(g_gen);
 					auto next_state = problem->step(curr_state,action,problem->m_timestep);
 					float discount = powf(problem->m_gamma,depth); 
 					value += discount * problem->normalized_reward(curr_state,action);
 					curr_state = next_state;
 					depth += 1;
-				}
+				} while (! problem->is_terminal(curr_state) && depth < m_search_depth) ;
 			}
 			return value; 
 		}
