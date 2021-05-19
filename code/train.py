@@ -24,7 +24,7 @@ from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_t
 
 # solver 
 num_simulations = 2000
-search_depth = 100
+search_depth = 50
 C_pw = 2.0
 alpha_pw = 0.5
 C_exp = 1.0
@@ -76,28 +76,6 @@ class Dataset(torch.utils.data.Dataset):
 	def to(self,device):
 		self.X_torch = self.X_torch.to(device)
 		self.target_torch = self.target_torch.to(device)
-
-
-# # utility 
-# def init_tqdm(rank,total):
-# 	pbar = None 
-# 	if rank == 0:
-# 		pbar = tqdm(total=total)
-# 	return pbar
-
-
-# def update_tqdm(rank,total_per_worker,queue,pbar):
-# 	if rank == 0:
-# 		count = total_per_worker
-# 		try:
-# 			while True:
-# 				count += queue.get_nowait()
-# 		except Empty:
-# 			pass
-# 		pbar.update(count)
-# 	else:
-# 		queue.put_nowait(total_per_worker)
-
 
 # policy demonstration functions 
 def worker_edp_wrapper(arg):
@@ -249,7 +227,7 @@ def worker_edv(rank,queue,fn,seed,problem,num_states_per_pool,policy_oracle):
 	while len(datapoints) < num_states_per_pool:	
 		state = problem.initialize()
 		instance["initial_state"] = state
-		sim_result = run_instance(instance,verbose=False)
+		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
 		value = calculate_value(problem,sim_result)
 		encoding = problem.value_encoding(state).squeeze()
 		datapoint = np.append(encoding,value)

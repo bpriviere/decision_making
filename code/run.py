@@ -51,7 +51,7 @@ def make_instance(param):
 	return instance 
 
 
-def run_instance(rank,queue,total,instance,verbose=False):
+def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 	# input: 
 	#	- 
 	# outputs:
@@ -72,7 +72,7 @@ def run_instance(rank,queue,total,instance,verbose=False):
 
 	# print('rank',rank)
 	# print('total',total)
-	pbar = init_tqdm(rank,total)
+	if tqdm_on:	pbar = init_tqdm(rank,total)
 
 	states.append(curr_state)
 	times.append(problem.times[0])
@@ -96,7 +96,7 @@ def run_instance(rank,queue,total,instance,verbose=False):
 		actions.append(action)
 		rewards.append(reward)
 
-		update_tqdm(rank,1,queue,pbar)
+		if tqdm_on: update_tqdm(rank,1,queue,pbar)
 
 		if done: 
 			break 
