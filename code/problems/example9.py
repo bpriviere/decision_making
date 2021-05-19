@@ -245,48 +245,53 @@ class Example9(Problem):
 
 	def pretty_plot(self,sim_result):
 
-		for robot in [0,1]:
+		value_plot_on = sim_result["instance"]["value_oracle"] is not None
+		policy_plot_on = not all([a is None for a in sim_result["instance"]["policy_oracle"]])
 
-			fig,ax = plt.subplots()
-			inital_state = sim_result["states"][0]
+		if value_plot_on or policy_plot_on:
 
-			robot_idxs = self.state_idxs[robot] 
-			not_robot_idxs = []
-			for i in range(self.state_dim):
-				if i not in robot_idxs:
-					not_robot_idxs.append(i)
+			for robot in [0,1]:
 
-			num_eval = 3000
-			states = []
-			for _ in range(num_eval):
-				state = self.initialize()
-				state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
-				states.append(state)
-			states = np.array(states).squeeze(axis=2)
+				fig,ax = plt.subplots()
+				inital_state = sim_result["states"][0]
 
-			# plot value func contours
-			if sim_result["instance"]["value_oracle"] is not None:
-				value_oracle = sim_result["instance"]["value_oracle"]
-				values = []
-				for state in states: 
-					value = value_oracle.eval(self,state)
-					values.append(value)
-				values = np.array(values).squeeze(axis=2)
+				robot_idxs = self.state_idxs[robot] 
+				not_robot_idxs = []
+				for i in range(self.state_dim):
+					if i not in robot_idxs:
+						not_robot_idxs.append(i)
 
-				pcm = ax.tricontourf(states[:,robot_idxs[0]],states[:,robot_idxs[1]],values[:,robot])
-				fig.colorbar(pcm,ax=ax)	
+				num_eval = 3000
+				states = []
+				for _ in range(num_eval):
+					state = self.initialize()
+					state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
+					states.append(state)
+				states = np.array(states).squeeze(axis=2)
 
-			# plot policy function 
-			if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
-				policy_oracle = sim_result["instance"]["policy_oracle"]
-				actions = []
-				for state in states: 
-					action = policy_oracle[robot].eval(self,state,robot)
-					actions.append(action)
-				actions = np.array(actions).squeeze(axis=2)
+				# plot value func contours
+				if sim_result["instance"]["value_oracle"] is not None:
+					value_oracle = sim_result["instance"]["value_oracle"]
+					values = []
+					for state in states: 
+						value = value_oracle.eval(self,state)
+						values.append(value)
+					values = np.array(values).squeeze(axis=2)
 
-				ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
+					pcm = ax.tricontourf(states[:,robot_idxs[0]],states[:,robot_idxs[1]],values[:,robot])
+					fig.colorbar(pcm,ax=ax)	
 
-			
-			# plot final trajectory , obstacles and limits 
-			self.render(fig=fig,ax=ax,states=sim_result["states"])
+				# plot policy function 
+				if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
+					policy_oracle = sim_result["instance"]["policy_oracle"]
+					actions = []
+					for state in states: 
+						action = policy_oracle[robot].eval(self,state,robot)
+						actions.append(action)
+					actions = np.array(actions).squeeze(axis=2)
+
+					ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
+
+				
+				# plot final trajectory , obstacles and limits 
+				self.render(fig=fig,ax=ax,states=sim_result["states"])
