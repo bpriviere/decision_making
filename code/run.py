@@ -78,7 +78,7 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 	times.append(problem.times[0])
 	for step,time in enumerate(problem.times[1:]):
 
-		if verbose: print('\t\t t = {}/{}'.format(step,len(problem.times)))
+		if verbose and not tqdm_on: print('\t\t t = {}/{}'.format(step,len(problem.times)))
 		
 		action = solver.policy(problem,curr_state)
 
@@ -115,7 +115,8 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 
 	return sim_result
 
-def worker(rank,queue,num_trials,param):
+def worker(rank,queue,num_trials,param,seed):
+	np.random.seed(seed)
 	instance = make_instance(param)
 	total = num_trials * len(instance["problem"].times)
 	sim_result = run_instance(rank,queue,total,instance)
@@ -133,11 +134,13 @@ if __name__ == '__main__':
 	print('running sim...')
 	if param.parallel_on:
 		pool = mp.Pool(mp.cpu_count() - 1)
+		params = [Param() for _ in range(param.num_trials)]
+		seeds = [np.random.randint(10000) for _ in range(param.num_trials)]
 		args = list(zip(
 			itertools.count(), 
 			itertools.repeat(mp.Manager().Queue()),
 			itertools.repeat(param.num_trials),
-			[Param() for _ in range(param.num_trials)] ))
+			params,seeds))
 		sim_results = pool.imap_unordered(_worker, args)
 		# sim_results = pool.map(_worker, args)
 		pool.close()

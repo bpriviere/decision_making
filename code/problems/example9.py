@@ -191,7 +191,7 @@ class Example9(Problem):
 
 		# helper
 		def rot(th):
-			gamma = th + np.pi/2 
+			gamma = th - np.pi/2 
 			r = np.array([
 				[np.cos(gamma), -np.sin(gamma)],
 				[np.sin(gamma), np.cos(gamma)],
@@ -207,7 +207,8 @@ class Example9(Problem):
 		# 	- rotate 
 		a = np.expand_dims(states[:,0:2],axis=2) # in [num datapoints x 2 x 1]
 		b = np.transpose(rot(states[:,4]),(2,0,1)) # in [num datapoints x 2 x 2]
-		new_states = np.matmul(b,a).squeeze(axis=2) # in [num_datapoints x 2] 		
+		new_states = np.matmul(b,a).squeeze(axis=2) # in [num_datapoints x 2] 	
+		# new_states = a	
 		return new_states 
 
 
@@ -290,7 +291,7 @@ class Example9(Problem):
 						actions.append(action)
 					actions = np.array(actions).squeeze(axis=2)
 
-					ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
+					ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],np.sin(actions[:,0]),np.cos(actions[:,0]))
 
 				
 				# plot final trajectory , obstacles and limits 
