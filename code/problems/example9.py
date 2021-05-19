@@ -84,18 +84,33 @@ class Example9(Problem):
 		return state
 
 
+	# def reward(self,s,a):
+	# 	r = 1 # time until capture reward 
+	# 	if self.is_captured(s):
+	# 		r = 0.0
+	# 	reward = np.array([[r],[-r]])
+	# 	return reward
+
+	# def normalized_reward(self,s,a): 
+	# 	reward = self.reward(s,a)
+	# 	reward = np.clip(reward,self.r_min,self.r_max)
+	# 	reward = (reward - self.r_min) / (self.r_max - self.r_min)
+	# 	reward = np.array([[reward[0,0]],[1-reward[0,0]]])
+	# 	return reward
+
 	def reward(self,s,a):
-		r = 1 # time until capture reward 
-		if self.is_captured(s):
-			r = 0.0
-		reward = np.array([[r],[-r]])
-		return reward
+		return self.normalized_reward(s,a)
 
 	def normalized_reward(self,s,a): 
-		reward = self.reward(s,a)
-		reward = np.clip(reward,self.r_min,self.r_max)
-		reward = (reward - self.r_min) / (self.r_max - self.r_min)
-		reward = np.array([[reward[0,0]],[1-reward[0,0]]])
+		# weighted sum of validity of both robots, and then the time to capture
+		r1 = contains(s[self.state_idxs[0],:],self.state_lims[self.state_idxs[0],:])
+		r2 = contains(s[self.state_idxs[1],:],self.state_lims[self.state_idxs[1],:])
+		r3 = 1 
+		w1 = 0.1
+		w2 = 0.1 
+		w3 = 0.8 
+		r = w1*r1 + w2*(1-r2) + w3*r3
+		reward = np.array([[r],[1-r]])
 		return reward
 
 	def step(self,s,a,dt):
@@ -267,7 +282,7 @@ class Example9(Problem):
 		if value_plot_on or policy_plot_on:
 
 			fig,ax = plt.subplots()
-			
+
 			# inital_state = sim_result["states"][0]
 
 			# robot_idxs = self.state_idxs[robot] 

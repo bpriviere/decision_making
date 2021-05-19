@@ -67,26 +67,41 @@ class Example9 : public Problem {
 			Eigen::Matrix<float,-1,1> state,
 			Eigen::Matrix<float,-1,1> action) override
 		{ 
-			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-			r(0,0) = 0.5;
-			if (is_captured(state)) {
-				r(0,0) = 0.0;
-			}
-			return r;
+			// Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+			// r(0,0) = 0.5;
+			// if (is_captured(state)) {
+			// 	r(0,0) = 0.0;
+			// }
+			// return r;
+
+			return normalized_reward(state,action);
+
 		}
 
 
-        Eigen::Matrix<float,-1,1> normalized_reward(
-            Eigen::Matrix<float,-1,1> state,
-            Eigen::Matrix<float,-1,1> action) override
-        {
-            Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-			r = reward(state,action);
-			r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
-			r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
+		Eigen::Matrix<float,-1,1> normalized_reward(
+			Eigen::Matrix<float,-1,1> state,
+			Eigen::Matrix<float,-1,1> action) override
+		{
+			// Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+			// r = reward(state,action);
+			// r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
+			// r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
+			// r(1,0) = 1 - r(0,0);
+
+			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+			float r1 = (float) (state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
+				(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all();
+			float r2 = (float) (state.block(2,0,2,1).array() >= m_state_lims.block(2,0,2,1).array()).all() && 
+				(state.block(2,0,2,1).array() <= m_state_lims.block(2,1,2,1).array()).all();
+			float r3 = 1; 
+
+			r(0,0) = (0.1 * r1 + 0.1 * (1-r2) + 0.8 * r3);
 			r(1,0) = 1 - r(0,0);
-            return r;
-        }
+			return r;
+
+
+		}
 
 
 		bool is_valid(Eigen::Matrix<float,-1,1> state) override {
@@ -94,14 +109,14 @@ class Example9 : public Problem {
 			return stateInBounds;
 		}
 
-        bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
-        {
-            // return !is_valid(state);
-            return (!is_valid(state)) || is_captured(state);
-        }
+		bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
+		{
+			// return !is_valid(state);
+			return (!is_valid(state)) || is_captured(state);
+		}
 
-        bool is_captured(Eigen::Matrix<float,-1,1> state) {
-        	return (state.block(0,0,2,1) - state.block(2,0,2,1)).norm() < m_desired_distance;
-        }
+		bool is_captured(Eigen::Matrix<float,-1,1> state) {
+			return (state.block(0,0,2,1) - state.block(2,0,2,1)).norm() < m_desired_distance;
+		}
 		
 };
