@@ -120,9 +120,12 @@ class Example9 : public Problem {
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
 			r(0,0) = 0.0;
 			r(1,0) = 0.0;
-			if (is_captured(state) || state(5,0) > m_tf) {
+			if (is_captured(state)) {
 				r(0,0) = state(5,0) / m_tf;
 				r(1,0) = 1 - r(0,0);
+			} else if (state(5,0) > m_tf) {
+				r(0,0) = 1.0;
+				r(1,0) = 0.0;
 			} else if ( !(
 				(state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
 				(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all() )) {

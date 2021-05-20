@@ -21,7 +21,7 @@ class Example9(Problem):
 		self.t0 = 0
 		self.tf = 20
 		self.dt = 0.2
-		self.gamma = 0.99
+		self.gamma = 1.0
 		self.num_robots = 2 
 		self.state_idxs = [
 			np.arange(2),
@@ -38,9 +38,9 @@ class Example9(Problem):
 		self.state_control_weight = 0.01 
 		
 		# problem specific parameters 
-		self.desired_distance = 1.0
+		self.desired_distance = 0.5
 		self.w1 = 1.0 
-		self.w2 = 2.0
+		self.w2 = 1.5
 		self.R = 1.0
 
 		self.action_dim_per_robot = 1 
@@ -51,6 +51,7 @@ class Example9(Problem):
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
 
+		max_angle = np.pi + self.tf * self.w2 / self.R
 		self.state_lims = np.array((
 			(-10,10), 
 			(-10,10), 
@@ -61,7 +62,8 @@ class Example9(Problem):
 			# (-5,5), 
 			# (-5,5), 
 			# (-np.pi,np.pi), 
-			(-np.inf,np.inf), 
+			(-max_angle,max_angle), 
+			# (-np.inf,np.inf), 
 			(0,self.tf)
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
@@ -212,15 +214,15 @@ class Example9(Problem):
 
 		# helper
 		def rot(th):
-			gamma = th - np.pi/2 
-			# r = np.array([
-			# 	[np.cos(gamma), -np.sin(gamma)],
-			# 	[np.sin(gamma), np.cos(gamma)],
-			# 	])
+			gamma = - th + np.pi/2 
 			r = np.array([
-				[np.ones(th.shape), np.zeros(th.shape)],
-				[np.zeros(th.shape), np.ones(th.shape)],
+				[np.cos(gamma), -np.sin(gamma)],
+				[np.sin(gamma), np.cos(gamma)],
 				])
+			# r = np.array([
+			# 	[np.ones(th.shape), np.zeros(th.shape)],
+			# 	[np.zeros(th.shape), np.ones(th.shape)],
+			# 	])
 			return r
 
 		# transform state for planar representation

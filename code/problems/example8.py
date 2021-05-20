@@ -20,7 +20,7 @@ class Example8(Problem):
 		self.t0 = 0
 		self.tf = 20
 		self.dt = 0.5
-		self.gamma = 0.999
+		self.gamma = 1.0
 		self.num_robots = 2 
 		self.state_dim_per_robot = 2 
 		self.action_dim_per_robot = 2
