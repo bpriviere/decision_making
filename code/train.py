@@ -23,7 +23,7 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
-num_simulations = 10000
+num_simulations = 5000
 search_depth = 100
 C_pw = 2.0
 alpha_pw = 0.5
@@ -42,17 +42,17 @@ dirname = "../current/models"
 
 # learning 
 L = 40
-num_D_pi = 1000
+num_D_pi = 10000
 # num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 10000
-num_v_eval = 10000
+num_v_eval = 100000
 num_subsamples = 10
 num_self_play_plots = 10 
 learning_rate = 0.001
-num_epochs = 500
+num_epochs = 200
 # num_epochs = 100
-batch_size = 512
+batch_size = 1024
 train_test_split = 0.8
 
 
@@ -223,16 +223,12 @@ def worker_edv(rank,queue,fn,seed,problem,num_states_per_pool,policy_oracle):
 	}
 	np.random.seed(seed)
 	
-	count = 0 
 	pbar = init_tqdm(rank,num_D_v)
 	datapoints = []
 	while len(datapoints) < num_states_per_pool:	
 		state = problem.initialize()
 		instance["initial_state"] = state
 		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
-		if count < num_self_play_plots:
-			plotter.plot_sim_result(sim_result)
-			count += 1
 		value = calculate_value(problem,sim_result)
 		encoding = problem.value_encoding(state).squeeze()
 		datapoint = np.append(encoding,value)
@@ -432,6 +428,25 @@ def eval_policy(problem,l,robot):
 	plotter.save_figs("{}/policy_eval_l{}_i{}.pdf".format(dirname,l,robot))
 
 
+def self_play(problem,policy_oracle,l):
+	solver = get_solver(
+			"NeuralNetwork",
+			policy_oracle=policy_oracle)
+
+	instance = {
+		"problem" : problem,
+		"solver" : solver,
+	}
+
+	for _ in range(num_self_play_plots):
+		state = problem.initialize()
+		instance["initial_state"] = state
+		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
+		plotter.plot_sim_result(sim_result)
+		problem.render(states=sim_result["states"])
+	plotter.save_figs("{}/self_play_l{}.pdf".format(dirname,l))
+	return 
+
 if __name__ == '__main__':
 
 	problem = get_problem(problem_name) 
@@ -457,6 +472,7 @@ if __name__ == '__main__':
 				policy_oracle_name = policy_oracle_name, 
 				policy_oracle_paths = policy_oracle_paths
 				)
+			self_play(problem,policy_oracle,l-1)
 
 		for robot in range(problem.num_robots): 
 			print('\t policy training iteration l/L, i/N: {}/{} {}/{}...'.format(\
