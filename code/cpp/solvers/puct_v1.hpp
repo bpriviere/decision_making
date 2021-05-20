@@ -69,7 +69,7 @@ class PUCT_V1 : public Solver {
 				return solver_result; 
 			}
 
-			for (int ii = 1; ii <= m_num_simulations; ii++){
+			for (int ii = 0; ii < m_num_simulations; ii++){
 
 				Node* curr_node_ptr = root_node_ptr;
 				std::vector< Eigen::Matrix<float,-1,1> > rewards(m_search_depth+1);
@@ -85,21 +85,15 @@ class PUCT_V1 : public Solver {
 						child_node_ptr = expand_node(problem,curr_node_ptr); 
 					}
 					path[d] = curr_node_ptr;
-					// rewards[d] = powf(problem->m_gamma,d)*problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
 					rewards[d] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
+					
 					curr_node_ptr = child_node_ptr; 
-
 					if (problem->is_terminal(child_node_ptr->state)){
 						max_depth = d+1;
 						break;
-						// for (int dj = d+1; dj < m_search_depth; dj++) {
-						// 	path[dj] = curr_node_ptr;
-						// 	rewards[dj] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
-						// }
-						// break;
 					}
 				}
-				rewards[max_depth] = powf(problem->m_gamma,max_depth) * default_policy(problem,curr_node_ptr);
+				rewards[max_depth] = default_policy(problem,curr_node_ptr);
 				path[max_depth] = curr_node_ptr; 
 
 				for (int d = 0; d <= max_depth; d++){
@@ -228,7 +222,7 @@ class PUCT_V1 : public Solver {
 				auto encoding = problem->value_encoding(curr_state);
 				value = m_value_network_wrapper.value_network->eval(problem,encoding,g_gen);
 			} else { 
-				// while (! problem->is_terminal(curr_state) && depth < m_search_depth) {
+				// while ( (!problem->is_terminal(curr_state)) && (depth < m_search_depth)) {
 				// 	auto action = problem->sample_action(g_gen);
 				// 	auto next_state = problem->step(curr_state,action,problem->m_timestep);
 				// 	float discount = powf(problem->m_gamma,depth); 
@@ -236,15 +230,28 @@ class PUCT_V1 : public Solver {
 				// 	curr_state = next_state;
 				// 	depth += 1;
 				// }
-				do {
+
+				// do {
+				// 	auto action = problem->sample_action(g_gen);
+				// 	auto next_state = problem->step(curr_state,action,problem->m_timestep);
+				// 	value += powf(problem->m_gamma,depth) * problem->normalized_reward(curr_state,action);
+				// 	curr_state = next_state;
+				// 	depth += 1;
+				// } while (! problem->is_terminal(curr_state)) ;
+				// } while (! problem->is_terminal(curr_state) && depth < m_search_depth) ;
+
+				while (true) {
 					auto action = problem->sample_action(g_gen);
 					auto next_state = problem->step(curr_state,action,problem->m_timestep);
-					float discount = powf(problem->m_gamma,depth); 
-					value += discount * problem->normalized_reward(curr_state,action);
+					value += powf(problem->m_gamma,depth) * problem->normalized_reward(curr_state,action);
+					if (problem->is_terminal(curr_state)){
+						break;
+					}
 					curr_state = next_state;
 					depth += 1;
-				} while (! problem->is_terminal(curr_state) && depth < m_search_depth) ;
+				}
 			}
+
 			return value; 
 		}
 
