@@ -12,7 +12,7 @@ int main()
 {
 
     // problem stuff 
-    std::string problem_name = "example6";
+    std::string problem_name = "example8";
     std::string solver_name = "C_PUCT_V1";
 
     // 
@@ -126,24 +126,26 @@ int main()
         problem_settings.obstacles[2] = obstacle3;
 
     } else if (problem_name == "example8"){
-        problem_settings.state_lims.resize(4,2);
+        problem_settings.state_lims.resize(5,2);
         problem_settings.state_lims << 
             -2.0,2.0,
             -2.0,2.0,
             -2.0,2.0,
-            -2.0,2.0;
+            -2.0,2.0,
+             0.0, 20.0;
         problem_settings.action_lims.resize(4,2);
         problem_settings.action_lims << 
             -0.5,0.5,
             -0.5,0.5,
             -0.5,0.5,
             -0.5,0.5;
-        problem_settings.init_lims.resize(4,2);
+        problem_settings.init_lims.resize(5,2);
         problem_settings.init_lims << 
             -2.0,2.0,
             -2.0,2.0,
             -2.0,2.0,
-            -2.0,2.0;
+            -2.0,2.0,
+             0.0,0.0;
 
         problem_settings.timestep = 0.1f;
         problem_settings.gamma = 0.99f;
@@ -153,6 +155,7 @@ int main()
 
     }
     problem_settings.init_lims = problem_settings.state_lims; 
+    problem_settings.tf = 20.0f;
 
     Problem_Wrapper problem_wrapper(problem_name,problem_settings);
     
