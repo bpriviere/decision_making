@@ -187,8 +187,8 @@ class Example8(Problem):
 					fig,ax = plt.subplots() 
 					state_idx_per_robot = int(self.state_dim / self.num_robots)
 					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-					pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
-					fig.colorbar(pcm,ax=ax[0,robot])
+					pcm = ax.tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
+					fig.colorbar(pcm,ax=ax)
 					ax.set_title("{} Value for Robot {}".format(title,robot))
 					ax.set_xlim(self.state_lims[self.position_idx[0],:])
 					ax.set_ylim(self.state_lims[self.position_idx[0],:])
