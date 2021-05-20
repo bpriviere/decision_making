@@ -97,7 +97,8 @@ def plot_sim_result(sim_result):
 		for i_state in range(state_dim_per_robot):
 			idx = i_state + state_dim_per_robot * i_robot 
 			axs[i_robot,i_state].plot(times,states[:,idx])
-			axs[i_robot,i_state].set_ylim((state_lims[idx,0],state_lims[idx,1]))
+			if not (np.isinf(np.abs(state_lims[idx,:])).any()):
+				axs[i_robot,i_state].set_ylim((state_lims[idx,0],state_lims[idx,1]))
 		axs[i_robot,0].set_ylabel("Robot State {}".format(i_robot))
 
 	# action
