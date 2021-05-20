@@ -30,6 +30,7 @@ PYBIND11_MODULE(bindings, m) {
     pybind11::class_<Problem_Settings> (m, "Problem_Settings")
         .def(pybind11::init())
         .def_readwrite("timestep", &Problem_Settings::timestep)
+        .def_readwrite("tf", &Problem_Settings::tf)
         .def_readwrite("state_lims", &Problem_Settings::state_lims)
         .def_readwrite("action_lims", &Problem_Settings::action_lims)
         .def_readwrite("init_lims", &Problem_Settings::init_lims)

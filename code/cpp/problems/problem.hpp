@@ -10,6 +10,7 @@ class Problem_Settings
 {
     public: 
         float timestep; 
+        float tf; 
         float gamma; 
         float mass; 
         float g; 

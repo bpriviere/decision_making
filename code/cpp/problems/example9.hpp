@@ -17,11 +17,12 @@ class Example9 : public Problem {
 		float m_c2; 
 		float m_R; 
 		float m_desired_distance;
+		float m_tf;
 
 		void set_params(Problem_Settings & problem_settings) override 
 		{
 			m_num_robots = 2;
-			m_state_dim = 5; 
+			m_state_dim = 6; 
 			m_action_dim = 2; 
 
 			problem_settings.state_lims.resize(m_state_dim,2);
@@ -29,6 +30,7 @@ class Example9 : public Problem {
 			problem_settings.init_lims.resize(m_state_dim,2);
 
 			m_timestep = problem_settings.timestep;
+			m_tf = problem_settings.tf; 
 			m_gamma = problem_settings.gamma;
 			m_r_max = problem_settings.r_max;
 			m_r_min = problem_settings.r_min;
@@ -56,9 +58,10 @@ class Example9 : public Problem {
 			next_state(2,0) = state(2,0) + timestep * m_c2 * sin(state(4,0));
 			next_state(3,0) = state(3,0) + timestep * m_c2 * cos(state(4,0));
 			next_state(4,0) = state(4,0) + timestep * m_c2 / m_R * action(1,0);
+			next_state(5,0) = state(5,0) + timestep;
 
 			// wrap angles
-			next_state(4,0) = fmod(next_state(4,0) + M_PI, 2*M_PI) - M_PI;
+			// next_state(4,0) = fmod(next_state(4,0) + M_PI, 2*M_PI) - M_PI;
 			return next_state;
 		}
 
@@ -104,16 +107,31 @@ class Example9 : public Problem {
 			// 	r(1,0) = 0.0f;
 			// };
 
+			// Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+			// float r1 = (float) (state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
+			// 	(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all();
+			// float r2 = (float) (state.block(2,0,2,1).array() >= m_state_lims.block(2,0,2,1).array()).all() && 
+			// 	(state.block(2,0,2,1).array() <= m_state_lims.block(2,1,2,1).array()).all();
+			// float r3 = 1.0f; 
+
+			// r(0,0) = (0.1 * r1 + 0.1 * (1-r2) + 0.8 * r3);
+			// r(1,0) = 1 - r(0,0);
+
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-			float r1 = (float) (state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
-				(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all();
-			float r2 = (float) (state.block(2,0,2,1).array() >= m_state_lims.block(2,0,2,1).array()).all() && 
-				(state.block(2,0,2,1).array() <= m_state_lims.block(2,1,2,1).array()).all();
-			float r3 = 1.0f; 
-
-			r(0,0) = (0.1 * r1 + 0.1 * (1-r2) + 0.8 * r3);
-			r(1,0) = 1 - r(0,0);
-
+			r(0,0) = 0.0;
+			r(1,0) = 0.0;
+			if (is_captured(state) || state(5,0) > m_tf) {
+				r(0,0) = state(5,0) / m_tf;
+				r(1,0) = 1 - r(0,0);
+			} else if ( !(
+				(state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
+				(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all() )) {
+				r(0,0) = -1;
+			} else if ( !(
+				(state.block(2,0,2,1).array() >= m_state_lims.block(2,0,2,1).array()).all() &&
+				(state.block(2,0,2,1).array() <= m_state_lims.block(2,1,2,1).array()).all() )) {
+				r(1,0) = -1;
+			}
 			return r;
 		}
 

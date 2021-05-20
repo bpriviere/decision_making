@@ -55,6 +55,8 @@ class C_PUCT(Solver):
 			result = self.search(problem,root_state,turn=robot)
 			py_action[action_idxs,0] = result.best_action[action_idxs]
 
+			# exit()
+
 		if self.solver_name in ["C_PUCT_V2"]:
 			py_action = np.append(py_action,np.array(result.best_action[-1],ndmin=2),axis=0)
 
@@ -65,6 +67,7 @@ class C_PUCT(Solver):
 		# problem settings 
 		problem_settings = Problem_Settings()
 		problem_settings.timestep = problem.dt
+		problem_settings.tf = problem.tf
 		problem_settings.gamma = problem.gamma
 		problem_settings.r_max = problem.r_max
 		problem_settings.r_min = problem.r_min
@@ -105,7 +108,9 @@ class C_PUCT(Solver):
 		problem_wrapper = Problem_Wrapper(problem.name,problem_settings)
 
 		# 
+		# print('search')
 		result = cpp_search(problem_wrapper,self.solver_wrapper,root_state,turn)
+		# print('done')
 
 		if self.vis_on: 
 			tree_state = result.tree 
