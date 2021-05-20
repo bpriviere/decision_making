@@ -230,7 +230,8 @@ def plot_value_dataset(problem,datasets,dataset_names):
 		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
 		for i_e in range(encoding_dim):
 			ax[0,i_e].hist(encodings[:,i_e])
-			ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+			if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
+				ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
 		ax[0,0].set_ylabel("Encoding")
 
 		for i_t in range(target_dim):
@@ -260,7 +261,8 @@ def plot_policy_dataset(problem,datasets,dataset_names,robot):
 		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
 		for i_e in range(encoding_dim):
 			ax[0,i_e].hist(encodings[:,i_e])
-			ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+			if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
+				ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
 		ax[0,0].set_ylabel("Encoding")
 
 		for i_t in range(target_dim):
