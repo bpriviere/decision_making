@@ -48,6 +48,7 @@ num_pi_eval = 2000
 num_D_v = 10000
 num_v_eval = 10000
 num_subsamples = 10
+num_self_play_plots = 10 
 learning_rate = 0.001
 num_epochs = 500
 # num_epochs = 100
@@ -222,12 +223,16 @@ def worker_edv(rank,queue,fn,seed,problem,num_states_per_pool,policy_oracle):
 	}
 	np.random.seed(seed)
 	
+	count = 0 
 	pbar = init_tqdm(rank,num_D_v)
 	datapoints = []
 	while len(datapoints) < num_states_per_pool:	
 		state = problem.initialize()
 		instance["initial_state"] = state
 		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
+		if count < num_self_play_plots:
+			plotter.plot_sim_result(sim_result)
+			count += 1
 		value = calculate_value(problem,sim_result)
 		encoding = problem.value_encoding(state).squeeze()
 		datapoint = np.append(encoding,value)
