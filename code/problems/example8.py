@@ -20,7 +20,7 @@ class Example8(Problem):
 		self.t0 = 0
 		self.tf = 20
 		self.dt = 0.5
-		self.gamma = 0.99
+		self.gamma = 0.999
 		self.num_robots = 2 
 		self.state_dim_per_robot = 2 
 		self.action_dim_per_robot = 2
@@ -31,29 +31,37 @@ class Example8(Problem):
 		self.state_control_weight = 1e-5 
 		self.desired_distance = 1.0
 
-		self.state_dim = self.num_robots * self.state_dim_per_robot
-		self.action_dim = self.num_robots * self.action_dim_per_robot
+		self.state_idxs = [
+			np.arange(2),
+			2+np.arange(2)
+		]
+		self.action_idxs = [
+			np.arange(2),
+			2+np.arange(2)
+		]
+
+		self.state_dim = 5
+		self.action_dim = 4
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
 
-		self.state_lims = 5*np.array((
-			(-2,2), 
-			(-2,2), 
-			(-2,2), 
-			(-2,2),
+		self.state_lims = np.array((
+			(-10,10), 
+			(-10,10), 
+			(-10,10), 
+			(-10,10),
+			(0,self.tf),
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
 
-		self.action_lims = 0.5*np.array((
-			(-1,1),
-			(-1,1),
-			# (0,0),
-			# (0,0),
-			(-1,1),
-			(-1,1),
-			# (0,0),
-			# (0,0),
+		self.action_lims = np.array((
+			(-0.5,0.5),
+			(-0.5,0.5),
+			# (-0.0,0.0),
+			# (-0.0,0.0),
+			(-0.5,0.5),
+			(-0.5,0.5),
 			))
 
 		self.init_lims = np.array((
@@ -61,6 +69,7 @@ class Example8(Problem):
 			(-2,2), 
 			(-2,2), 
 			(-2,2),
+			(0,0),
 			))
 
 		self.Fc = np.array((
@@ -76,31 +85,24 @@ class Example8(Problem):
 		self.Q = np.eye(self.state_dim_per_robot)
 		self.Ru = self.state_control_weight * np.eye(self.action_dim_per_robot)
 
-	def reward(self,s,a):
-		s_1 = s[0:self.state_dim_per_robot]
-		s_2 = s[self.state_dim_per_robot:]
-		a_1 = a[0:self.action_dim_per_robot]
-		
-		# r = -1 * (
-		# 	np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2)) + \
-		# 	a_1.T @ self.Ru @ a_1).squeeze()
-		
-		r = 1.0
-		if self.is_captured(s):
-			r = 0.0
-		reward = np.array([[r],[-r]])
+	def normalized_reward(self,s,a):
+		r1 = 0 
+		r2 = 0
+		if self.is_captured(s) or s[4,0] > self.tf:
+			r1 = s[4,0] / self.tf 
+			r2 = 1 - r1 
+		if not contains(s[self.state_idxs[0],:],self.state_lims[self.state_idxs[0],:]):
+			r1 = -1 
+		if not contains(s[self.state_idxs[1],:],self.state_lims[self.state_idxs[1],:]):
+			r2 = -1 
+		reward = np.array([[r1],[r2]])
 		return reward
 
 	def is_captured(self,s):
-		s_1 = s[0:self.state_dim_per_robot]
-		s_2 = s[self.state_dim_per_robot:]
-		return np.linalg.norm(s_1-s_2) < self.desired_distance
+		return np.linalg.norm(s[self.state_idxs[0],:]-s[self.state_idxs[1],:]) < self.desired_distance
 
-	def normalized_reward(self,s,a): 
-		reward = self.reward(s,a)
-		reward = np.clip(reward,self.r_min,self.r_max)
-		reward = (reward - self.r_min) / (self.r_max - self.r_min)
-		reward = np.array([[reward[0,0]],[1-reward[0,0]]])
+	def reward(self,s,a): 
+		reward = self.normalized_reward(s,a) 
 		return reward
 
 	def step(self,s,a,dt):
@@ -111,6 +113,7 @@ class Example8(Problem):
 			Fd = np.eye(self.state_dim_per_robot) +  dt * self.Fc 
 			Bd = dt * self.Bc 
 			s_tp1[state_idx,:] = np.dot(Fd,s[state_idx,:]) + np.dot(Bd,a[action_idx,:])
+		s_tp1[4,0] = s[4,0] + dt 
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):

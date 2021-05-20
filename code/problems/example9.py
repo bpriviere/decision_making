@@ -15,7 +15,7 @@ class Example9(Problem):
 
 	def __init__(self): 
 		super(Example9,self).__init__()
-		# state: [x1,y1,x2,y2,theta2]
+		# state: [x1,y1,x2,y2,theta2,t]
 		# actions: [psi,phi]
 
 		self.t0 = 0
@@ -25,11 +25,11 @@ class Example9(Problem):
 		self.num_robots = 2 
 		self.state_idxs = [
 			np.arange(2),
-			2 + np.arange(3)
+			2 + np.arange(3),
 		]
 		self.action_idxs = [ 
 			np.arange(1),
-			1+np.arange(1)
+			1+np.arange(1),
 		]
 		self.r_max = 1.0 
 		self.r_min = 0.0
@@ -45,8 +45,8 @@ class Example9(Problem):
 
 		self.action_dim_per_robot = 1 
 
-		self.state_dim = 1 + self.state_idxs[-1][-1] 
-		self.action_dim = 1 + self.action_idxs[-1][-1] 
+		self.state_dim = 6
+		self.action_dim = 2
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
@@ -60,7 +60,9 @@ class Example9(Problem):
 			# (-5,5), 
 			# (-5,5), 
 			# (-5,5), 
-			(-np.pi,np.pi), 
+			# (-np.pi,np.pi), 
+			(-np.inf,np.inf), 
+			(0,self.tf)
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
 
@@ -76,60 +78,48 @@ class Example9(Problem):
 			(-5,5), 
 			(-5,5),
 			(-np.pi,np.pi),
+			(0,0),
 			))
-
-	# def initialize(self):
-	# 	valid = False
-	# 	while not valid:
-	# 		state = sample_vector(self.init_lims)
-	# 		state[2,0] = 0.0
-	# 		state[3,0] = 0.0
-	# 		state[4,0] = 0.0
-	# 		valid = not self.is_terminal(state)
-	# 	return state
-
-
-	# def reward(self,s,a):
-	# 	r = 1 # time until capture reward 
-	# 	if self.is_captured(s):
-	# 		r = 0.0
-	# 	reward = np.array([[r],[-r]])
-	# 	return reward
-
-	# def normalized_reward(self,s,a): 
-	# 	reward = self.reward(s,a)
-	# 	reward = np.clip(reward,self.r_min,self.r_max)
-	# 	reward = (reward - self.r_min) / (self.r_max - self.r_min)
-	# 	reward = np.array([[reward[0,0]],[1-reward[0,0]]])
-	# 	return reward
 
 	def reward(self,s,a):
 		return self.normalized_reward(s,a)
 
 	def normalized_reward(self,s,a): 
 		# weighted sum of validity of both robots, and then the time to capture
-		r1 = contains(s[self.state_idxs[0],:],self.state_lims[self.state_idxs[0],:])
-		r2 = contains(s[self.state_idxs[1],:],self.state_lims[self.state_idxs[1],:])
-		r3 = 1 
-		w1 = 0.1
-		w2 = 0.1 
-		w3 = 0.8 
-		r = w1*r1 + w2*(1-r2) + w3*r3
-		reward = np.array([[r],[1-r]])
+		# r1 = contains(s[self.state_idxs[0],:],self.state_lims[self.state_idxs[0],:])
+		# r2 = contains(s[self.state_idxs[1],:],self.state_lims[self.state_idxs[1],:])
+		# r3 = 1 
+		# w1 = 0.1
+		# w2 = 0.1 
+		# w3 = 0.8 
+		# r = w1*r1 + w2*(1-r2) + w3*r3
+		# reward = np.array([[r],[1-r]])
+
+		r1 = 0 
+		r2 = 0
+		if self.is_captured(s) or s[5,0] > self.tf:
+			r1 = s[5,0] / self.tf 
+			r2 = 1 - r1 
+		if not contains(s[self.state_idxs[0],:],self.state_lims[self.state_idxs[0],:]):
+			r1 = -1 
+		if not contains(s[self.state_idxs[0],:],self.state_lims[self.state_idxs[0],:]):
+			r2 = -1 
+		reward = np.array([[r1],[r2]])
 		return reward
 
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		s_dot = np.zeros(s.shape)
-		s_dot[0,0] = self.w1 * np.sin(a[0,0])
+		s_dot[0,0] = self.w1 * np.sin(a[0,0]) # m/s 
 		s_dot[1,0] = self.w1 * np.cos(a[0,0])
 		s_dot[2,0] = self.w2 * np.sin(s[4,0])
 		s_dot[3,0] = self.w2 * np.cos(s[4,0])
 		s_dot[4,0] = self.w2 / self.R * a[1,0]
+		s_dot[5,0] = 1.0
 		s_tp1 = s + s_dot * dt 
 
 		# wrap angles
-		s_tp1[4,0] = ((s_tp1[4,0] + np.pi) % (2*np.pi)) - np.pi 
+		# s_tp1[4,0] = ((s_tp1[4,0] + np.pi) % (2*np.pi)) - np.pi 
 
 		return s_tp1 
 
