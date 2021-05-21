@@ -191,12 +191,11 @@ class PUCT_V1 : public Solver {
 			
 			auto action = problem->sample_action(g_gen);
 			if (problem->dist(g_gen) < m_beta_policy){
-				int action_dim_per_robot = int(problem->m_action_dim / problem->m_num_robots);
 				for (int i = 0; i < problem->m_num_robots; i++) {
 					if (m_policy_network_wrappers[i].valid){
 						auto encoding = problem->policy_encoding(parent_node_ptr->state,i); 
-						action.block(action_dim_per_robot*i,0,action_dim_per_robot,1) = 
-							m_policy_network_wrappers[i].policy_network->eval(problem, encoding, g_gen);
+						action.block(problem->m_action_idxs[i][0],0,problem->m_action_idxs[i].size(),1) = 
+							m_policy_network_wrappers[i].policy_network->eval(problem, encoding, i, g_gen);
 					}
 				} 
 			} 

@@ -87,16 +87,6 @@ class Example9(Problem):
 		return self.normalized_reward(s,a)
 
 	def normalized_reward(self,s,a): 
-		# weighted sum of validity of both robots, and then the time to capture
-		# r1 = contains(s[self.state_idxs[0],:],self.state_lims[self.state_idxs[0],:])
-		# r2 = contains(s[self.state_idxs[1],:],self.state_lims[self.state_idxs[1],:])
-		# r3 = 1 
-		# w1 = 0.1
-		# w2 = 0.1 
-		# w3 = 0.8 
-		# r = w1*r1 + w2*(1-r2) + w3*r3
-		# reward = np.array([[r],[1-r]])
-
 		r1 = 0 
 		r2 = 0
 		if self.is_captured(s) or s[5,0] > self.tf:
@@ -119,10 +109,6 @@ class Example9(Problem):
 		s_dot[4,0] = self.w2 / self.R * a[1,0]
 		s_dot[5,0] = 1.0
 		s_tp1 = s + s_dot * dt 
-
-		# wrap angles
-		# s_tp1[4,0] = ((s_tp1[4,0] + np.pi) % (2*np.pi)) - np.pi 
-
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):
@@ -166,8 +152,6 @@ class Example9(Problem):
 		capture = self.is_captured(state)
 		valid = self.is_valid(state)
 		return (not valid) or capture
-		# valid = self.is_valid(state)
-		# return not valid 
 
 	def is_captured(self,state):
 		return np.linalg.norm(state[0:2,0] - state[2:4,0]) < self.desired_distance
@@ -280,22 +264,6 @@ class Example9(Problem):
 
 			fig,ax = plt.subplots()
 
-			# inital_state = sim_result["states"][0]
-
-			# robot_idxs = self.state_idxs[robot] 
-			# not_robot_idxs = []
-			# for i in range(self.state_dim):
-			# 	if i not in robot_idxs:
-			# 		not_robot_idxs.append(i)
-
-			# num_eval = 3000
-			# states = []
-			# for _ in range(num_eval):
-			# 	state = self.initialize()
-			# 	state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
-			# 	states.append(state)
-			# states = np.array(states).squeeze(axis=2)
-
 			num_eval = 3000
 			states = []
 			for _ in range(num_eval):
@@ -303,6 +271,7 @@ class Example9(Problem):
 				state[2,0] = 0
 				state[3,0] = 0
 				state[4,0] = 0
+				state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
 				states.append(state)
 			states = np.array(states).squeeze(axis=2)
 
@@ -314,21 +283,21 @@ class Example9(Problem):
 					value = value_oracle.eval(self,state)
 					values.append(value)
 				values = np.array(values).squeeze(axis=2)
-
 				pcm = ax.tricontourf(states[:,0],states[:,1],values[:,0])
 				fig.colorbar(pcm,ax=ax)	
+				pcm = ax.tricontourf(states[:,robot_idxs[0]],states[:,robot_idxs[1]],values[:,robot])
+				fig.colorbar(pcm,ax=ax)	
 
-			# # plot policy function 
-			# if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
-			# 	policy_oracle = sim_result["instance"]["policy_oracle"]
-			# 	actions = []
-			# 	for state in states: 
-			# 		action = policy_oracle[robot].eval(self,state,robot)
-			# 		actions.append(action)
-			# 	actions = np.array(actions).squeeze(axis=2)
+			# plot policy function 
+			if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
+				policy_oracle = sim_result["instance"]["policy_oracle"]
+				actions = []
+				for state in states: 
+					action = policy_oracle[robot].eval(self,state,robot)
+					actions.append(action)
+				actions = np.array(actions).squeeze(axis=2)
 
-			# 	ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],np.sin(actions[:,0]),np.cos(actions[:,0]))
+				ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
 
-				
-				# plot final trajectory , obstacles and limits 
-				# self.render(fig=fig,ax=ax,states=sim_result["states"])
+			# plot final trajectory , obstacles and limits 
+			self.render(fig=fig,ax=ax,states=sim_result["states"])

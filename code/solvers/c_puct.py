@@ -50,10 +50,9 @@ class C_PUCT(Solver):
 	def policy(self,problem,root_state):
 		py_action = np.zeros((problem.action_dim,1))
 		for robot in range(problem.num_robots): 
-			action_idxs = robot * problem.action_dim_per_robot + \
-				np.arange(problem.action_dim_per_robot)
+			robot_action_idxs = problem.action_idxs[robot]
 			result = self.search(problem,root_state,turn=robot)
-			py_action[action_idxs,0] = result.best_action[action_idxs]
+			py_action[robot_action_idxs,0] = result.best_action[robot_action_idxs]
 
 			# exit()
 
@@ -66,6 +65,9 @@ class C_PUCT(Solver):
 
 		# problem settings 
 		problem_settings = Problem_Settings()
+		problem_settings.state_dim = problem.state_dim
+		problem_settings.action_dim = problem.action_dim
+		problem_settings.num_robots = problem.num_robots
 		problem_settings.timestep = problem.dt
 		problem_settings.tf = problem.tf
 		problem_settings.gamma = problem.gamma
@@ -73,6 +75,8 @@ class C_PUCT(Solver):
 		problem_settings.r_min = problem.r_min
 		problem_settings.state_lims = problem.state_lims
 		problem_settings.action_lims = problem.action_lims 
+		problem_settings.state_idxs = problem.state_idxs
+		problem_settings.action_idxs = problem.action_idxs
 		problem_settings.init_lims = problem.init_lims 
 		problem_settings.state_control_weight = problem.state_control_weight
 

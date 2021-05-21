@@ -23,13 +23,15 @@ class Example6 : public Problem {
 
 		void set_params(Problem_Settings & problem_settings) override 
 		{
-			m_state_dim = 2;
-			m_action_dim = 2;
-			m_num_robots = 1;
+            m_state_dim = problem_settings.state_dim;
+            m_action_dim = problem_settings.action_dim;
+            m_num_robots = problem_settings.num_robots;
+            m_state_idxs = problem_settings.state_idxs;
+            m_action_idxs = problem_settings.action_idxs;
 
-			problem_settings.state_lims.resize(m_state_dim,2);
-			problem_settings.action_lims.resize(m_action_dim,2);
-			problem_settings.init_lims.resize(m_state_dim,2);
+            // problem_settings.state_lims.resize(m_state_dim,2);
+            // problem_settings.action_lims.resize(m_action_dim,2);
+            // problem_settings.init_lims.resize(m_state_dim,2);
 
 			m_timestep = problem_settings.timestep;
 			m_gamma = problem_settings.gamma;

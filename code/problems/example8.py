@@ -22,8 +22,8 @@ class Example8(Problem):
 		self.dt = 0.5
 		self.gamma = 1.0
 		self.num_robots = 2 
-		self.state_dim_per_robot = 2 
-		self.action_dim_per_robot = 2
+		self.state_dim = 4
+		self.action_dim = 4
 		self.r_max = 1
 		self.r_min = 0
 		self.name = "example8"
@@ -82,8 +82,8 @@ class Example8(Problem):
 			(0,1),
 			))
 
-		self.Q = np.eye(self.state_dim_per_robot)
-		self.Ru = self.state_control_weight * np.eye(self.action_dim_per_robot)
+		self.Q = np.eye(2)
+		self.Ru = self.state_control_weight * np.eye(2)
 
 	def normalized_reward(self,s,a):
 		r1 = 0 
@@ -96,7 +96,6 @@ class Example8(Problem):
 		if not contains(s[self.state_idxs[1],:],self.state_lims[self.state_idxs[1],:]):
 			r2 = -1 
 		reward = np.array([[r1],[r2]])
-		return reward
 
 	def is_captured(self,s):
 		return np.linalg.norm(s[self.state_idxs[0],:]-s[self.state_idxs[1],:]) < self.desired_distance
@@ -108,9 +107,7 @@ class Example8(Problem):
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		for robot in range(self.num_robots):
-			state_idx = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
-			action_idx = robot * self.action_dim_per_robot + np.arange(self.action_dim_per_robot)
-			Fd = np.eye(self.state_dim_per_robot) +  dt * self.Fc 
+			Fd = np.eye(len(self.state_idxs[robot])) +  dt * self.Fc 
 			Bd = dt * self.Bc 
 			s_tp1[state_idx,:] = np.dot(Fd,s[state_idx,:]) + np.dot(Bd,a[action_idx,:])
 		s_tp1[4,0] = s[4,0] + dt 
@@ -126,11 +123,11 @@ class Example8(Problem):
 
 			colors = plotter.get_n_colors(self.num_robots)
 			for robot in range(self.num_robots):
-				state_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+				robot_state_idxs = self.state_idxs[robot] 
 
-				ax.plot(states[:,state_idxs[0]], states[:,state_idxs[1]], color=colors[robot])
-				ax.plot(states[0,state_idxs[0]], states[0,state_idxs[1]], color=colors[robot],marker='o')
-				ax.plot(states[-1,state_idxs[0]], states[-1,state_idxs[1]], color=colors[robot],marker='s')
+				ax.plot(states[:,robot_state_idxs[0]], states[:,robot_state_idxs[1]], color=colors[robot])
+				ax.plot(states[0,robot_state_idxs[0]], states[0,robot_state_idxs[1]], color=colors[robot],marker='o')
+				ax.plot(states[-1,robot_state_idxs[0]], states[-1,robot_state_idxs[1]], color=colors[robot],marker='s')
 				
 			# ax.set_aspect(lims[0,1]-lims[0,0] / lims[1,1]-lims[1,0])
 
@@ -185,9 +182,8 @@ class Example8(Problem):
 				# contour
 				if encodings.shape[0] > 100:
 					fig,ax = plt.subplots() 
-					state_idx_per_robot = int(self.state_dim / self.num_robots)
-					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-					pcm = ax.tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
+					robot_idxs = self.state_idxs[robot]
+					pcm = ax.tricontourf(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],target[:,robot])
 					fig.colorbar(pcm,ax=ax)
 					ax.set_title("{} Value for Robot {}".format(title,robot))
 					ax.set_xlim(self.state_lims[self.position_idx[0],:])
@@ -196,9 +192,8 @@ class Example8(Problem):
 				else:
 					# scatter
 					fig,ax = plt.subplots() 
-					state_idx_per_robot = int(self.state_dim / self.num_robots)
-					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-					pcm = ax.scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=target[:,robot])
+					robot_idxs = self.state_idxs[robot]
+					pcm = ax.scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],c=target[:,robot])
 					fig.colorbar(pcm,ax=ax)
 					ax.set_title("{} Value for Robot {}".format(title,robot))
 					ax.set_xlim(self.state_lims[self.position_idx[0],:])
@@ -208,7 +203,7 @@ class Example8(Problem):
 				state = group[0][0:self.state_dim]
 				for other_robot in range(self.num_robots):
 					if other_robot != robot:
-						other_robot_idxs = other_robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+						other_robot_idxs = self.state_idxs[other_robot] 
 						# Circle((x,y),radius)
 						circ = patches.Circle((state[other_robot_idxs[0]], state[other_robot_idxs[1]]), \
 							self.approx_dist,facecolor='gray',alpha=0.5)
@@ -220,7 +215,7 @@ class Example8(Problem):
 
 		max_plots = 10
 
-		robot_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+		robot_idxs = self.state_idxs[robot]
 
 		groups = self.make_groups(dataset[0],dataset[1],robot)
 		if len(groups) > max_plots:
@@ -246,7 +241,7 @@ class Example8(Problem):
 			state = group[0][0:self.state_dim]
 			for other_robot in range(self.num_robots):
 				if other_robot != robot:
-					other_robot_idxs = other_robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+					other_robot_idxs = self.state_idxs[other_robot] 
 					# Circle((x,y),radius)
 					circ = patches.Circle((state[other_robot_idxs[0]], state[other_robot_idxs[1]]), \
 						self.approx_dist,facecolor='gray',alpha=0.5)
@@ -258,7 +253,7 @@ class Example8(Problem):
 
 		num_datapoints = encoding.shape[0]
 		groups = [] # list of list of lists
-		robot_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+		robot_idxs = self.state_idxs[robot] 
 		not_robot_idxs = []
 		for i in range(self.state_dim):
 			if i not in robot_idxs:
@@ -334,6 +329,47 @@ class Example8(Problem):
 
 					ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
 
+		# for robot in [0,1]:
+
+		# 	fig,ax = plt.subplots()
+		# 	inital_state = sim_result["states"][0]
+
+		# 	robot_idxs = self.state_idxs[robot]
+		# 	not_robot_idxs = []
+		# 	for i in range(self.state_dim):
+		# 		if i not in robot_idxs:
+		# 			not_robot_idxs.append(i)
+
+		# 	num_eval = 3000
+		# 	states = []
+		# 	for _ in range(num_eval):
+		# 		state = self.initialize()
+		# 		state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
+		# 		states.append(state)
+		# 	states = np.array(states).squeeze(axis=2)
+
+		# 	# plot value func contours
+		# 	if sim_result["instance"]["value_oracle"] is not None:
+		# 		value_oracle = sim_result["instance"]["value_oracle"]
+		# 		values = []
+		# 		for state in states: 
+		# 			value = value_oracle.eval(self,state)
+		# 			values.append(value)
+		# 		values = np.array(values).squeeze(axis=2)
+
+		# 		pcm = ax.tricontourf(states[:,robot_idxs[0]],states[:,robot_idxs[1]],values[:,robot])
+		# 		fig.colorbar(pcm,ax=ax)	
+
+		# 	# plot policy function 
+		# 	if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
+		# 		policy_oracle = sim_result["instance"]["policy_oracle"]
+		# 		actions = []
+		# 		for state in states: 
+		# 			action = policy_oracle[robot].eval(self,state,robot)
+		# 			actions.append(action)
+		# 		actions = np.array(actions).squeeze(axis=2)
+
+		# 		ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
 				
-				# plot final trajectory , obstacles and limits 
-				self.render(fig=fig,ax=ax,states=sim_result["states"])
+		# 	# plot final trajectory , obstacles and limits 
+		# 	self.render(fig=fig,ax=ax,states=sim_result["states"])

@@ -18,19 +18,19 @@ class Example5(Problem):
 		# 	- s[0]: player 1's number of forces 
 		# 	- s[1]: player 2's "" 
 		# actions: 
-		# 	- a[0]: player 1's fraction of forces devoted to attrition 
+		# 	- a[0]: player 1's (1-fraction of forces) devoted to offensive
 		# 	- a[1]: player 2's "" 
 		# rewards: 
 		# 	- r[0]: player 1's margin of superiority over one day
 		# 	- r[1]: player 2's ""  
 
 		self.t0 = 0
-		self.tf = 2
+		self.tf = 20
 		self.dt = 0.1
-		self.gamma = 1.0
+		self.gamma = 0.99
 		self.num_robots = 2 
-		self.state_dim_per_robot = 1
-		self.action_dim_per_robot = 1
+		self.state_dim = 2
+		self.action_dim = 2
 		self.r_max = 1
 		self.r_min = -1 * self.r_max
 		self.name = "example5"
@@ -43,8 +43,8 @@ class Example5(Problem):
 		self.c1 = 1 # measure of effectiveness  
 		self.c2 = 1 
 
-		self.state_dim = self.num_robots * self.state_dim_per_robot
-		self.action_dim = self.num_robots * self.action_dim_per_robot
+		self.state_idxs = [np.arange(1), 1+np.arange(1)] 
+		self.action_idxs = [np.arange(1), 1+np.arange(1)] 
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
@@ -70,7 +70,7 @@ class Example5(Problem):
 			state = sample_vector(self.init_lims)
 			valid = self.is_valid(state)
 		# start with same initial number of forces 
-		state[1] = state[0]
+		# state[1] = state[0]
 		return state
 
 	def reward(self,s,a):
@@ -126,7 +126,7 @@ class Example5(Problem):
 		return state 
 
 	def plot_value_dataset(self,dataset,title):
-		pass 	
+		pass 
 
 	def plot_policy_dataset(self,dataset,title,robot):
 		pass 

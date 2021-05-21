@@ -25,15 +25,15 @@ class Example8 : public Problem {
 
 		void set_params(Problem_Settings & problem_settings) override 
 		{
-			m_state_dim_per_robot = 2;
-			m_action_dim_per_robot = 2;
-			m_num_robots = 2;
-			m_state_dim = 5;
-			m_action_dim = 4;
+            m_state_dim = problem_settings.state_dim;
+            m_action_dim = problem_settings.action_dim;
+            m_num_robots = problem_settings.num_robots;
+            m_state_idxs = problem_settings.state_idxs;
+            m_action_idxs = problem_settings.action_idxs;
 
-			problem_settings.state_lims.resize(m_state_dim,2);
-			problem_settings.action_lims.resize(m_action_dim,2);
-			problem_settings.init_lims.resize(m_state_dim,2);
+            // problem_settings.state_lims.resize(m_state_dim,2);
+            // problem_settings.action_lims.resize(m_action_dim,2);
+            // problem_settings.init_lims.resize(m_state_dim,2);
 
 			m_timestep = problem_settings.timestep;
 			m_tf = problem_settings.tf;
@@ -68,15 +68,11 @@ class Example8 : public Problem {
 			Eigen::Matrix<float,2,2> Bd = m_Bc * timestep; 
 
             // dynamics 
-            int state_shift;
-            int action_shift;
             for (int ii = 0; ii < m_num_robots; ii++){
-                state_shift = ii * m_state_dim_per_robot;
-                action_shift = ii * m_action_dim_per_robot;
-                // block(i,j,p,q): Block of size (p,q), starting at (i,j) 
-                next_state.block(state_shift,0,m_state_dim_per_robot,1) = 
-                    Fd * state.block(state_shift,0,m_state_dim_per_robot,1) + 
-                    Bd * action.block(action_shift,0,m_action_dim_per_robot,1);
+				// block(i,j,p,q): Block of size (p,q), starting at (i,j) 
+                next_state.block(m_state_idxs[ii][0],0,m_state_idxs[ii].size(),1) = 
+                    Fd * state.block(m_state_idxs[ii][0],0,m_state_idxs[ii].size(),1) + 
+                    Bd * action.block(m_action_idxs[ii][0],0,m_action_idxs[ii].size(),1);
             }   
             
             next_state(4,0) = state(4,0) + timestep;
@@ -88,23 +84,6 @@ class Example8 : public Problem {
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
         { 
-            // Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-            // Eigen::Matrix<float,-1,1> s1 = state.block(0,0,m_state_dim_per_robot,1);
-            // Eigen::Matrix<float,-1,1> s2 = state.block(m_state_dim_per_robot,0,m_state_dim_per_robot,1);
-            // Eigen::Matrix<float,-1,1> a1 = action.block(0,0,m_action_dim_per_robot,1);
-
-            // r(0,0) = -1.0f * ( (s1-s2).transpose() * m_Q * (s1-s2) + a1.transpose() * m_R * a1);
-			// r(0,0) = -1.0f * (s1-s2).transpose() * m_Q * (s1-s2);
-   			// r(1,0) = -1.0f * r(0,0); 
-
-            // float dist = (s1-s2).norm();
-            // r(0,0) = 1.0;
-            // r(1,0) = 0.0;
-            // if (is_captured(state)) {
-            // 	r(0,0) = 0.0;
-            // 	r(1,0) = 1.0;
-            // }
-
             return normalized_reward(state,action);
         }
 

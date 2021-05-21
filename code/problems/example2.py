@@ -22,16 +22,16 @@ class Example2(Problem):
 		self.gamma = 1.0
 		self.mass = 1
 		self.num_robots = 1 
-		self.state_dim_per_robot = 4 
-		self.action_dim_per_robot = 2 
+		self.state_dim = 4 
+		self.action_dim = 2 
 		self.r_max = 100
 		self.r_min = -1*self.r_max
 		self.state_control_weight = 1.0
 		self.name = "example2"
 		self.position_idx = np.arange(2) 
 
-		self.state_dim = self.num_robots * self.state_dim_per_robot
-		self.action_dim = self.num_robots * self.action_dim_per_robot
+		self.state_idxs = [np.arange(self.state_dim)]
+		self.action_idxs = [np.arange(self.action_dim)]
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
@@ -122,7 +122,8 @@ class Example2(Problem):
 			fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
 			state_idx_per_robot = int(self.state_dim / self.num_robots)
 			for robot in range(self.num_robots):
-				pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+				robot_state_idxs = self.state_idxs[robot]
+				pos_i_idxs = robot_state_idxs * robot + np.arange(robot_state_idxs)[self.position_idx]
 				pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
 				fig.colorbar(pcm,ax=ax[0,robot])
 				ax[0,robot].set_title("{} Value for Robot {}".format(title,robot))
@@ -134,7 +135,8 @@ class Example2(Problem):
 		fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
 		state_idx_per_robot = int(self.state_dim / self.num_robots)
 		for robot in range(self.num_robots):
-			pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+			robot_state_idxs = self.state_idxs[robot]
+			pos_i_idxs = robot_state_idxs * robot + np.arange(robot_state_idxs)[self.position_idx]
 			pcm = ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=target[:,robot])
 			fig.colorbar(pcm,ax=ax[0,robot])
 			ax[0,robot].set_title("{} Value for Robot {}".format(title,robot))
@@ -151,7 +153,8 @@ class Example2(Problem):
 		# quiver plot 
 		fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
 		state_idx_per_robot = int(self.state_dim / self.num_robots)
-		pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
+		robot_state_idxs = self.state_idxs[robot]
+		pos_i_idxs = robot_state_idxs * robot + np.arange(robot_state_idxs)[self.position_idx]
 		C = np.linalg.norm(target[:,0:1],axis=1)
 		ax[0,robot].quiver(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],\
 			target[:,0],target[:,1])
