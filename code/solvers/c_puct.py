@@ -14,7 +14,7 @@ from cpp.build.bindings import Policy_Network_Wrapper, Value_Network_Wrapper
 class C_PUCT(Solver):
 
 	def __init__(self,
-		policy_oracle=None,\
+		policy_oracle=[None],\
 		value_oracle=None,\
 		search_depth=10,\
 		number_simulations=1000,
