@@ -10,7 +10,7 @@ class Param:
 		self.num_trials = 5 
 
 		# names 
-		self.problem_name = "example9" # e.g. example1, example2, example3, ...
+		self.problem_name = "example8" # e.g. example1, example2, example3, ...
 		self.solver_name = "C_PUCT_V1" # e.g. Empty, DARE, PUCT_V0, C_PUCT_V0, PUCT_V1, ...
 		self.value_oracle_name = "deterministic" # ["deterministic","gaussian"]
 		self.policy_oracle_name = "gaussian" # ["deterministic","gaussian"]
@@ -32,8 +32,8 @@ class Param:
 		self.pretty_plot_on = True
 
 		# solver settings 
-		self.number_simulations = 10000
-		self.search_depth = 100
+		self.number_simulations = 500
+		self.search_depth = 20
 		self.C_pw = 2.0
 		self.alpha_pw = 0.5
 		self.C_exp = 1.0

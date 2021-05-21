@@ -78,7 +78,7 @@ def plot_sim_result(sim_result):
 	times = sim_result["times"] # nt, 
 	states = sim_result["states"] # nt x state_dim
 	actions = sim_result["actions"] # nt-1 x action_dim
-	rewards = sim_result["rewards"] # nt-1,  
+	rewards = sim_result["rewards"] # nt-1,x num_robots
 	problem = sim_result["instance"]["problem"] 
 	problem = problem.__dict__ 
 
@@ -88,7 +88,7 @@ def plot_sim_result(sim_result):
 	state_lims = problem["state_lims"]
 	action_lims = problem["action_lims"]
 
-	ncols = np.max((np.max(robot_state_dims),action_dim,2))
+	ncols = np.max((np.max(robot_state_dims),action_dim,2,num_robots+1))
 
 	# plot trajectories (over time)
 	fig,axs = plt.subplots(nrows=int(num_robots+2),ncols=int(ncols))

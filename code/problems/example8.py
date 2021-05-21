@@ -85,6 +85,10 @@ class Example8(Problem):
 		self.Q = np.eye(2)
 		self.Ru = self.state_control_weight * np.eye(2)
 
+	def reward(self,s,a): 
+		reward = self.normalized_reward(s,a) 
+		return reward
+
 	def normalized_reward(self,s,a):
 		r1 = 0 
 		r2 = 0
@@ -96,20 +100,18 @@ class Example8(Problem):
 		if not contains(s[self.state_idxs[1],:],self.state_lims[self.state_idxs[1],:]):
 			r2 = -1 
 		reward = np.array([[r1],[r2]])
+		return reward
 
 	def is_captured(self,s):
 		return np.linalg.norm(s[self.state_idxs[0],:]-s[self.state_idxs[1],:]) < self.desired_distance
 
-	def reward(self,s,a): 
-		reward = self.normalized_reward(s,a) 
-		return reward
 
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		for robot in range(self.num_robots):
 			Fd = np.eye(len(self.state_idxs[robot])) +  dt * self.Fc 
 			Bd = dt * self.Bc 
-			s_tp1[state_idx,:] = np.dot(Fd,s[state_idx,:]) + np.dot(Bd,a[action_idx,:])
+			s_tp1[self.state_idxs[robot],:] = np.dot(Fd,s[self.state_idxs[robot],:]) + np.dot(Bd,a[self.action_idxs[robot],:])
 		s_tp1[4,0] = s[4,0] + dt 
 		return s_tp1 
 
