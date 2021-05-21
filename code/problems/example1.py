@@ -90,3 +90,12 @@ class Example1(Problem):
 
 	def value_encoding(self,state):
 		return state 
+
+	def plot_policy_dataset(self,dataset,title,robot):
+		pass 
+
+	def plot_value_dataset(self,dataset,title):
+		pass 
+
+
+

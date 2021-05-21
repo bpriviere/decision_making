@@ -243,7 +243,7 @@ class PUCT_V1 : public Solver {
 					auto action = problem->sample_action(g_gen);
 					auto next_state = problem->step(curr_state,action,problem->m_timestep);
 					value += powf(problem->m_gamma,depth) * problem->normalized_reward(curr_state,action);
-					if (problem->is_terminal(curr_state)){
+					if ((problem->is_terminal(curr_state)) || (depth > m_search_depth)) {
 						break;
 					}
 					curr_state = next_state;
