@@ -229,9 +229,6 @@ def worker_edv(rank,queue,fn,seed,problem,num_states_per_pool,policy_oracle):
 		state = problem.initialize()
 		instance["initial_state"] = state
 		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
-		if count < num_self_play_plots:
-			plotter.plot_sim_result(sim_result)
-			count += 1
 		value = calculate_value(problem,sim_result)
 		encoding = problem.value_encoding(state).squeeze()
 		datapoint = np.append(encoding,value)
@@ -275,7 +272,7 @@ def make_expert_demonstration_v(problem, l):
 		# paths.append(path + '.npy')
 		paths = [get_temp_fn(dirname,0)]
 		seed = np.random.randint(10000)
-		worker_edv_wrapper((0,Queue(),path,seed,problem,num_D_v,policy_oracle))
+		worker_edv_wrapper((0,Queue(),paths[0],seed,problem,num_D_v,policy_oracle))
 
 	datapoints = []
 	plot_count = 0 
