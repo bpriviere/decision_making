@@ -44,9 +44,17 @@ class Example10(Problem):
 		self.state_lims[:,0] = -5 
 		self.state_lims[:,1] = 5 
 
-		self.action_lims = np.zeros((2 * self.num_robots, 2))
-		self.action_lims[:,0] = -1
-		self.action_lims[:,1] = 1
+		eps = 0.00001
+		self.action_lims = np.array((
+			[-eps,eps],
+			[1-eps,1],
+			[1-eps,1],
+			[-eps,eps]
+			))
+
+		# self.action_lims = np.zeros((2 * self.num_robots, 2))
+		# self.action_lims[:,0] = -1
+		# self.action_lims[:,1] = 1
 
 		self.init_lims = self.state_lims
 
