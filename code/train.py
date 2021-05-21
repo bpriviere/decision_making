@@ -23,7 +23,7 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
-num_simulations = 10000
+num_simulations = 1000
 search_depth = 100
 C_pw = 2.0
 alpha_pw = 0.5
@@ -34,7 +34,7 @@ beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example9"
+problem_name = "example6"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
@@ -46,13 +46,13 @@ num_D_pi = 1000
 # num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 10000
-num_v_eval = 10000
+num_v_eval = 5000
 num_subsamples = 10
 num_self_play_plots = 10 
 learning_rate = 0.001
-num_epochs = 500
+num_epochs = 100
 # num_epochs = 100
-batch_size = 512
+batch_size = 1028
 train_test_split = 0.8
 
 
@@ -431,7 +431,7 @@ def eval_policy(problem,l,robot):
 	plotter.save_figs("{}/policy_eval_l{}_i{}.pdf".format(dirname,l,robot))
 
 
-def self_play(problem,policy_oracle,l):
+def self_play(problem,policy_oracle,value_oracle,l):
 	solver = get_solver(
 			"NeuralNetwork",
 			policy_oracle=policy_oracle)
@@ -439,6 +439,8 @@ def self_play(problem,policy_oracle,l):
 	instance = {
 		"problem" : problem,
 		"solver" : solver,
+		"policy_oracle" : policy_oracle,
+		"value_oracle" : value_oracle,
 	}
 
 	for _ in range(num_self_play_plots):
@@ -447,6 +449,8 @@ def self_play(problem,policy_oracle,l):
 		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
 		plotter.plot_sim_result(sim_result)
 		problem.render(states=sim_result["states"])
+		if hasattr(problem, 'pretty_plot'):
+			problem.pretty_plot(sim_result)
 	plotter.save_figs("{}/self_play_l{}.pdf".format(dirname,l))
 	return 
 
@@ -476,7 +480,7 @@ if __name__ == '__main__':
 				policy_oracle_name = policy_oracle_name, 
 				policy_oracle_paths = policy_oracle_paths
 				)
-			self_play(problem,policy_oracle,l-1)
+			self_play(problem,policy_oracle,value_oracle,l-1)
 
 
 		for robot in range(problem.num_robots): 
