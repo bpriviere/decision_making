@@ -43,8 +43,6 @@ class Example9(Problem):
 		self.w2 = 1.5
 		self.R = 1.0
 
-		self.action_dim_per_robot = 1 
-
 		self.state_dim = 6
 		self.action_dim = 2
 		self.times = np.arange(self.t0,self.tf,self.dt)
