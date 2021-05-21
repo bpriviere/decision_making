@@ -83,6 +83,16 @@ class Example9(Problem):
 			(0,0),
 			))
 
+	# def initialize(self):
+	# 	valid = False
+	# 	while not valid:
+	# 		state = sample_vector(self.init_lims)
+	# 		state[2,0] = 0
+	# 		state[3,0] = 0
+	# 		state[4,0] = 0
+	# 		valid = not self.is_terminal(state)
+	# 	return state
+
 	def reward(self,s,a):
 		return self.normalized_reward(s,a)
 
@@ -198,15 +208,15 @@ class Example9(Problem):
 
 		# helper
 		def rot(th):
-			gamma = - th + np.pi/2 
-			r = np.array([
-				[np.cos(gamma), -np.sin(gamma)],
-				[np.sin(gamma), np.cos(gamma)],
-				])
+			# gamma = - th + np.pi/2 
 			# r = np.array([
-			# 	[np.ones(th.shape), np.zeros(th.shape)],
-			# 	[np.zeros(th.shape), np.ones(th.shape)],
+			# 	[np.cos(gamma), -np.sin(gamma)],
+			# 	[np.sin(gamma), np.cos(gamma)],
 			# 	])
+			r = np.array([
+				[np.ones(th.shape), np.zeros(th.shape)],
+				[np.zeros(th.shape), np.ones(th.shape)],
+				])
 			return r
 
 		# transform state for planar representation
@@ -271,7 +281,7 @@ class Example9(Problem):
 				state[2,0] = 0
 				state[3,0] = 0
 				state[4,0] = 0
-				state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
+				# state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
 				states.append(state)
 			states = np.array(states).squeeze(axis=2)
 
@@ -285,19 +295,20 @@ class Example9(Problem):
 				values = np.array(values).squeeze(axis=2)
 				pcm = ax.tricontourf(states[:,0],states[:,1],values[:,0])
 				fig.colorbar(pcm,ax=ax)	
-				pcm = ax.tricontourf(states[:,robot_idxs[0]],states[:,robot_idxs[1]],values[:,robot])
-				fig.colorbar(pcm,ax=ax)	
 
 			# plot policy function 
 			if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
 				policy_oracle = sim_result["instance"]["policy_oracle"]
+
+				robot = 0 
+
 				actions = []
 				for state in states: 
 					action = policy_oracle[robot].eval(self,state,robot)
 					actions.append(action)
 				actions = np.array(actions).squeeze(axis=2)
 
-				ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],actions[:,0],actions[:,1])
+				ax.quiver(states[:,0],states[:,1],np.sin(actions[:,0]),np.cos(actions[:,0]))
 
 			# plot final trajectory , obstacles and limits 
-			self.render(fig=fig,ax=ax,states=sim_result["states"])
+			# self.render(fig=fig,ax=ax,states=sim_result["states"])
