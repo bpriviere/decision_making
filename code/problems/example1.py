@@ -1,6 +1,7 @@
 
 # standard 
 import numpy as np 
+import matplotlib.pyplot as plt 
 
 # custom 
 from problems.problem import Problem
@@ -92,10 +93,28 @@ class Example1(Problem):
 		return state 
 
 	def plot_policy_dataset(self,dataset,title,robot):
-		pass 
+
+		state = dataset[0] 
+		action = dataset[1] 
+
+		# quiver 
+		fig,ax = plt.subplots()
+		ax.quiver(state[:,0],state[:,1],action[:,0],action[:,1])
+		ax.set_title("{} Policy for Robot {}".format(title,robot))
+		ax.set_xlim(self.state_lims[0,:])
+		ax.set_ylim(self.state_lims[1,:])
+
 
 	def plot_value_dataset(self,dataset,title):
-		pass 
 
+		state = dataset[0] 
+		value = dataset[1] 
+
+		# quiver 
+		fig,ax = plt.subplots()
+		pcm = ax.tricontourf(state[:,0],state[:,1],value[:,0])
+		ax.set_title("{} Value".format(title))
+		ax.set_xlim(self.state_lims[0,:])
+		ax.set_ylim(self.state_lims[1,:])
 
 
