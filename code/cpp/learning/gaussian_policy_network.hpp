@@ -16,8 +16,10 @@ class GaussianPolicyNetwork : public PolicyNetwork {
 			Eigen::Matrix<float,-1,1> action(robot_action_dim); 
 
 			auto distribution = m_phi.eval(encoding);
-			auto mu = distribution.block(problem->m_action_idxs[robot][0],0,robot_action_dim,1);
-			auto sd = distribution.block(problem->m_action_idxs[robot][0],0,robot_action_dim,1).array().exp().sqrt();
+			// auto mu = distribution.block(problem->m_action_idxs[robot][0],0,robot_action_dim,1);
+			// auto sd = distribution.block(problem->m_action_idxs[robot][0],0,robot_action_dim,1).array().exp().sqrt();
+			auto mu = distribution.block(0,0,robot_action_dim,1);
+			auto sd = distribution.block(robot_action_dim,0,robot_action_dim,1).array().exp().sqrt();
 
 			for (int i = 0; i < robot_action_dim; i++) {
 				std::normal_distribution<float> dist(mu(i,0),sd(i,0));
