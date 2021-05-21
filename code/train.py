@@ -319,6 +319,7 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 		model_fn = policy_oracle_paths[robot]
 		model, _ = get_oracles(problem,
 			policy_oracle_name = policy_oracle_name,
+			policy_oracle_paths = [None for _ in range(problem.num_robots)],
 			force = True
 			)
 		model = model[robot]
@@ -433,6 +434,26 @@ def eval_policy(problem,l,robot):
 	plotter.save_figs("{}/policy_eval_l{}_i{}.pdf".format(dirname,l,robot))
 
 
+def self_play(problem,policy_oracle,l):
+	solver = get_solver(
+			"NeuralNetwork",
+			policy_oracle=policy_oracle)
+
+	instance = {
+		"problem" : problem,
+		"solver" : solver,
+	}
+
+	for _ in range(num_self_play_plots):
+		state = problem.initialize()
+		instance["initial_state"] = state
+		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
+		plotter.plot_sim_result(sim_result)
+		problem.render(states=sim_result["states"])
+	plotter.save_figs("{}/self_play_l{}.pdf".format(dirname,l))
+	return 
+
+
 if __name__ == '__main__':
 
 	problem = get_problem(problem_name) 
@@ -458,6 +479,8 @@ if __name__ == '__main__':
 				policy_oracle_name = policy_oracle_name, 
 				policy_oracle_paths = policy_oracle_paths
 				)
+			self_play(problem,policy_oracle,l-1)
+
 
 		for robot in range(problem.num_robots): 
 			print('\t policy training iteration l/L, i/N: {}/{} {}/{}...'.format(\
