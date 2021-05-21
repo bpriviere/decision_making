@@ -11,6 +11,7 @@
 #include "example6.hpp" 
 #include "example8.hpp" 
 #include "example9.hpp" 
+#include "example10.hpp" 
 
 // Strategy Pattern: https://stackoverflow.com/questions/41220046/is-it-possible-to-change-a-c-objects-class-after-instantiation
 
@@ -36,6 +37,8 @@ class Problem_Wrapper
                 problem = new Example8(); 
             } else if (string == "example9"){
                 problem = new Example9(); 
+            } else if (string == "example10"){
+                problem = new Example10(); 
             }
             (*problem).set_params(problem_settings);
         }

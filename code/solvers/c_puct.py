@@ -104,7 +104,7 @@ class C_PUCT(Solver):
 			problem_settings.c1 = problem.w1
 			problem_settings.c2 = problem.w2
 
-		if problem.name not in ["example{}".format(i) for i in [1,2,3,4,5,6,8,9]]:
+		if problem.name not in ["example{}".format(i) for i in [1,2,3,4,5,6,8,9,10]]:
 			print("problem not supported")
 			exit()
 
