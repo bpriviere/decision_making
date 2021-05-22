@@ -46,8 +46,12 @@ class Example9(Problem):
 		self.state_dim = 6
 		self.action_dim = 2
 		self.times = np.arange(self.t0,self.tf,self.dt)
-		self.policy_encoding_dim = self.state_dim
-		self.value_encoding_dim = self.state_dim
+		# self.policy_encoding_dim = self.state_dim
+		# self.value_encoding_dim = self.state_dim
+
+		self.policy_encoding_dim = 2
+		self.value_encoding_dim = 2
+
 
 		max_angle = np.pi + self.tf * self.w2 / self.R
 		self.state_lims = np.array((
@@ -174,10 +178,22 @@ class Example9(Problem):
 		return contains(state,self.state_lims)
 
 	def policy_encoding(self,state,robot):
-		return state 
+		# return state 
+		state = state.squeeze(axis=1)
+		state = np.expand_dims(state,axis=0)
+		new_state = self.isaacs_transformation(state)
+		new_state = new_state.squeeze(axis=0)
+		new_state = np.expand_dims(new_state,axis=1)
+		return new_state
 
 	def value_encoding(self,state):
-		return state 
+		# return state 
+		state = state.squeeze(axis=1)
+		state = np.expand_dims(state,axis=0)
+		new_state = self.isaacs_transformation(state)
+		new_state = new_state.squeeze(axis=0)
+		new_state = np.expand_dims(new_state,axis=1)
+		return new_state
 
 	def plot_value_dataset(self,dataset,title):
 
@@ -185,7 +201,9 @@ class Example9(Problem):
 		values = dataset[1] # in [num_datapoints x 2] 
 
 		# get data 
-		new_state = self.isaacs_transformation(states) 
+		# new_state = self.isaacs_transformation(states) 
+
+		new_state = states
 
 		for robot in range(self.num_robots):
 			fig,ax = plt.subplots()
@@ -199,22 +217,30 @@ class Example9(Problem):
 
 		robot_action_dim = len(self.action_idxs[robot])
 		num_datapoints = dataset[0].shape[0]
+		
 		states = dataset[0]
 		actions = dataset[1][:,0:robot_action_dim]
 
-		next_states = []
-		for ii in range(num_datapoints):
-			state = np.expand_dims(states[ii,:],axis=1)
-			action = np.zeros((self.action_dim,1))
-			action[self.action_idxs[robot],:] = actions[ii,:]
-			next_state = self.step(state,action,self.dt)
-			next_states.append(next_state)
-		next_states = np.array(next_states).squeeze(axis=2)
+		# next_states = []
+		# for ii in range(num_datapoints):
+		# 	state = np.expand_dims(states[ii,:],axis=1)
+		# 	action = np.zeros((self.action_dim,1))
+		# 	action[self.action_idxs[robot],:] = actions[ii,:]
+		# 	next_state = self.step(state,action,self.dt)
+		# 	next_states.append(next_state)
+		# next_states = np.array(next_states).squeeze(axis=2)
 
 		# get data 
-		new_state  = self.isaacs_transformation(states) # in [num datapoints x 2] 
-		new_next_states = self.isaacs_transformation(next_states)
-		diff = new_next_states-new_state
+		# new_state  = self.isaacs_transformation(states) # in [num datapoints x 2] 
+		# new_next_states = self.isaacs_transformation(next_states)
+		# diff = new_next_states-new_state
+
+		new_state = states
+		actions = actions.squeeze()
+
+		diff = np.zeros((num_datapoints,2)) 
+		diff[:,0] = np.sin(actions)
+		diff[:,1] = np.cos(actions)
 
 		# plot quiver 
 		fig,ax = plt.subplots()
@@ -317,14 +343,14 @@ class Example9(Problem):
 
 			num_eval = 3000
 			states = []
+			encodings = [] 
 			for _ in range(num_eval):
 				state = self.initialize()
-				state[2,0] = 0
-				state[3,0] = 0
-				state[4,0] = 0
-				# state[not_robot_idxs,:] = inital_state[not_robot_idxs,:]
+				encoding = self.policy_encoding(state,0)
 				states.append(state)
-			states = np.array(states).squeeze(axis=2)
+				encodings.append(encoding)
+			states = np.array(states) # num datapoints x 6 x 1
+			encodings = np.array(encodings).squeeze(axis=2) # num datapoints x 2
 
 			# plot value func contours
 			if sim_result["instance"]["value_oracle"] is not None:
@@ -334,7 +360,7 @@ class Example9(Problem):
 					value = value_oracle.eval(self,state)
 					values.append(value)
 				values = np.array(values).squeeze(axis=2)
-				pcm = ax.tricontourf(states[:,0],states[:,1],values[:,0])
+				pcm = ax.tricontourf(encodings[:,0],encodings[:,1],values[:,0])
 				fig.colorbar(pcm,ax=ax)	
 
 			# plot policy function 
@@ -347,21 +373,25 @@ class Example9(Problem):
 					for robot in range(self.num_robots):
 						action[self.action_idxs[robot],:] = policy_oracle[robot].eval(self,state,robot)
 					actions.append(action)
-				actions = np.array(actions).squeeze(axis=2)
+				actions = np.array(actions)  # num_datapoints x 2 x 1
 
 				next_states = [] 
 				for ii in range(num_eval):
-					next_state = self.step(
-						np.expand_dims(states[ii,:],axis=1),
-						np.expand_dims(actions[ii,:],axis=1),
-						self.dt
-						)
+					next_state = self.step(states[ii,:],actions[ii,:],self.dt)
 					next_states.append(next_state)
-				next_states = np.array(next_states).squeeze(axis=2)
+				next_states = np.array(next_states)
+
+				next_states = next_states.squeeze(axis=(2)) # num datapoints x 2
+				states = states.squeeze(axis=2)
 
 				new_states = self.isaacs_transformation(states)
 				new_next_states = self.isaacs_transformation(next_states)
 				diff = new_next_states - new_states
+				
+				# new_states = encodings
+				# diff = np.zeros((actions.shape[0],2)) 
+				# diff[:,0] = np.sin(actions)
+				# diff[:,1] = np.cos(actions)
 
 				ax.quiver(new_states[:,0],new_states[:,1],diff[:,0],diff[:,1])
 				self.render_isaacs(fig=fig,ax=ax)
