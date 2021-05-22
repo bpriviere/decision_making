@@ -38,7 +38,7 @@ class Example9(Problem):
 		self.state_control_weight = 0.01 
 		
 		# problem specific parameters 
-		self.desired_distance = 0.5
+		self.desired_distance = 1.0
 		self.w1 = 1.0 
 		self.w2 = 1.25
 		self.R = 1.0
@@ -66,8 +66,10 @@ class Example9(Problem):
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
 
+		# eps = 0.0001
 		self.action_lims = np.array((
 			(-np.pi,np.pi),
+			# (-eps,eps),
 			(-1,1),
 			))
 
