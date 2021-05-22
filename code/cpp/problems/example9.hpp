@@ -155,5 +155,39 @@ class Example9 : public Problem {
 		bool is_captured(Eigen::Matrix<float,-1,1> state) {
 			return (state.block(0,0,2,1) - state.block(2,0,2,1)).norm() < m_desired_distance;
 		}
+
+
+	    Eigen::Matrix<float,-1,1> policy_encoding(Eigen::Matrix<float,-1,1> state, int robot) override {
+	        // return state;
+
+	    	Eigen::Matrix<float,-1,1> new_state(2,1); 
+	    	new_state(0,0) = state(0,0) - state(2,0);
+	    	new_state(1,0) = state(1,0) - state(3,0);
+
+	    	Eigen::Matrix<float,2,2> R;
+	    	R << 
+	    		cos(state(4,0)),-sin(state(4,0)),
+	    		sin(state(4,0)), cos(state(4,0)); 
+
+    		new_state = R * new_state;
+	        return new_state;
+	    }
+
+	    Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state) override {
+	        // return state;
+
+	    	Eigen::Matrix<float,-1,1> new_state(2,1); 
+	    	new_state(0,0) = state(0,0) - state(2,0);
+	    	new_state(1,0) = state(1,0) - state(3,0);
+
+	    	Eigen::Matrix<float,2,2> R;
+	    	R << 
+	    		cos(state(4,0)),-sin(state(4,0)),
+	    		sin(state(4,0)), cos(state(4,0)); 
+
+    		new_state = R * new_state;
+	        return new_state;
+	    }
+
 		
 };

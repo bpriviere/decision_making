@@ -148,11 +148,11 @@ public:
         return true;
     }
 
-    Eigen::Matrix<float,-1,1> policy_encoding(Eigen::Matrix<float,-1,1> state, int robot){
+    virtual Eigen::Matrix<float,-1,1> policy_encoding(Eigen::Matrix<float,-1,1> state, int robot){
         return state;
     }
 
-    Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state){
+    virtual Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state){
         return state;
     }
 
