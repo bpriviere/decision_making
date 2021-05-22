@@ -468,7 +468,11 @@ def self_play(problem,policy_oracle,value_oracle,l):
 	for sim_result in sim_results:
 		plotter.plot_sim_result(sim_result)
 		problem.render(states=sim_result["states"])
-		plotter.save_figs("{}/self_play_l{}.pdf".format(dirname,l))
+
+	if hasattr(problem, 'pretty_plot'):
+		problem.pretty_plot(sim_results[0])	
+	
+	plotter.save_figs("{}/self_play_l{}.pdf".format(dirname,l))
 	return sim_results
 
 
@@ -500,8 +504,6 @@ if __name__ == '__main__':
 			
 			print('\t self play l/L: {}/{}...'.format(l,L))
 			sim_results = self_play(problem,policy_oracle,value_oracle,l-1)
-			if hasattr(problem, 'pretty_plot'):
-				problem.pretty_plot(sim_results[0])
 
 
 		for robot in range(problem.num_robots): 
