@@ -34,7 +34,7 @@ beta_value = 0.75
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example6"
+problem_name = "example9"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
@@ -443,16 +443,33 @@ def self_play(problem,policy_oracle,value_oracle,l):
 		"value_oracle" : value_oracle,
 	}
 
+	sim_results = [] 
 	for _ in range(num_self_play_plots):
 		state = problem.initialize()
 		instance["initial_state"] = state
 		sim_result = run_instance(0,Queue(),0,instance,verbose=False,tqdm_on=False)
+		sim_results.append(sim_result)
+
+	# if parallel_on:
+	# 	pool = mp.Pool(mp.cpu_count() - 1)
+	# 	params = [Param() for _ in range(num_self_play_plots)]
+	# 	seeds = [np.random.randint(10000) for _ in range(num_self_play_plots)]
+	# 	args = list(zip(
+	# 		itertools.count(), 
+	# 		itertools.repeat(mp.Manager().Queue()),
+	# 		itertools.repeat(param.num_self_play_plots),
+	# 		params,seeds))
+	# 	sim_results = pool.imap_unordered(_worker_run_instance, args)
+	# 	pool.close()
+	# 	pool.join()
+	# else:
+	# 	sim_results = [run_instance(0,Queue(),len(instance["problem"].times),instance,verbose=False,tqdm_on=True)]
+
+	for sim_result in sim_results:
 		plotter.plot_sim_result(sim_result)
 		problem.render(states=sim_result["states"])
-		if hasattr(problem, 'pretty_plot'):
-			problem.pretty_plot(sim_result)
-	plotter.save_figs("{}/self_play_l{}.pdf".format(dirname,l))
-	return 
+		plotter.save_figs("{}/self_play_l{}.pdf".format(dirname,l))
+	return sim_results
 
 
 if __name__ == '__main__':
@@ -480,7 +497,11 @@ if __name__ == '__main__':
 				policy_oracle_name = policy_oracle_name, 
 				policy_oracle_paths = policy_oracle_paths
 				)
-			self_play(problem,policy_oracle,value_oracle,l-1)
+			
+			print('\t self play l/L: {}/{}...'.format(l,L))
+			sim_results = self_play(problem,policy_oracle,value_oracle,l-1)
+			if hasattr(problem, 'pretty_plot'):
+				problem.pretty_plot(sim_results[0])
 
 
 		for robot in range(problem.num_robots): 

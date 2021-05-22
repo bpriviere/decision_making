@@ -42,11 +42,13 @@ def make_instance(param):
 	instance["value_oracle"] = value_oracle
 	instance["problem"] = problem 
 	instance["solver"] = solver 
-	instance["initial_state"] = problem.initialize() 
+	instance["initial_state"] = problem.initialize()
+
 	# instance["initial_state"] = np.array([
-		# [-1],[3],
-		# [-3],[3],
-		# ])
+	# 	# [-1],[3], # state for single robot, 2d single integrator problems
+	# 	# [1],[1],[1],[-2],[0],[0], # state for homicidal chauffeur 
+	# 	[1],[1],[-2],[1],[np.pi],[0], # state for homicidal chauffeur 
+	# 	])
 
 	return instance 
 
@@ -115,7 +117,7 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 
 	return sim_result
 
-def worker(rank,queue,num_trials,param,seed):
+def worker_run_instance(rank,queue,num_trials,param,seed):
 	np.random.seed(seed)
 	instance = make_instance(param)
 	total = num_trials * len(instance["problem"].times)
@@ -123,8 +125,8 @@ def worker(rank,queue,num_trials,param,seed):
 	del sim_result["instance"]["solver"] # can't pickle bindings 
 	return sim_result
 
-def _worker(arg):
-	return worker(*arg)
+def _worker_run_instance(arg):
+	return worker_run_instance(*arg)
 
 
 if __name__ == '__main__':
@@ -141,7 +143,7 @@ if __name__ == '__main__':
 			itertools.repeat(mp.Manager().Queue()),
 			itertools.repeat(param.num_trials),
 			params,seeds))
-		sim_results = pool.imap_unordered(_worker, args)
+		sim_results = pool.imap_unordered(_worker_run_instance, args)
 		# sim_results = pool.map(_worker, args)
 		pool.close()
 		pool.join()

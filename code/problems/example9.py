@@ -40,7 +40,7 @@ class Example9(Problem):
 		# problem specific parameters 
 		self.desired_distance = 0.5
 		self.w1 = 1.0 
-		self.w2 = 1.5
+		self.w2 = 1.25
 		self.R = 1.0
 
 		self.state_dim = 6
@@ -119,7 +119,7 @@ class Example9(Problem):
 		s_tp1 = s + s_dot * dt 
 		return s_tp1 
 
-	def render(self,states=None,fig=None,ax=None):
+	def render(self,states=None,actions=None,fig=None,ax=None):
 		# states, np array in [nt x state_dim]
 		
 		if fig == None or ax == None:
@@ -140,6 +140,12 @@ class Example9(Problem):
 					circ = patches.Circle((states[-1,robot_idxs[0]], states[-1,robot_idxs[1]]), \
 						self.desired_distance,facecolor='green',alpha=0.5)
 					ax.add_patch(circ)
+
+				if robot == 1 and actions is not None:
+					robot_action_idxs = self.action_idxs[robot]
+					ax.quiver(states[:,robot_idxs[0]],states[:,robot_idxs[1]],\
+						np.sin(actions[:,robot_action_idxs[0]]),\
+						np.cos(actions[:,robot_action_idxs[0]]))
 				
 			for robot in range(self.num_robots):
 				if robot == 0:
@@ -175,30 +181,51 @@ class Example9(Problem):
 
 	def plot_value_dataset(self,dataset,title):
 
+		states = dataset[0] # in [num datapoints x 2] 
+		values = dataset[1] # in [num_datapoints x 2] 
+
 		# get data 
-		new_state = self.isaacs_transformation(dataset[0]) # in [num datapoints x 2] 
-		target = dataset[1] # in [num_datapoints x 2] 
+		new_state = self.isaacs_transformation(states) 
 
 		for robot in range(self.num_robots):
 			fig,ax = plt.subplots()
-			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],target[:,robot])
+			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],values[:,robot])
 			fig.colorbar(pcm,ax=ax)
 			ax.set_title("{} Value for Robot {}".format(title,robot))
-			self.render(fig=fig,ax=ax)
+			# self.render(fig=fig,ax=ax)
+			self.render_isaacs(fig=fig,ax=ax)
 
 	def plot_policy_dataset(self,dataset,title,robot):
 
-		# get data 
-		new_state = self.isaacs_transformation(dataset[0]) # in [num datapoints x 2] 
-		target = dataset[1] # in [num_datapoints x 2] 
+		robot_action_dim = len(self.action_idxs[robot])
+		num_datapoints = dataset[0].shape[0]
+		states = dataset[0]
+		actions = dataset[1][:,0:robot_action_dim]
 
+		next_states = []
+		for ii in range(num_datapoints):
+			state = np.expand_dims(states[ii,:],axis=1)
+			action = np.zeros((self.action_dim,1))
+			action[self.action_idxs[robot],:] = actions[ii,:]
+			next_state = self.step(state,action,self.dt)
+			next_states.append(next_state)
+		next_states = np.array(next_states).squeeze(axis=2)
+
+		# get data 
+		new_state  = self.isaacs_transformation(states) # in [num datapoints x 2] 
+		new_next_states = self.isaacs_transformation(next_states)
+		diff = new_next_states-new_state
+
+		# plot quiver 
 		fig,ax = plt.subplots()
-		ax.quiver(new_state[:,0],new_state[:,1],np.sin(target[:,0]),np.cos(target[:,0]))
+		ax.quiver(new_state[:,0],new_state[:,1],diff[:,0],diff[:,1])
 		ax.set_title("{} Policy for Robot {}".format(title,robot))
+		
 		if title == "Eval":
-			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],target[:,1],alpha=0.3)
+			variance = dataset[1][:,robot_action_dim:]
+			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],np.linalg.norm(variance,axis=1),alpha=0.3)
 			fig.colorbar(pcm,ax=ax)
-		self.render(fig=fig,ax=ax)
+		self.render_isaacs(fig=fig,ax=ax)
 
 		
 	def isaacs_transformation(self,states):
@@ -206,29 +233,45 @@ class Example9(Problem):
 
 		# helper
 		def rot(th):
-			# gamma = - th + np.pi/2 
-			# r = np.array([
-			# 	[np.cos(gamma), -np.sin(gamma)],
-			# 	[np.sin(gamma), np.cos(gamma)],
-			# 	])
 			r = np.array([
-				[np.ones(th.shape), np.zeros(th.shape)],
-				[np.zeros(th.shape), np.ones(th.shape)],
+				[ np.cos(th),-np.sin(th)],
+				[ np.sin(th), np.cos(th)],
 				])
 			return r
 
+		th = states[:,4]
+
 		# transform state for planar representation
 		# 	- shift 
-		ref = np.zeros(states.shape)
-		ref[:,2] = states[:,2] 
-		ref[:,3] = states[:,3] 
-		states = states - ref 
+		states[:,0] = states[:,0] - states[:,2]
+		states[:,1] = states[:,1] - states[:,3]
+		states = states[:,0:2]
+		new_states = states[:,0:2] 
+		
 		# 	- rotate 
-		a = np.expand_dims(states[:,0:2],axis=2) # in [num datapoints x 2 x 1]
-		b = np.transpose(rot(states[:,4]),(2,0,1)) # in [num datapoints x 2 x 2]
+		a = np.expand_dims(new_states,axis=2) # in [num datapoints x 2 x 1]
+		b = np.transpose(rot(th),(2,0,1)) # in [num datapoints x 2 x 2]
 		new_states = np.matmul(b,a).squeeze(axis=2) # in [num_datapoints x 2] 	
-		# new_states = a	
+
 		return new_states 
+
+
+	def dbg_transform_plot(self,states,actions):
+		fig,ax = plt.subplots(ncols=2,nrows=1,squeeze=False)
+		self.render(states,fig=fig,ax=ax[0,0])
+		self.render_isaacs(states=states,actions=actions,fig=fig,ax=ax[0,1])
+
+
+	def render_isaacs(self,states=None,actions=None,fig=None,ax=None):
+		if fig is None and ax is None:
+			fig,ax = plt.subplots()
+		if states is not None:
+			new_states = self.isaacs_transformation(states)
+			ax.plot(new_states[:,0],new_states[:,1])
+		lims = self.state_lims
+		ax.set_xlim((lims[0,0],lims[0,1]))
+		ax.set_ylim((lims[1,0],lims[1,1]))
+		ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]))
 
 
 	def make_groups(self,encoding,target,robot):
@@ -298,15 +341,30 @@ class Example9(Problem):
 			if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
 				policy_oracle = sim_result["instance"]["policy_oracle"]
 
-				robot = 0 
-
 				actions = []
 				for state in states: 
-					action = policy_oracle[robot].eval(self,state,robot)
+					action = np.zeros((self.action_dim,1))
+					for robot in range(self.num_robots):
+						action[self.action_idxs[robot],:] = policy_oracle[robot].eval(self,state,robot)
 					actions.append(action)
 				actions = np.array(actions).squeeze(axis=2)
 
-				ax.quiver(states[:,0],states[:,1],np.sin(actions[:,0]),np.cos(actions[:,0]))
+				next_states = [] 
+				for ii in range(num_eval):
+					next_state = self.step(
+						np.expand_dims(states[ii,:],axis=1),
+						np.expand_dims(actions[ii,:],axis=1),
+						self.dt
+						)
+					next_states.append(next_state)
+				next_states = np.array(next_states).squeeze(axis=2)
+
+				new_states = self.isaacs_transformation(states)
+				new_next_states = self.isaacs_transformation(next_states)
+				diff = new_next_states - new_states
+
+				ax.quiver(new_states[:,0],new_states[:,1],diff[:,0],diff[:,1])
+				self.render_isaacs(fig=fig,ax=ax)
 
 			# plot final trajectory , obstacles and limits 
 			# self.render(fig=fig,ax=ax,states=sim_result["states"])
