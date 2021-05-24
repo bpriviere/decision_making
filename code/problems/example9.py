@@ -55,10 +55,10 @@ class Example9(Problem):
 
 		max_angle = np.pi + self.tf * self.w2 / self.R
 		self.state_lims = np.array((
-			(-10,10), 
-			(-10,10), 
-			(-10,10), 
-			(-10,10), 
+			(-20,20), 
+			(-20,20), 
+			(-20,20), 
+			(-20,20), 
 			# (-5,5), 
 			# (-5,5), 
 			# (-5,5), 
@@ -221,8 +221,15 @@ class Example9(Problem):
 		num_datapoints = dataset[0].shape[0]
 		
 		states = dataset[0]
-		actions = dataset[1][:,0:robot_action_dim]
-
+		if title == "Eval":
+			mu = dataset[1][:,0:robot_action_dim]
+			logvar = dataset[1][:,robot_action_dim:]
+			eps = np.random.randn(num_datapoints,robot_action_dim)
+			actions = mu + eps * np.sqrt(np.exp(logvar))
+		else:
+			actions = dataset[1]
+		actions = actions.squeeze()
+		
 		# next_states = []
 		# for ii in range(num_datapoints):
 		# 	state = np.expand_dims(states[ii,:],axis=1)
@@ -238,7 +245,7 @@ class Example9(Problem):
 		# diff = new_next_states-new_state
 
 		new_state = states
-		actions = actions.squeeze()
+		# actions = actions.squeeze()
 
 		diff = np.zeros((num_datapoints,2)) 
 		diff[:,0] = np.sin(actions)
