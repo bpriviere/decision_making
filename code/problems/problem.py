@@ -107,4 +107,9 @@ def get_problem(problem_name):
 		from problems.example10 import Example10
 		problem = Example10() 
 
+	# modified homicidal chauffer  
+	elif problem_name == "example12":
+		from problems.example12 import Example12
+		problem = Example12() 
+
 	return problem 
