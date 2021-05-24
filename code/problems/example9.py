@@ -180,19 +180,21 @@ class Example9(Problem):
 		return contains(state,self.state_lims)
 
 	def policy_encoding(self,state,robot):
+		# state in 6x1
+		# new_state in 2x1
 		# return state 
-		state = state.squeeze(axis=1)
-		state = np.expand_dims(state,axis=0)
-		new_state = self.isaacs_transformation(state)
+		new_state = np.copy(state).squeeze(axis=1)
+		new_state = np.expand_dims(new_state,axis=0)
+		new_state = self.isaacs_transformation(new_state)
 		new_state = new_state.squeeze(axis=0)
 		new_state = np.expand_dims(new_state,axis=1)
 		return new_state
 
 	def value_encoding(self,state):
 		# return state 
-		state = state.squeeze(axis=1)
-		state = np.expand_dims(state,axis=0)
-		new_state = self.isaacs_transformation(state)
+		new_state = np.copy(state).squeeze(axis=1)
+		new_state = np.expand_dims(new_state,axis=0)
+		new_state = self.isaacs_transformation(new_state)
 		new_state = new_state.squeeze(axis=0)
 		new_state = np.expand_dims(new_state,axis=1)
 		return new_state
@@ -259,6 +261,8 @@ class Example9(Problem):
 	def isaacs_transformation(self,states):
 		# states in [num datapoints x 5] 
 
+		new_states = np.zeros((states.shape[0],2))
+
 		# helper
 		def rot(th):
 			r = np.array([
@@ -271,10 +275,8 @@ class Example9(Problem):
 
 		# transform state for planar representation
 		# 	- shift 
-		states[:,0] = states[:,0] - states[:,2]
-		states[:,1] = states[:,1] - states[:,3]
-		states = states[:,0:2]
-		new_states = states[:,0:2] 
+		new_states[:,0] = states[:,0] - states[:,2]
+		new_states[:,1] = states[:,1] - states[:,3]
 		
 		# 	- rotate 
 		a = np.expand_dims(new_states,axis=2) # in [num datapoints x 2 x 1]
