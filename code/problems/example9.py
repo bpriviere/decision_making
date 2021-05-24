@@ -46,6 +46,7 @@ class Example9(Problem):
 		self.state_dim = 6
 		self.action_dim = 2
 		self.times = np.arange(self.t0,self.tf,self.dt)
+
 		# self.policy_encoding_dim = self.state_dim
 		# self.value_encoding_dim = self.state_dim
 
@@ -55,10 +56,10 @@ class Example9(Problem):
 
 		max_angle = np.pi + self.tf * self.w2 / self.R
 		self.state_lims = np.array((
-			(-20,20), 
-			(-20,20), 
-			(-20,20), 
-			(-20,20), 
+			(-30,30), 
+			(-30,30), 
+			(-30,30), 
+			(-30,30), 
 			# (-5,5), 
 			# (-5,5), 
 			# (-5,5), 
@@ -206,8 +207,9 @@ class Example9(Problem):
 
 		# get data 
 		# new_state = self.isaacs_transformation(states) 
-
 		new_state = states
+
+		# new_state = states
 
 		for robot in range(self.num_robots):
 			fig,ax = plt.subplots()
@@ -236,7 +238,7 @@ class Example9(Problem):
 		# for ii in range(num_datapoints):
 		# 	state = np.expand_dims(states[ii,:],axis=1)
 		# 	action = np.zeros((self.action_dim,1))
-		# 	action[self.action_idxs[robot],:] = actions[ii,:]
+		# 	action[self.action_idxs[robot],:] = actions[ii]
 		# 	next_state = self.step(state,action,self.dt)
 		# 	next_states.append(next_state)
 		# next_states = np.array(next_states).squeeze(axis=2)
@@ -246,6 +248,7 @@ class Example9(Problem):
 		# new_next_states = self.isaacs_transformation(next_states)
 		# diff = new_next_states-new_state
 
+		# new_state = self.isaacs_transformation(states)
 		new_state = states
 		# actions = actions.squeeze()
 

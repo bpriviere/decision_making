@@ -23,14 +23,14 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
-num_simulations = 1000
-search_depth = 100
+num_simulations = 5000
+search_depth = 50
 C_pw = 2.0
 alpha_pw = 0.5
 C_exp = 1.0
 alpha_exp = 0.25
-beta_policy = 0.75
-beta_value = 0.75
+beta_policy = 0.5
+beta_value = 0.5
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
@@ -42,7 +42,7 @@ dirname = "../current/models"
 
 # learning 
 L = 40
-num_D_pi = 1000
+num_D_pi = 10000
 # num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 10000
@@ -50,7 +50,7 @@ num_v_eval = 5000
 num_subsamples = 10
 num_self_play_plots = 10 
 learning_rate = 0.001
-num_epochs = 100
+num_epochs = 500
 # num_epochs = 100
 batch_size = 1028
 train_test_split = 0.8
@@ -111,7 +111,7 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 		if root_node.success:
 			encoding = problem.policy_encoding(state,robot).squeeze()
 
-			mode = 2
+			mode = 1
 			if mode == 0:
 				# weighted average of children 
 				actions,num_visits = solver.get_child_distribution(root_node)
@@ -121,8 +121,19 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 				datapoints.append(datapoint)
 			elif mode == 1:
 				# best child 
-				most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
-				target = root_node.edges[most_visited_child][robot_action_idx,:]
+				# most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
+				# target = root_node.edges[most_visited_child][robot_action_idx,:]
+
+				actions,num_visits = solver.get_child_distribution(root_node)
+
+				# print('actions',actions)
+				# print('num_visits',num_visits)
+				# print('np.argmax(num_visits)',np.argmax(num_visits))
+				# print('actions[np.argmax(num_visits)]',actions[np.argmax(num_visits)])
+				# print('actions[np.argmax(num_visits)][robot_action_idx]',actions[np.argmax(num_visits)][robot_action_idx])
+
+				target = np.array(actions[np.argmax(num_visits)])[robot_action_idx]
+
 				datapoint = np.append(encoding,target)
 				datapoints.append(datapoint)
 			elif mode == 2: 
@@ -386,15 +397,20 @@ def eval_value(problem,l):
 
 	states = []
 	values = []
+	encodings = [] 
 	for _ in range(num_v_eval):
 		state = problem.initialize()
+		encoding = problem.value_encoding(state)
 		value = value_oracle.eval(problem,state)
 		states.append(state)
 		values.append(value)
+		encodings.append(encoding.reshape((problem.value_encoding_dim,1)))
 
 	states = np.array(states).squeeze(axis=2)
 	values = np.array(values).squeeze(axis=2)
-	plotter.plot_value_dataset(problem,[[states,values]],["Eval"])
+	encodings = np.array(encodings).squeeze(axis=2)
+	plotter.plot_value_dataset(problem,[[encodings,values]],["Eval"])
+	# plotter.plot_value_dataset(problem,[[states,values]],["Eval"])
 	plotter.save_figs("{}/value_eval_l{}.pdf".format(dirname,l))
 
 
@@ -412,6 +428,7 @@ def eval_policy(problem,l,robot):
 	policy_oracle = policy_oracles[robot]
 
 	states = []
+	encodings = []
 	actions = []
 	robot_action_dim = len(problem.action_idxs[robot]) 
 	for _ in range(num_pi_eval):
@@ -424,10 +441,13 @@ def eval_policy(problem,l,robot):
 		action = np.concatenate((mu,sd),axis=0)
 		states.append(state)
 		actions.append(action)
+		encodings.append(encoding.detach().numpy().reshape((problem.policy_encoding_dim,1)))
 
 	states = np.array(states).squeeze(axis=2)
 	actions = np.array(actions).squeeze(axis=2)
-	plotter.plot_policy_dataset(problem,[[states,actions]],["Eval"],robot)
+	encodings = np.array(encodings).squeeze(axis=2)
+	# plotter.plot_policy_dataset(problem,[[states,actions]],["Eval"],robot)
+	plotter.plot_policy_dataset(problem,[[encodings,actions]],["Eval"],robot)
 	plotter.save_figs("{}/policy_eval_l{}_i{}.pdf".format(dirname,l,robot))
 
 
