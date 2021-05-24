@@ -40,8 +40,8 @@ class Example9(Problem):
 		# problem specific parameters 
 		self.desired_distance = 1.0
 		self.w1 = 1.0 
-		self.w2 = 1.25
-		self.R = 1.0
+		self.w2 = 2.0
+		self.R = 2.0
 
 		self.state_dim = 6
 		self.action_dim = 2
@@ -308,10 +308,11 @@ class Example9(Problem):
 		if states is not None:
 			new_states = self.isaacs_transformation(states)
 			ax.plot(new_states[:,0],new_states[:,1])
-		lims = self.state_lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
-		ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]))
+		# lims = self.state_lims
+		# ax.set_xlim((lims[0,0],lims[0,1]))
+		# ax.set_ylim((lims[1,0],lims[1,1]))
+		# ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]))
+		ax.axis('equal')
 
 
 	def make_groups(self,encoding,target,robot):
