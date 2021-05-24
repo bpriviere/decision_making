@@ -116,8 +116,11 @@ def plot_sim_result(sim_result):
 
 
 def plot_loss(losses):
+	losses = np.array(losses)
 	fig,ax = plt.subplots()
-	ax.plot(losses)
+	ax.plot(losses[:,0],label="Train")
+	ax.plot(losses[:,1],label="Test")
+	ax.legend()
 	if np.amin(losses) > 0:
 		ax.set_yscale('log')
 	ax.set_title("Losses")
@@ -242,7 +245,7 @@ def plot_policy_dataset(problem,datasets,dataset_names,robot):
 	# target: robot_action 
 
 	encoding_dim = problem.policy_encoding_dim
-	target_dim = int(problem.action_dim / problem.num_robots)
+	target_dim = len(problem.action_idxs[robot]) 
 	state_lims = problem.state_lims
 	action_lims = problem.action_lims
 
@@ -250,18 +253,36 @@ def plot_policy_dataset(problem,datasets,dataset_names,robot):
 		encodings = dataset[0]
 		target = dataset[1]
 
-		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
-		for i_e in range(encoding_dim):
-			ax[0,i_e].hist(encodings[:,i_e])
-			if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
-				ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
-		ax[0,0].set_ylabel("Encoding")
+		if title == "Eval":
+			fig,ax = plt.subplots(nrows=3,ncols=max((encoding_dim,target_dim)),squeeze=False)
+			for i_e in range(encoding_dim):
+				ax[0,i_e].hist(encodings[:,i_e])
+				if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
+					ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+			ax[0,0].set_ylabel("Encoding")
 
-		for i_t in range(target_dim):
-			ax[1,i_t].hist(target[:,i_t])
-			ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
-		ax[1,0].set_ylabel("Target")
-		fig.suptitle(title)
+			for i_t in range(target_dim):
+				ax[1,i_t].hist(target[:,i_t])
+				ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
+				ax[2,i_t].hist(target[:,i_t+target_dim])
+			ax[1,0].set_ylabel("Mean")
+			ax[2,0].set_ylabel("Variance")
+			fig.suptitle(title)
+
+		else: 
+			fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
+
+			for i_e in range(encoding_dim):
+				ax[0,i_e].hist(encodings[:,i_e])
+				if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
+					ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+			ax[0,0].set_ylabel("Encoding")
+
+			for i_t in range(target_dim):
+				ax[1,i_t].hist(target[:,i_t])
+				ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
+			ax[1,0].set_ylabel("Target")
+			fig.suptitle(title)
 
 		problem.plot_policy_dataset(dataset,title,robot)
 
