@@ -24,7 +24,7 @@ from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_t
 
 # solver 
 num_simulations = 5000
-search_depth = 20
+search_depth = 40
 C_pw = 2.0
 alpha_pw = 0.5
 C_exp = 1.0
@@ -42,7 +42,8 @@ dirname = "../current/models"
 
 # learning 
 L = 40
-num_D_pi = 10000
+mode = 1 # 0: weighted sum, 1: best child, 2: subsamples 
+num_D_pi = 5000
 # num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 10000
@@ -501,8 +502,11 @@ if __name__ == '__main__':
 	problem = get_problem(problem_name) 
 	format_dir(clean_dirnames=["data","models"]) 
 
-	if batch_size > np.min((num_D_pi*num_subsamples,num_D_v)) * (1-train_test_split):
-		batch_size = int(np.floor((np.min((num_D_pi*num_subsamples,num_D_v)) * train_test_split / 10)))
+	num_D_pi_samples = num_D_pi
+	if mode == 2:
+		num_D_pi_samples = num_D_pi*num_subsamples
+	if batch_size > np.min((num_D_pi_samples,num_D_v)) * (1-train_test_split):
+		batch_size = int(np.floor((np.min((num_D_pi_samples,num_D_v)) * train_test_split / 10)))
 		print('changing batch size to {}'.format(batch_size))
 
 	# training 

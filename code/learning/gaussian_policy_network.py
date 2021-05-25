@@ -78,8 +78,8 @@ class GaussianPolicyNetwork(torch.nn.Module):
 		# 		- for diagonal matrix, det(Var) = Var(0,0) * Var(1,1) * ... 
 
 		mu,logvar = self.__call__(x,training=True)
-		# loss = torch.sum((mu - target).pow(2) / (2*torch.exp(logvar)) + mu.shape[0]/2 * logvar)
-		loss = torch.sum( (mu - target).pow(2) / (2*torch.exp(logvar)) + 1/2 * logvar)
+		loss = torch.sum((mu - target).pow(2) / (2*torch.exp(logvar)) + mu.shape[0]/2 * logvar)
+		# loss = torch.sum( (mu - target).pow(2) / (2*torch.exp(logvar)) + 1/2 * logvar)
 		loss = loss / mu.shape[0]
 		return loss 
 
