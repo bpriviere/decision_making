@@ -20,7 +20,7 @@ class Example12(Problem):
 
 		self.t0 = 0
 		self.tf = 20
-		self.dt = 0.2
+		self.dt = 0.1
 		self.gamma = 1.0
 		self.num_robots = 2 
 		self.state_idxs = [
@@ -38,7 +38,7 @@ class Example12(Problem):
 		self.state_control_weight = 0.01 
 		
 		# problem specific parameters 
-		self.desired_distance = 0.5 # < 1
+		self.desired_distance = 0.3 # < 1
 		self.w1 = 0.5 # < 1
 		self.w2 = 1.0 # = 1
 		self.R = 1.0 # = 1
@@ -50,7 +50,7 @@ class Example12(Problem):
 		self.policy_encoding_dim = 2
 		self.value_encoding_dim = 2
 
-		init_length = 2.5
+		init_length = 1.0
 		max_angle = np.pi + self.tf * self.w2 / self.R
 		max_length = init_length + self.tf * self.w2 
 		self.state_lims = np.array((
@@ -142,10 +142,11 @@ class Example12(Problem):
 				ax.plot(np.nan,np.nan,color=colors[robot],label=label)
 			ax.legend(loc='best')
 
-		lims = self.state_lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
-		ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]) )
+		# lims = self.state_lims
+		# ax.set_xlim((lims[0,0],lims[0,1]))
+		# ax.set_ylim((lims[1,0],lims[1,1]))
+		# ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]) )
+		ax.axis('equal')
 
 		return fig,ax 
 

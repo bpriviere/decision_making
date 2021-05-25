@@ -24,7 +24,7 @@ from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_t
 
 # solver 
 num_simulations = 5000
-search_depth = 50
+search_depth = 20
 C_pw = 2.0
 alpha_pw = 0.5
 C_exp = 1.0
@@ -34,7 +34,7 @@ beta_value = 0.5
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example9"
+problem_name = "example12"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
