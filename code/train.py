@@ -23,8 +23,8 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
-num_simulations = 5000
-search_depth = 40
+num_simulations = 10000
+search_depth = 20
 C_pw = 2.0
 alpha_pw = 0.5
 C_exp = 1.0
@@ -42,16 +42,16 @@ dirname = "../current/models"
 
 # learning 
 L = 40
-mode = 2 # 0: weighted sum, 1: best child, 2: subsamples 
-num_D_pi = 5000
+mode = 1 # 0: weighted sum, 1: best child, 2: subsamples 
+num_D_pi = 10000
 # num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 10000
 num_v_eval = 5000
-num_subsamples = 10
+num_subsamples = 5
 num_self_play_plots = 10 
 learning_rate = 0.001
-num_epochs = 500
+num_epochs = 200
 # num_epochs = 100
 batch_size = 1028
 train_test_split = 0.8
