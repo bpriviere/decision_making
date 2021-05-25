@@ -34,7 +34,7 @@ beta_value = 0.5
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example12"
+problem_name = "example9"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
@@ -42,7 +42,7 @@ dirname = "../current/models"
 
 # learning 
 L = 40
-mode = 1 # 0: weighted sum, 1: best child, 2: subsamples 
+mode = 2 # 0: weighted sum, 1: best child, 2: subsamples 
 num_D_pi = 5000
 # num_D_pi = 200
 num_pi_eval = 2000
@@ -112,7 +112,6 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 		if root_node.success:
 			encoding = problem.policy_encoding(state,robot).squeeze()
 
-			mode = 1
 			if mode == 0:
 				# weighted average of children 
 				actions,num_visits = solver.get_child_distribution(root_node)
