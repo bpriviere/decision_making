@@ -24,6 +24,7 @@ class GaussianPolicyNetwork : public PolicyNetwork {
 			for (int i = 0; i < robot_action_dim; i++) {
 				std::normal_distribution<float> dist(mu(i,0),sd(i,0));
 				action(i,0) = dist(gen);
+				action(i,0) = std::min(std::max(action(i,0),problem->m_action_lims(i,0)),problem->m_action_lims(i,1));
 			}
 
 			return action; 
