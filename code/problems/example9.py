@@ -162,10 +162,11 @@ class Example9(Problem):
 				ax.plot(np.nan,np.nan,color=colors[robot],label=label)
 			ax.legend(loc='best')
 
-		lims = self.state_lims
-		ax.set_xlim((lims[0,0],lims[0,1]))
-		ax.set_ylim((lims[1,0],lims[1,1]))
-		ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]) )
+		# lims = self.state_lims
+		# ax.set_xlim((lims[0,0],lims[0,1]))
+		# ax.set_ylim((lims[1,0],lims[1,1]))
+		# ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]) )
+		ax.axis("equal")
 
 		return fig,ax 
 

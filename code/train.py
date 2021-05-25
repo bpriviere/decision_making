@@ -23,7 +23,7 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
-num_simulations = 5000
+num_simulations = 10000
 search_depth = 20
 C_pw = 2.0
 alpha_pw = 0.5
@@ -34,7 +34,7 @@ beta_value = 0.5
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example12"
+problem_name = "example9"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
@@ -42,15 +42,16 @@ dirname = "../current/models"
 
 # learning 
 L = 40
+mode = 1 # 0: weighted sum, 1: best child, 2: subsamples 
 num_D_pi = 10000
 # num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 10000
 num_v_eval = 5000
-num_subsamples = 10
+num_subsamples = 5
 num_self_play_plots = 10 
 learning_rate = 0.001
-num_epochs = 500
+num_epochs = 200
 # num_epochs = 100
 batch_size = 1028
 train_test_split = 0.8
@@ -111,7 +112,6 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 		if root_node.success:
 			encoding = problem.policy_encoding(state,robot).squeeze()
 
-			mode = 1
 			if mode == 0:
 				# weighted average of children 
 				actions,num_visits = solver.get_child_distribution(root_node)
@@ -501,8 +501,11 @@ if __name__ == '__main__':
 	problem = get_problem(problem_name) 
 	format_dir(clean_dirnames=["data","models"]) 
 
-	if batch_size > np.min((num_D_pi*num_subsamples,num_D_v)) * (1-train_test_split):
-		batch_size = int(np.floor((np.min((num_D_pi*num_subsamples,num_D_v)) * train_test_split / 10)))
+	num_D_pi_samples = num_D_pi
+	if mode == 2:
+		num_D_pi_samples = num_D_pi*num_subsamples
+	if batch_size > np.min((num_D_pi_samples,num_D_v)) * (1-train_test_split):
+		batch_size = int(np.floor((np.min((num_D_pi_samples,num_D_v)) * train_test_split / 10)))
 		print('changing batch size to {}'.format(batch_size))
 
 	# training 
