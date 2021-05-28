@@ -4,6 +4,7 @@
 import numpy as np 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import torch
 
 # custom 
 from problems.problem import Problem
@@ -163,10 +164,13 @@ class Example9(Problem):
 			ax.legend(loc='best')
 
 		# lims = self.state_lims
-		# ax.set_xlim((lims[0,0],lims[0,1]))
-		# ax.set_ylim((lims[1,0],lims[1,1]))
-		# ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]) )
-		ax.axis("equal")
+		ax.set_xlim((-15,15))
+		ax.set_ylim((-15,15))
+		ax.set_aspect( 1 )
+		# ax.axis("equal")
+		# x0,x1 = ax.get_xlim()
+		# y0,y1 = ax.get_ylim()
+		# ax.set_aspect(abs(x1-x0)/abs(y1-y0))
 
 		return fig,ax 
 
@@ -313,7 +317,7 @@ class Example9(Problem):
 		# ax.set_xlim((lims[0,0],lims[0,1]))
 		# ax.set_ylim((lims[1,0],lims[1,1]))
 		# ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]))
-		ax.axis('equal')
+		# ax.axis('equal')
 
 
 	def make_groups(self,encoding,target,robot):
@@ -368,16 +372,16 @@ class Example9(Problem):
 			states = np.array(states) # num datapoints x 6 x 1
 			encodings = np.array(encodings).squeeze(axis=2) # num datapoints x 2
 
-			# plot value func contours
-			if sim_result["instance"]["value_oracle"] is not None:
-				value_oracle = sim_result["instance"]["value_oracle"]
-				values = []
-				for state in states: 
-					value = value_oracle.eval(self,state)
-					values.append(value)
-				values = np.array(values).squeeze(axis=2)
-				pcm = ax.tricontourf(encodings[:,0],encodings[:,1],values[:,0])
-				fig.colorbar(pcm,ax=ax)	
+			# # plot value func contours
+			# if sim_result["instance"]["value_oracle"] is not None:
+			# 	value_oracle = sim_result["instance"]["value_oracle"]
+			# 	values = []
+			# 	for state in states: 
+			# 		value = value_oracle.eval(self,state)
+			# 		values.append(value)
+			# 	values = np.array(values).squeeze(axis=2)
+			# 	pcm = ax.tricontourf(encodings[:,0],encodings[:,1],values[:,0])
+			# 	fig.colorbar(pcm,ax=ax)	
 
 			# plot policy function 
 			if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
@@ -410,7 +414,25 @@ class Example9(Problem):
 				# diff[:,1] = np.cos(actions)
 
 				ax.quiver(new_states[:,0],new_states[:,1],diff[:,0],diff[:,1])
-				self.render_isaacs(fig=fig,ax=ax)
+				
+				ax.set_xlim((-15,15))
+				ax.set_ylim((-15,15))
+				ax.set_aspect( 1 )
+
+				# self.render_isaacs(fig=fig,ax=ax)
 
 			# plot final trajectory , obstacles and limits 
-			# self.render(fig=fig,ax=ax,states=sim_result["states"])
+			sim_result_states = sim_result["states"].squeeze()
+			self.render_isaacs(fig=fig,ax=ax,states=sim_result_states)
+
+			# capture radius 
+			circ = patches.Circle((0,0),self.desired_distance,facecolor='green',alpha=0.5,label="Capture")
+			ax.add_patch(circ)
+			ax.legend()
+
+			ax.set_xlim((-15,15))
+			ax.set_ylim((-15,15))
+			ax.set_aspect( 1 )
+
+			# sim_result_new_states = self.isaacs_transformation(sim_result_states)
+			# self.render_isaacs(fig=fig,ax=ax,states=sim_result_new_states)
