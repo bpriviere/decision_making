@@ -74,25 +74,40 @@ class PUCT_V1 : public Solver {
 				Node* curr_node_ptr = root_node_ptr;
 				std::vector< Eigen::Matrix<float,-1,1> > rewards(m_search_depth+1);
 				std::vector<Node*> path(m_search_depth+1);
-
 				int max_depth = m_search_depth;
+
 				for (int d = 0; d < m_search_depth; d++){
 					int robot_turn = (d + turn) % problem->m_num_robots;
 					Node* child_node_ptr;
+					bool valid_expansion = true;
+					Eigen::Matrix<float,-1,1> action; 
 					if (is_expanded(curr_node_ptr)){
 						child_node_ptr = best_child(curr_node_ptr,robot_turn);
+						action = child_node_ptr->action_to_node;
 					} else {
-						child_node_ptr = expand_node(problem,curr_node_ptr); 
+						action = select_action(problem,curr_node_ptr); 						
+						auto next_state = problem->step(curr_node_ptr->state,action,problem->m_timestep);
+						valid_expansion = problem->is_valid(next_state);
+						if (valid_expansion) {
+						// if (problem->is_valid(next_state)) {
+							child_node_ptr = make_child(problem, curr_node_ptr, next_state, action);
+						} else { 
+							max_depth = d;
+							break;
+						}
 					}
+
 					path[d] = curr_node_ptr;
-					rewards[d] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
-					
-					curr_node_ptr = child_node_ptr; 
-					if (problem->is_terminal(child_node_ptr->state)){
-						max_depth = d+1;
+					rewards[d] = problem->normalized_reward(curr_node_ptr->state,action);
+
+					if (valid_expansion) {
+						curr_node_ptr = child_node_ptr; 
+					} else { 
+						max_depth = d;
 						break;
 					}
 				}
+
 				rewards[max_depth] = default_policy(problem,curr_node_ptr);
 				path[max_depth] = curr_node_ptr; 
 
@@ -102,12 +117,14 @@ class PUCT_V1 : public Solver {
 				}
 			};
 
-			solver_result.success = true;
-			solver_result.best_action = most_visited(root_node_ptr,0)->action_to_node; 
-			solver_result.child_distribution = export_child_distribution(problem);
-			solver_result.tree = export_tree(problem);
-			solver_result.value = root_node_ptr->total_value / root_node_ptr->num_visits;
-			solver_result.num_visits = root_node_ptr->num_visits;
+			if (int(root_node_ptr->children.size()) > 0) {
+				solver_result.success = true;
+				solver_result.best_action = most_visited(root_node_ptr,0)->action_to_node; 
+				solver_result.child_distribution = export_child_distribution(problem);
+				solver_result.tree = export_tree(problem);
+				solver_result.value = root_node_ptr->total_value / root_node_ptr->num_visits;
+				solver_result.num_visits = root_node_ptr->num_visits;
+			}
 			return solver_result;
 		}
 
@@ -165,6 +182,38 @@ class PUCT_V1 : public Solver {
 			return int(node_ptr->children.size()) > max_children;
 		}
 
+
+		Eigen::Matrix<float,-1,1> select_action(Problem * problem, Node * parent_node_ptr){
+			Eigen::Matrix<float,-1,1> action(problem->m_action_dim,1);
+			action = problem->sample_action(g_gen);
+			if (problem->dist(g_gen) < m_beta_policy){
+				for (int ii = 0; ii < problem->m_num_robots; ii++) {
+					if (m_policy_network_wrappers[ii].valid){
+						auto encoding = problem->policy_encoding(parent_node_ptr->state,ii); 
+						action.block(problem->m_action_idxs[ii][0],0,problem->m_action_idxs[ii].size(),1) = 
+							m_policy_network_wrappers[ii].policy_network->eval(problem, encoding, ii, g_gen);
+					}
+				} 
+			} 
+			return action; 
+		}
+
+
+		Node* make_child(
+			Problem * problem, 
+			Node * parent_node_ptr, 
+			Eigen::Matrix<float,-1,1> next_state, 
+			Eigen::Matrix<float,-1,1> action) 
+		{ 
+			m_nodes.resize(m_nodes.size() + 1); // increase size by 1 
+			auto& child_node = m_nodes[m_nodes.size()-1]; // take last index of newly sized vector
+			child_node.parent = parent_node_ptr;
+			child_node.resize_node(problem);
+			child_node.action_to_node = action;
+			child_node.state = next_state;
+			parent_node_ptr->children.push_back(&child_node);
+			return &child_node;
+		}
 
 		Node* expand_node(Problem * problem,Node* parent_node_ptr){
 			m_nodes.resize(m_nodes.size() + 1);

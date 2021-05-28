@@ -64,6 +64,17 @@ class PUCT_V1(Solver):
 		parent_node.add_child(child_node,action)
 		return child_node
 
+	def make_child(self,parent_node,next_state,action,problem):
+		child_node = Node(next_state,parent_node,problem.num_robots,action)
+		parent_node.add_child(child_node,action)
+		return child_node		
+
+	def select_action(self,parent_node,problem):
+		if not all(x is None for x in self.policy_oracle) and np.random.uniform() < self.beta_policy:
+			action = self.policy_solver.policy(problem,parent_node.state)
+		else: 
+			action = problem.sample_action()
+		return action 
 
 	def is_expanded(self,curr_node):
 		max_children = np.ceil(self.C_pw * (curr_node.num_visits ** self.alpha_pw))
@@ -111,7 +122,7 @@ class PUCT_V1(Solver):
 	def search(self,problem,root_state,turn=0): 
 		
 		# init tree 
-		root_node = Node(root_state,None,problem.num_robots)
+		root_node = Node(root_state,None,problem.num_robots,None)
 		root_node.success = False
 
 		# check validity
@@ -130,20 +141,27 @@ class PUCT_V1(Solver):
 
 			# collect data
 			for d in range(self.search_depth):
+				valid_expansion = True				
 				robot = (d+turn) % problem.num_robots  
 				if self.is_expanded(curr_node):
 					child_node = self.best_child(curr_node,robot) 
+					action = child_node.action_to_node
 				else:
-					child_node = self.expand_node(curr_node,problem)
+					action = self.select_action(curr_node,problem)
+					next_state = problem.step(curr_node.state,action,problem.dt)
+					valid_expansion = problem.is_valid(next_state)
+					if valid_expansion:
+						child_node = self.make_child(curr_node,next_state,action,problem)
 
 				path.append(curr_node)
-				rewards.append(problem.normalized_reward(curr_node.state,curr_node.edges[child_node]))
-				curr_node = child_node 
+				rewards.append(problem.normalized_reward(curr_node.state,action))
 
-				if problem.is_terminal(child_node.state):
+				if valid_expansion:
+					curr_node = child_node 
+				else:
 					break 
 
-			rewards.append(self.default_policy(child_node,problem))
+			rewards.append(self.default_policy(curr_node,problem))
 			path.append(curr_node)
 
 			# backpropagate 
@@ -182,9 +200,10 @@ class PUCT_V1(Solver):
 
 class Node: 
 
-	def __init__(self,state,parent,num_robots):
+	def __init__(self,state,parent,num_robots,action):
 		self.state = state 
 		self.parent = parent 
+		self.action_to_node = action
 		self.num_visits = 0 
 		self.total_value = np.zeros((num_robots,1))
 		self.children = []
