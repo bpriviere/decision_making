@@ -16,13 +16,16 @@ class Param:
 		self.policy_oracle_name = "gaussian" # ["deterministic","gaussian"]
 
 		# oracles 
-		oracles_on = False
-		dirname = "../current"
+		oracles_on = True
+		# dirname = "../current/models"
+		dirname = "/home/ben/projects/decision_making/saved/example9"
+		# dirname = "/home/ben/projects/decision_making/saved/example6"
+
 		n = 2 # num robots 
 		l = 0 # learning iteration 
 		if oracles_on:
 			self.policy_oracle_paths = ["{}/model_policy_l{}_i{}.pt".format(dirname,l,i) for i in range(n)]	
-			self.value_oracle_path = "{}/models/model_value_l{}.pt".format(dirname,l)
+			self.value_oracle_path = "{}/model_value_l{}.pt".format(dirname,l)
 		else:	
 			self.policy_oracle_paths = [None]  
 			self.value_oracle_path = None 
