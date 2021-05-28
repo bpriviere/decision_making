@@ -1,18 +1,19 @@
 
 
 
+
 # standard 
 import numpy as np 
 
 # custom 
 from solvers.solver import Solver 
+from solvers.policy_solver import PolicySolver
 import plotter
 
 
-# Polynomial Upper Confidence Trees (PUCT) with adaptive timestep in tree action selection  
-# only changes from PUCT_V1 are: 
-#  - 'expand_node'
-#  - 'policy' 
+# Polynomial Upper Confidence Trees (PUCT) pseudocode from PolyHOOT, modified with adaptive timestep
+# Changes from PUCT_V1 are: 
+#  - 'select_action'
 #  - calculating the reward in 'collect_data' of 'search'  
 class PUCT_V2(Solver):
 
@@ -46,37 +47,31 @@ class PUCT_V2(Solver):
 
 
 	def policy(self,problem,root_state):
-		action = np.zeros((problem.action_dim+1*problem.num_robots,1))
-		for robot in range(problem.num_robots): 
-			# add a dimension for time
-			tree_action_idxs = robot * (problem.action_dim_per_robot+1) + \
-				np.arange(problem.action_dim_per_robot+1)
+		action = np.zeros((problem.action_dim,1))
+		for robot in range(problem.num_robots):
+			robot_action_idxs = problem.action_idxs[robot] 
 			root_node = self.search(problem,root_state,turn=robot)
-			most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
-			action[tree_action_idxs,:] = root_node.edges[most_visited_child][tree_action_idxs,:]
+			if root_node.success:
+				most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
+				action[robot_action_idxs,0] = root_node.edges[most_visited_child][robot_action_idxs,0]
 		return action
 
+	def make_child(self,parent_node,next_state,action,problem):
+		child_node = Node(next_state,parent_node,problem.num_robots,action)
+		parent_node.add_child(child_node,action)
+		return child_node		
 
-	def expand_node(self,parent_node,problem):
-		valid = False
-		while not valid:
-			if self.policy_oracle is not None and np.random.uniform() < self.beta_policy:
-				problem_action = self.policy_solver.policy(problem,parent_node.state)
-			else: 
-				problem_action = problem.sample_action()
+	def select_action(self,parent_node,problem):
+		if not all(x is None for x in self.policy_oracle) and np.random.uniform() < self.beta_policy:
+			problem_action = self.policy_solver.policy(problem,parent_node.state)
+		else: 
+			problem_action = problem.sample_action()
 
-			timestep_sample = problem.dt * (10 ** np.random.uniform(-1,0)) # from (0.1 to 10) * dt 
-			
-			tree_action = np.zeros((problem.action_dim+1,1))
-			tree_action[0:problem.action_dim,0] = problem_action[:,0]
-			tree_action[-1,0] = timestep_sample
-			
-			next_state = problem.step(parent_node.state,problem_action,timestep_sample)
-			valid = problem.is_valid(next_state)
-		child_node = Node(next_state,parent_node,problem.num_robots)
-		parent_node.add_child(child_node,tree_action)
-		return child_node
-
+		timestep_sample = problem.dt * (10 ** np.random.uniform(-1,0)) # from (0.1 to 10) * dt 			
+		tree_action = np.zeros((problem.action_dim+1,1))
+		tree_action[0:problem.action_dim,0] = problem_action[:,0]
+		tree_action[-1,0] = timestep_sample
+		return tree_action 
 
 	def is_expanded(self,curr_node):
 		max_children = np.ceil(self.C_pw * (curr_node.num_visits ** self.alpha_pw))
@@ -102,7 +97,7 @@ class PUCT_V2(Solver):
 			value = self.value_oracle.eval(problem,node.state) 
 		else: 
 			value = np.zeros((problem.num_robots,1))
-			if False:
+			if True:
 				depth = 0 
 				curr_state = node.state 
 				while not problem.is_terminal(curr_state) and depth < self.search_depth:
@@ -124,12 +119,15 @@ class PUCT_V2(Solver):
 	def search(self,problem,root_state,turn=0): 
 		
 		# init tree 
-		root_node = Node(root_state,None,problem.num_robots)
+		root_node = Node(root_state,None,problem.num_robots,None)
 		root_node.success = False
 
 		# check validity
 		if problem.is_terminal(root_state):
 			return root_node
+
+		if not all(x is None for x in self.policy_oracle):
+			self.policy_solver = PolicySolver(self.policy_oracle)
 
 		# search 
 		for t in range(self.number_simulations):
@@ -140,20 +138,32 @@ class PUCT_V2(Solver):
 
 			# collect data
 			for d in range(self.search_depth):
+				valid_expansion = True				
 				robot = (d+turn) % problem.num_robots  
 				if self.is_expanded(curr_node):
 					child_node = self.best_child(curr_node,robot) 
+					action = child_node.action_to_node
 				else:
-					child_node = self.expand_node(curr_node,problem)
+					tree_action = self.select_action(curr_node,problem)
+					next_state = problem.step(curr_node.state,tree_action[0:-1,:],tree_action[-1,0])
+					valid_expansion = problem.is_valid(next_state)
+					if valid_expansion:
+						child_node = self.make_child(curr_node,next_state,tree_action,problem)
+
 				path.append(curr_node)
-				rewards.append(problem.normalized_reward(curr_node.state,curr_node.edges[child_node][0:-1,:]))
-				curr_node = child_node 
-			rewards.append(self.default_policy(child_node,problem))
+				rewards.append(problem.normalized_reward(curr_node.state,tree_action[0:-1,:]))
+
+				if valid_expansion:
+					curr_node = child_node 
+				else:
+					break 
+
+			rewards.append(self.default_policy(curr_node,problem))
 			path.append(curr_node)
 
 			# backpropagate 
 			for d,node in enumerate(path):
-				node.total_value += self.calc_value(rewards,d,self.search_depth+1,problem.gamma,problem.num_robots)
+				node.total_value += self.calc_value(rewards,d,len(path),problem.gamma,problem.num_robots)
 				node.num_visits += 1 
 
 		root_node.success = True
@@ -187,9 +197,10 @@ class PUCT_V2(Solver):
 
 class Node: 
 
-	def __init__(self,state,parent,num_robots):
+	def __init__(self,state,parent,num_robots,action):
 		self.state = state 
 		self.parent = parent 
+		self.action_to_node = action
 		self.num_visits = 0 
 		self.total_value = np.zeros((num_robots,1))
 		self.children = []
