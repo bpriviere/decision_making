@@ -36,17 +36,17 @@ def worker(param):
 
 if __name__ == '__main__':
 
-    mode = 1
+    mode = 0
 
     # complete
     if mode == 0:
-        number_simulations_lst = [50,100,200]
+        number_simulations_lst = [100,200,500,1000]
         # problem_name_lst = ["example1","example2",["example4"]
-        problem_name_lst = ["example4"]
+        problem_name_lst = ["example11"]
         # solver_name_lst = ["PUCT","C_PUCT"]
         # solver_name_lst = ["PUCT_V0","C_PUCT_V0","PUCT_V1","C_PUCT_V1"]
-        solver_name_lst = ["PUCT_V1","C_PUCT_V1"] #,"PUCT_V1","C_PUCT_V1"]
-        num_trial = 20
+        solver_name_lst = ["C_PUCT_V1","C_PUCT_V2"] #,"PUCT_V1","C_PUCT_V1"]
+        num_trial = 10
     
     # speed test 
     elif mode == 1:
