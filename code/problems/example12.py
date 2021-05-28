@@ -20,7 +20,7 @@ class Example12(Problem):
 
 		self.t0 = 0
 		self.tf = 20
-		self.dt = 0.2
+		self.dt = 0.1
 		self.gamma = 1.0
 		self.num_robots = 2 
 		self.state_idxs = [
