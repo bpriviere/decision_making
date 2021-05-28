@@ -44,13 +44,12 @@ class PUCT_V1(Solver):
 
 	def policy(self,problem,root_state):
 		action = np.zeros((problem.action_dim,1))
-		for robot in range(problem.num_robots): 
-			action_idxs = robot * problem.action_dim_per_robot + \
-				np.arange(problem.action_dim_per_robot)
+		for robot in range(problem.num_robots):
+			robot_action_idxs = problem.action_idxs[robot] 
 			root_node = self.search(problem,root_state,turn=robot)
 			if root_node.success:
 				most_visited_child = root_node.children[np.argmax([c.num_visits for c in root_node.children])]
-				action[action_idxs,0] = root_node.edges[most_visited_child][action_idxs,0]
+				action[robot_action_idxs,0] = root_node.edges[most_visited_child][robot_action_idxs,0]
 		return action
 
 	def expand_node(self,parent_node,problem):

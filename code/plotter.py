@@ -78,26 +78,26 @@ def plot_sim_result(sim_result):
 	times = sim_result["times"] # nt, 
 	states = sim_result["states"] # nt x state_dim
 	actions = sim_result["actions"] # nt-1 x action_dim
-	rewards = sim_result["rewards"] # nt-1,  
+	rewards = sim_result["rewards"] # nt-1,x num_robots
 	problem = sim_result["instance"]["problem"] 
 	problem = problem.__dict__ 
 
 	num_robots = problem["num_robots"]
-	state_dim_per_robot = int(np.shape(states)[1] / num_robots)
+	robot_state_dims = [len(robot_state_idx) for robot_state_idx in problem["state_idxs"]]
 	action_dim = np.shape(actions)[1]
 	state_lims = problem["state_lims"]
 	action_lims = problem["action_lims"]
 
-	ncols = np.max((state_dim_per_robot,action_dim,2))
+	ncols = np.max((np.max(robot_state_dims),action_dim,2,num_robots+1))
 
 	# plot trajectories (over time)
 	fig,axs = plt.subplots(nrows=int(num_robots+2),ncols=int(ncols))
 	# state 
 	for i_robot in range(num_robots):
-		for i_state in range(state_dim_per_robot):
-			idx = i_state + state_dim_per_robot * i_robot 
-			axs[i_robot,i_state].plot(times,states[:,idx])
-			axs[i_robot,i_state].set_ylim((state_lims[idx,0],state_lims[idx,1]))
+		robot_state_idx = problem["state_idxs"][i_robot]
+		for i_ax,i_state in enumerate(robot_state_idx):
+			axs[i_robot,i_ax].plot(times,states[:,i_state])
+			axs[i_robot,i_ax].set_ylim((state_lims[i_state,0],state_lims[i_state,1]))
 		axs[i_robot,0].set_ylabel("Robot State {}".format(i_robot))
 
 	# action
@@ -116,8 +116,11 @@ def plot_sim_result(sim_result):
 
 
 def plot_loss(losses):
+	losses = np.array(losses)
 	fig,ax = plt.subplots()
-	ax.plot(losses)
+	ax.plot(losses[:,0],label="Train")
+	ax.plot(losses[:,1],label="Test")
+	ax.legend()
 	if np.amin(losses) > 0:
 		ax.set_yscale('log')
 	ax.set_title("Losses")
@@ -138,12 +141,8 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 		for i_row,row in enumerate(tree_state):
 			parentIdx = int(row[-1])
 			nodes.append(row[plot_idx])
-			# print('row',row)
-			# print('row[plot_idx]',row[plot_idx])
 			if parentIdx >= 0:
 				segments.append([row[plot_idx], tree_state[parentIdx][plot_idx]])
-			# print('segments',segments)
-			# exit()
 
 		ln_coll = matplotlib.collections.LineCollection(segments, linewidth=0.2, colors='k', alpha=0.2)
 		ax.add_collection(ln_coll)
@@ -153,15 +152,13 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 	elif len(problem.position_idx) == 2: 
 		fig,ax = plt.subplots()
 
-		state_dim_per_robot = int(problem.state_dim / problem.num_robots)
-
 		segments = [[] for _ in range(problem.num_robots)]
 		nodes = [[] for _ in range(problem.num_robots)]
 		for i_row,row in enumerate(tree_state):
 			parentIdx = int(row[-1])
 
 			for robot in range(problem.num_robots):
-				robot_state_idxs = robot * state_dim_per_robot + np.arange(state_dim_per_robot)
+				robot_state_idxs = problem.state_idxs[robot]
 				robot_position_idx = robot_state_idxs[position_idxs]
 				nodes[robot].append(row[robot_position_idx])
 				if parentIdx >= 0:
@@ -185,7 +182,6 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 	elif len(problem.position_idx) == 3: 
 		
 		num_robots = problem.num_robots
-		state_dim_per_robot = int(problem.state_dim / num_robots)
 
 		fig,ax = make_3d_fig()
 		segments = [[] for _ in range(num_robots)]
@@ -194,8 +190,8 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 			parentIdx = int(row[-1])
 
 			for robot in range(num_robots):
-				robot_state_idx = robot * state_dim_per_robot + np.arange(state_dim_per_robot)
-				robot_position_idx = robot_state_idx[position_idxs]
+				robot_state_idxs = problem.state_idxs[robot]
+				robot_position_idx = robot_state_idxs[position_idxs]
 				nodes[robot].append(row[robot_position_idx])
 				if parentIdx >= 0:
 					segments[robot].append([row[robot_position_idx], tree_state[parentIdx][robot_position_idx]])
@@ -229,7 +225,8 @@ def plot_value_dataset(problem,datasets,dataset_names):
 		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
 		for i_e in range(encoding_dim):
 			ax[0,i_e].hist(encodings[:,i_e])
-			ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+			if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
+				ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
 		ax[0,0].set_ylabel("Encoding")
 
 		for i_t in range(target_dim):
@@ -248,7 +245,7 @@ def plot_policy_dataset(problem,datasets,dataset_names,robot):
 	# target: robot_action 
 
 	encoding_dim = problem.policy_encoding_dim
-	target_dim = int(problem.action_dim / problem.num_robots)
+	target_dim = len(problem.action_idxs[robot]) 
 	state_lims = problem.state_lims
 	action_lims = problem.action_lims
 
@@ -256,17 +253,36 @@ def plot_policy_dataset(problem,datasets,dataset_names,robot):
 		encodings = dataset[0]
 		target = dataset[1]
 
-		fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
-		for i_e in range(encoding_dim):
-			ax[0,i_e].hist(encodings[:,i_e])
-			ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
-		ax[0,0].set_ylabel("Encoding")
+		if title == "Eval":
+			fig,ax = plt.subplots(nrows=3,ncols=max((encoding_dim,target_dim)),squeeze=False)
+			for i_e in range(encoding_dim):
+				ax[0,i_e].hist(encodings[:,i_e])
+				if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
+					ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+			ax[0,0].set_ylabel("Encoding")
 
-		for i_t in range(target_dim):
-			ax[1,i_t].hist(target[:,i_t])
-			ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
-		ax[1,0].set_ylabel("Target")
-		fig.suptitle(title)
+			for i_t in range(target_dim):
+				ax[1,i_t].hist(target[:,i_t])
+				ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
+				ax[2,i_t].hist(target[:,i_t+target_dim])
+			ax[1,0].set_ylabel("Mean")
+			ax[2,0].set_ylabel("Variance")
+			fig.suptitle(title)
+
+		else: 
+			fig,ax = plt.subplots(nrows=2,ncols=max((encoding_dim,target_dim)),squeeze=False)
+
+			for i_e in range(encoding_dim):
+				ax[0,i_e].hist(encodings[:,i_e])
+				if not (np.isinf(np.abs(state_lims[i_e,:])).any()):
+					ax[0,i_e].set_xlim(state_lims[i_e,0],state_lims[i_e,1])
+			ax[0,0].set_ylabel("Encoding")
+
+			for i_t in range(target_dim):
+				ax[1,i_t].hist(target[:,i_t])
+				ax[1,i_t].set_xlim(action_lims[i_t,0],action_lims[i_t,1])
+			ax[1,0].set_ylabel("Target")
+			fig.suptitle(title)
 
 		problem.plot_policy_dataset(dataset,title,robot)
 

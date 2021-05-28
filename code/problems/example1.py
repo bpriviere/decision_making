@@ -1,6 +1,7 @@
 
 # standard 
 import numpy as np 
+import matplotlib.pyplot as plt 
 
 # custom 
 from problems.problem import Problem
@@ -29,8 +30,8 @@ class Example1(Problem):
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
-		self.state_dim_per_robot = self.state_dim
-		self.action_dim_per_robot = self.action_dim
+		self.state_idxs = [np.arange(self.state_dim)]
+		self.action_idxs = [np.arange(self.action_dim)]
 
 		self.state_lims = np.array([
 			[-5,5],
@@ -90,3 +91,30 @@ class Example1(Problem):
 
 	def value_encoding(self,state):
 		return state 
+
+	def plot_policy_dataset(self,dataset,title,robot):
+
+		state = dataset[0] 
+		action = dataset[1] 
+
+		# quiver 
+		fig,ax = plt.subplots()
+		ax.quiver(state[:,0],state[:,1],action[:,0],action[:,1])
+		ax.set_title("{} Policy for Robot {}".format(title,robot))
+		ax.set_xlim(self.state_lims[0,:])
+		ax.set_ylim(self.state_lims[1,:])
+
+
+	def plot_value_dataset(self,dataset,title):
+
+		state = dataset[0] 
+		value = dataset[1] 
+
+		# quiver 
+		fig,ax = plt.subplots()
+		pcm = ax.tricontourf(state[:,0],state[:,1],value[:,0])
+		ax.set_title("{} Value".format(title))
+		ax.set_xlim(self.state_lims[0,:])
+		ax.set_ylim(self.state_lims[1,:])
+
+

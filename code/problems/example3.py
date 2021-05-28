@@ -21,17 +21,24 @@ class Example3(Problem):
 		self.desired_distance = 0.2
 		self.state_control_weight = 0.1
 		self.g = 1.0 
-		self.state_dim_per_robot = 7 
-		self.action_dim_per_robot = 3
+		self.state_dim = 14
+		self.action_dim = 6
 		self.num_robots = 2 
 		self.position_idx = np.arange(3)
 		self.r_max = 100
 		self.r_min = -1 * self.r_max
 		self.name = "example3"
 
+		state_dim_per_robot = 7 
+		action_dim_per_robot = 3		
+		self.state_idxs = [
+			np.arange(state_dim_per_robot),
+			np.arange(state_dim_per_robot) + state_dim_per_robot ]
+		self.action_idxs = [
+			np.arange(action_dim_per_robot),
+			np.arange(action_dim_per_robot) + action_dim_per_robot ]
+
 		self.times = np.arange(self.t0,self.tf,self.dt)
-		self.state_dim = self.num_robots * self.state_dim_per_robot
-		self.action_dim = self.num_robots * self.action_dim_per_robot
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
 
@@ -95,9 +102,9 @@ class Example3(Problem):
 			))
 
 	def reward(self,s,a):
-		s_1 = s[0:self.state_dim_per_robot]
-		s_2 = s[self.state_dim_per_robot:]
-		a_1 = a[0:self.action_dim_per_robot]
+		s_1 = s[self.state_idxs[0]] 
+		s_2 = s[self.state_idxs[1]] 
+		a_1 = a[self.action_idxs[0]] 
 		r = -1 * (
 			np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2) - self.desired_distance) + \
 			a_1.T @ self.Ru @ a_1).squeeze()
@@ -116,23 +123,20 @@ class Example3(Problem):
 		# a = [gammadot, phidot,vdot]
 		sdot = np.zeros(s.shape)
 		for robot in range(self.num_robots):
-			state_shift = robot * self.state_dim_per_robot
-			action_shift = robot * self.action_dim_per_robot
-			sdot[state_shift+0,0] = s[state_shift+6,0] * np.cos(s[state_shift+4,0]) * np.sin(s[state_shift+3,0])
-			sdot[state_shift+1,0] = s[state_shift+6,0] * np.cos(s[state_shift+4,0]) * np.cos(s[state_shift+3,0])
-			sdot[state_shift+2,0] = -s[state_shift+6,0] * np.sin(s[state_shift+4,0]) 
-			sdot[state_shift+3,0] = self.g / s[state_shift+6,0] * np.tan(s[state_shift+5,0])
-			sdot[state_shift+4,0] = a[action_shift+0,0]
-			sdot[state_shift+5,0] = a[action_shift+1,0]
-			sdot[state_shift+6,0] = a[action_shift+2,0]
+			sdot[self.state_idxs[robot][0],0] = s[self.state_idxs[robot][6],0] * np.cos(s[self.state_idxs[robot][4],0]) * np.sin(s[self.state_idxs[robot][3],0])
+			sdot[self.state_idxs[robot][1],0] = s[self.state_idxs[robot][6],0] * np.cos(s[self.state_idxs[robot][4],0]) * np.cos(s[self.state_idxs[robot][3],0])
+			sdot[self.state_idxs[robot][2],0] = -s[self.state_idxs[robot][6],0] * np.sin(s[self.state_idxs[robot][4],0]) 
+			sdot[self.state_idxs[robot][3],0] = self.g / s[self.state_idxs[robot][6],0] * np.tan(s[self.state_idxs[robot][5],0])
+			sdot[self.state_idxs[robot][4],0] = a[self.action_idxs[robot][0],0]
+			sdot[self.state_idxs[robot][5],0] = a[self.action_idxs[robot][1],0]
+			sdot[self.state_idxs[robot][6],0] = a[self.action_idxs[robot][2],0]
 		s_tp1 = s + sdot * dt 
 
 		# wrap angles 
 		for robot in range(self.num_robots):
-			state_shift = robot * self.state_dim_per_robot
-			s_tp1[state_shift+3,0] = s_tp1[state_shift+3,0] % (2*np.pi)
-			s_tp1[state_shift+4,0] = s_tp1[state_shift+4,0] % (2*np.pi)
-			s_tp1[state_shift+5,0] = s_tp1[state_shift+5,0] % (2*np.pi)
+			s_tp1[self.state_idxs[robot][3],0] = s_tp1[self.state_idxs[robot][3],0] % (2*np.pi)
+			s_tp1[self.state_idxs[robot][4],0] = s_tp1[self.state_idxs[robot][4],0] % (2*np.pi)
+			s_tp1[self.state_idxs[robot][5],0] = s_tp1[self.state_idxs[robot][5],0] % (2*np.pi)
 
 		return s_tp1 
 
@@ -145,18 +149,18 @@ class Example3(Problem):
 			lims = self.state_lims
 			colors = plotter.get_n_colors(self.num_robots)
 			for robot in range(self.num_robots):
-				state_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+				robot_state_idxs = self.state_idxs[robot] 
 
-				ax.plot(states[:,state_idxs[0]].squeeze(), states[:,state_idxs[1]].squeeze(),states[:,state_idxs[2]].squeeze(), color=colors[robot])
-				ax.plot(states[0,state_idxs[0]], states[0,state_idxs[1]], states[0,state_idxs[2]],color=colors[robot],marker='o')
-				ax.plot(states[-1,state_idxs[0]], states[-1,state_idxs[1]], states[-1,state_idxs[2]],color=colors[robot],marker='s')
+				ax.plot(states[:,robot_state_idxs[0]].squeeze(), states[:,robot_state_idxs[1]].squeeze(),states[:,robot_state_idxs[2]].squeeze(), color=colors[robot])
+				ax.plot(states[0,robot_state_idxs[0]], states[0,robot_state_idxs[1]], states[0,robot_state_idxs[2]],color=colors[robot],marker='o')
+				ax.plot(states[-1,robot_state_idxs[0]], states[-1,robot_state_idxs[1]], states[-1,robot_state_idxs[2]],color=colors[robot],marker='s')
 
 				# projections 
-				ax.plot(lims[0,0]*np.ones(states.shape[0]),states[:,state_idxs[1]].squeeze(),states[:,state_idxs[2]].squeeze(),\
+				ax.plot(lims[0,0]*np.ones(states.shape[0]),states[:,robot_state_idxs[1]].squeeze(),states[:,robot_state_idxs[2]].squeeze(),\
 					color=colors[robot],linewidth=1,linestyle="--")
-				ax.plot(states[:,state_idxs[0]].squeeze(),lims[1,1]*np.ones(states.shape[0]),states[:,state_idxs[2]].squeeze(),\
+				ax.plot(states[:,robot_state_idxs[0]].squeeze(),lims[1,1]*np.ones(states.shape[0]),states[:,robot_state_idxs[2]].squeeze(),\
 					color=colors[robot],linewidth=1,linestyle="--")
-				ax.plot(states[:,state_idxs[0]].squeeze(),states[:,state_idxs[1]].squeeze(),lims[2,0]*np.ones(states.shape[0]),\
+				ax.plot(states[:,robot_state_idxs[0]].squeeze(),states[:,robot_state_idxs[1]].squeeze(),lims[2,0]*np.ones(states.shape[0]),\
 					color=colors[robot],linewidth=1,linestyle="--")
 
 			ax.set_xlim((lims[0,0],lims[0,1]))
@@ -174,11 +178,11 @@ class Example3(Problem):
 		return contains(state,self.state_lims)
 
 	def policy_encoding(self,state,robot):
-		s1 = state[np.arange(state_dim_per_robot),:]
-		s2 = state[state_dim_per_robot + np.arange(state_dim_per_robot),:]
+		s1 = state[self.state_idxs[0],:]
+		s2 = state[self.state_idxs[1],:]
 		return s2-s1 
 
 	def value_encoding(self,state):
-		s1 = state[np.arange(state_dim_per_robot),:]
-		s2 = state[state_dim_per_robot + np.arange(state_dim_per_robot),:]
+		s1 = state[self.state_idxs[0],:]
+		s2 = state[self.state_idxs[1],:]
 		return s2-s1 

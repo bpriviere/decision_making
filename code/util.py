@@ -8,6 +8,8 @@ import pprint
 import pickle 
 import os 
 import glob 
+from tqdm import tqdm 
+from queue import Empty 
 
 def dbgp(name,value):
 	if type(value) is dict:
@@ -72,7 +74,26 @@ def sample_vector(lims,damp=0.0):
 	return x
 
 def contains(vector,lims):
-	return (vector[:,0] > lims[:,0]).all() and (vector[:,0] < lims[:,1]).all()
+	return (vector[:,0] >= lims[:,0]).all() and (vector[:,0] <= lims[:,1]).all()
 
 def get_temp_fn(dirname,i):
 	return "{}/temp_{}.npy".format(dirname,i)
+
+
+def init_tqdm(rank,total):
+	pbar = None 
+	if rank == 0:
+		pbar = tqdm(total=total)
+	return pbar
+
+def update_tqdm(rank,total_per_worker,queue,pbar):
+	if rank == 0:
+		count = total_per_worker
+		try:
+			while True:
+				count += queue.get_nowait()
+		except Empty:
+			pass
+		pbar.update(count)
+	else:
+		queue.put_nowait(total_per_worker)

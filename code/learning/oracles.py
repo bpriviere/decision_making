@@ -18,12 +18,12 @@ def get_oracles(problem,
 		from learning.gaussian_value_network import GaussianValueNetwork
 		value_oracle = GaussianValueNetwork(problem,path=value_oracle_path)
 
-	if policy_oracle_name == "deterministic" and (all([a is not None for a in policy_oracle_paths]) or force):
+	if policy_oracle_name == "deterministic" and (any([a is not None for a in policy_oracle_paths]) or force):
 		from learning.deterministic_policy_network import DeterministicPolicyNetwork
 		policy_oracle = [DeterministicPolicyNetwork(problem,path=a) for a in policy_oracle_paths]
 
-	elif policy_oracle_name == "gaussian" and (all([a is not None for a in policy_oracle_paths]) or force):
+	elif policy_oracle_name == "gaussian" and (any([a is not None for a in policy_oracle_paths]) or force):
 		from learning.gaussian_policy_network import GaussianPolicyNetwork
-		policy_oracle = [GaussianPolicyNetwork(problem,path=a) for a in policy_oracle_paths]
+		policy_oracle = [GaussianPolicyNetwork(problem,robot,path=a) for robot,a in enumerate(policy_oracle_paths)]
 
 	return policy_oracle, value_oracle  

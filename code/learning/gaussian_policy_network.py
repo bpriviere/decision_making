@@ -1,6 +1,7 @@
 
 # standard package
 import torch
+import numpy as np 
 from torch.nn import MSELoss
 
 # my package
@@ -8,15 +9,17 @@ from learning.feedforward import FeedForward
 
 class GaussianPolicyNetwork(torch.nn.Module):
 
-	def __init__(self,problem,device="cpu",path=None):
+	def __init__(self,problem,robot,device="cpu",path=None):
 		super(GaussianPolicyNetwork, self).__init__()
 
 		h = 24
 
 		self.encoding_dim = problem.policy_encoding_dim
-		self.output_dim = 2*int(problem.action_dim/problem.num_robots) 
+		self.output_dim = 2*len(problem.action_idxs[robot]) 
 		self.state_dim = problem.state_dim 
 		self.action_dim = problem.action_dim 
+		self.action_lims = problem.action_lims
+		self.robot_action_idxs = problem.action_idxs[robot]
 		self.device = torch.device(device)
 		self.path = path
 		self.name = "gaussian"
@@ -61,6 +64,7 @@ class GaussianPolicyNetwork(torch.nn.Module):
 			sd = torch.sqrt(torch.exp(logvar))
 			eps = torch.randn(size=(batch_size,int(self.output_dim/2)),device=self.device)
 			policy = mu + sd * eps
+			policy = self.scale_action(policy)
 			return policy 
 			
 	def loss_fnc(self,x,target):
@@ -74,7 +78,8 @@ class GaussianPolicyNetwork(torch.nn.Module):
 		# 		- for diagonal matrix, det(Var) = Var(0,0) * Var(1,1) * ... 
 
 		mu,logvar = self.__call__(x,training=True)
-		loss = torch.sum((mu - target).pow(2) / (2*torch.exp(logvar)) + mu.shape[0]/2 * logvar)
+		# loss = torch.sum((mu - target).pow(2) / (2*torch.exp(logvar)) + mu.shape[0]/2 * logvar)
+		loss = torch.sum( (mu - target).pow(2) / (2*torch.exp(logvar)) + 1/2 * logvar)
 		loss = loss / mu.shape[0]
 		return loss 
 
@@ -83,3 +88,9 @@ class GaussianPolicyNetwork(torch.nn.Module):
 		policy_encoding = torch.tensor(policy_encoding,dtype=torch.float32).squeeze().unsqueeze(0) # [batch_size x state_dim]
 		policy = self.__call__(policy_encoding).detach().numpy().reshape(int(self.output_dim/2),1) # [action_dim_per_robot x 1]
 		return policy 
+
+	def scale_action(self,action):
+		u = torch.tensor(self.action_lims[self.robot_action_idxs,1]).unsqueeze(axis=0)
+		l = torch.tensor(self.action_lims[self.robot_action_idxs,0]).unsqueeze(axis=0)
+		action = torch.maximum(torch.minimum(action, u), l)
+		return action 

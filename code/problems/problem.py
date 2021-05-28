@@ -102,4 +102,14 @@ def get_problem(problem_name):
 		from problems.example9 import Example9
 		problem = Example9() 
 
+	# dummy game problem 
+	elif problem_name == "example10":
+		from problems.example10 import Example10
+		problem = Example10() 
+
+	# modified homicidal chauffer  
+	elif problem_name == "example12":
+		from problems.example12 import Example12
+		problem = Example12() 
+
 	return problem 

@@ -4,20 +4,19 @@
 import numpy as np 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-import torch
 
 # custom 
 from problems.problem import Problem
 from util import sample_vector, contains
 import plotter 
 
-# homicidal chauffeur problem - isaacs page 27    
-class Example9(Problem):
+# modified homicidal chauffeur problem - http://www-m6.ma.tum.de/~turova/html/wroclaw_eng_ver01a.pdf
+class Example12(Problem):
 
 	def __init__(self): 
-		super(Example9,self).__init__()
+		super(Example12,self).__init__()
 		# state: [x1,y1,x2,y2,theta2,t]
-		# actions: [psi,phi]
+		# actions: [v1,v2,phi]
 
 		self.t0 = 0
 		self.tf = 20
@@ -29,87 +28,55 @@ class Example9(Problem):
 			2 + np.arange(3),
 		]
 		self.action_idxs = [ 
-			np.arange(1),
-			1+np.arange(1),
+			np.arange(2),
+			2+np.arange(1),
 		]
 		self.r_max = 1.0 
 		self.r_min = 0.0
-		self.name = "example9"
+		self.name = "example12"
 		self.position_idx = np.arange(2) 
 		self.state_control_weight = 0.01 
 		
 		# problem specific parameters 
-		self.desired_distance = 1.0
-		self.w1 = 1.0 
-		self.w2 = 2.0
-		self.R = 2.0
+		self.desired_distance = 0.3 # < 1
+		self.w1 = 0.5 # < 1
+		self.w2 = 1.0 # = 1
+		self.R = 1.0 # = 1
 
 		self.state_dim = 6
-		self.action_dim = 2
+		self.action_dim = 3
 		self.times = np.arange(self.t0,self.tf,self.dt)
-
-		# self.policy_encoding_dim = self.state_dim
-		# self.value_encoding_dim = self.state_dim
 
 		self.policy_encoding_dim = 2
 		self.value_encoding_dim = 2
 
-
+		init_length = 1.0
 		max_angle = np.pi + self.tf * self.w2 / self.R
+		max_length = init_length + self.tf * self.w2 
 		self.state_lims = np.array((
-			(-30,30), 
-			(-30,30), 
-			(-30,30), 
-			(-30,30), 
-			# (-5,5), 
-			# (-5,5), 
-			# (-5,5), 
-			# (-5,5), 
-			# (-np.pi,np.pi), 
+			(-max_length,max_length), 
+			(-max_length,max_length), 
+			(-max_length,max_length), 
+			(-max_length,max_length), 
 			(-max_angle,max_angle), 
-			# (-np.inf,np.inf), 
 			(0,self.tf)
 			))
 		self.approx_dist = (self.state_lims[0,1] - self.state_lims[0,0])/10 
 
-		# eps = 0.0001
 		self.action_lims = np.array((
-			(-np.pi,np.pi),
-			# (-eps,eps),
+			(-self.w1,self.w1),
+			(-self.w1,self.w1),
 			(-1,1),
 			))
 
-		# self.init_lims = self.state_lims 
 		self.init_lims = np.array((
-			(-5,5), 
-			(-5,5), 
-			(-5,5), 
-			(-5,5),
+			(-init_length,init_length), 
+			(-init_length,init_length), 
+			(-init_length,init_length), 
+			(-init_length,init_length),
 			(-np.pi,np.pi),
 			(0,0),
 			))
-
-	def initialize(self):
-		valid = False
-		u_a = np.pi/4
-		l_a = -np.pi/2
-		u_r = 3.0 
-		l_r = 1.2 * self.desired_distance
-		while not valid:
-			state = sample_vector(self.init_lims)
-			if np.random.uniform() < 0.4 : 
-				angle = np.random.uniform() * (u_a - l_a) + l_a
-				radius = np.random.uniform() * (u_r - l_r) + l_r
-				flip_x = 1 
-				if np.random.uniform() < 0.5:
-					flip_x = -1 
-				state[0,0] = flip_x * radius * np.cos(angle)
-				state[1,0] = radius * np.sin(angle)
-				state[2,0] = 0 
-				state[3,0] = 0 
-				state[4,0] = 0 
-			valid = not self.is_terminal(state)
-		return state
 
 	def reward(self,s,a):
 		return self.normalized_reward(s,a)
@@ -130,11 +97,11 @@ class Example9(Problem):
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		s_dot = np.zeros(s.shape)
-		s_dot[0,0] = self.w1 * np.sin(a[0,0]) # m/s 
-		s_dot[1,0] = self.w1 * np.cos(a[0,0])
+		s_dot[0,0] = a[0,0] 
+		s_dot[1,0] = a[1,0]
 		s_dot[2,0] = self.w2 * np.sin(s[4,0])
 		s_dot[3,0] = self.w2 * np.cos(s[4,0])
-		s_dot[4,0] = self.w2 / self.R * a[1,0]
+		s_dot[4,0] = self.w2 / self.R * a[2,0]
 		s_dot[5,0] = 1.0
 		s_tp1 = s + s_dot * dt 
 		return s_tp1 
@@ -176,13 +143,10 @@ class Example9(Problem):
 			ax.legend(loc='best')
 
 		# lims = self.state_lims
-		ax.set_xlim((-15,15))
-		ax.set_ylim((-15,15))
-		ax.set_aspect( 1 )
-		# ax.axis("equal")
-		# x0,x1 = ax.get_xlim()
-		# y0,y1 = ax.get_ylim()
-		# ax.set_aspect(abs(x1-x0)/abs(y1-y0))
+		# ax.set_xlim((lims[0,0],lims[0,1]))
+		# ax.set_ylim((lims[1,0],lims[1,1]))
+		# ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]) )
+		ax.axis('equal')
 
 		return fig,ax 
 
@@ -219,21 +183,14 @@ class Example9(Problem):
 
 	def plot_value_dataset(self,dataset,title):
 
-		states = dataset[0] # in [num datapoints x 2] 
+		encoding = dataset[0] # in [num datapoints x 2] 
 		values = dataset[1] # in [num_datapoints x 2] 
-
-		# get data 
-		# new_state = self.isaacs_transformation(states) 
-		new_state = states
-
-		# new_state = states
 
 		for robot in range(self.num_robots):
 			fig,ax = plt.subplots()
-			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],values[:,robot])
+			pcm = ax.tricontourf(encoding[:,0],encoding[:,1],values[:,robot])
 			fig.colorbar(pcm,ax=ax)
 			ax.set_title("{} Value for Robot {}".format(title,robot))
-			# self.render(fig=fig,ax=ax)
 			self.render_isaacs(fig=fig,ax=ax)
 
 	def plot_policy_dataset(self,dataset,title,robot):
@@ -241,7 +198,8 @@ class Example9(Problem):
 		robot_action_dim = len(self.action_idxs[robot])
 		num_datapoints = dataset[0].shape[0]
 		
-		states = dataset[0]
+		encoding = dataset[0]
+
 		if title == "Eval":
 			mu = dataset[1][:,0:robot_action_dim]
 			logvar = dataset[1][:,robot_action_dim:]
@@ -251,36 +209,22 @@ class Example9(Problem):
 			actions = dataset[1]
 		actions = actions.squeeze()
 		
-		# next_states = []
-		# for ii in range(num_datapoints):
-		# 	state = np.expand_dims(states[ii,:],axis=1)
-		# 	action = np.zeros((self.action_dim,1))
-		# 	action[self.action_idxs[robot],:] = actions[ii]
-		# 	next_state = self.step(state,action,self.dt)
-		# 	next_states.append(next_state)
-		# next_states = np.array(next_states).squeeze(axis=2)
-
-		# get data 
-		# new_state  = self.isaacs_transformation(states) # in [num datapoints x 2] 
-		# new_next_states = self.isaacs_transformation(next_states)
-		# diff = new_next_states-new_state
-
-		# new_state = self.isaacs_transformation(states)
-		new_state = states
-		# actions = actions.squeeze()
-
 		diff = np.zeros((num_datapoints,2)) 
-		diff[:,0] = np.sin(actions)
-		diff[:,1] = np.cos(actions)
+		if robot == 0:
+			diff[:,0] = actions[:,0]
+			diff[:,1] = actions[:,1]
+		elif robot == 1: 
+			diff[:,0] = np.sin(actions)
+			diff[:,1] = np.cos(actions)
 
 		# plot quiver 
 		fig,ax = plt.subplots()
-		ax.quiver(new_state[:,0],new_state[:,1],diff[:,0],diff[:,1])
+		ax.quiver(encoding[:,0],encoding[:,1],diff[:,0],diff[:,1])
 		ax.set_title("{} Policy for Robot {}".format(title,robot))
 		
 		if title == "Eval":
 			variance = dataset[1][:,robot_action_dim:]
-			pcm = ax.tricontourf(new_state[:,0],new_state[:,1],np.linalg.norm(variance,axis=1),alpha=0.3)
+			pcm = ax.tricontourf(encoding[:,0],encoding[:,1],np.linalg.norm(variance,axis=1),alpha=0.3)
 			fig.colorbar(pcm,ax=ax)
 		self.render_isaacs(fig=fig,ax=ax)
 
@@ -325,11 +269,7 @@ class Example9(Problem):
 		if states is not None:
 			new_states = self.isaacs_transformation(states)
 			ax.plot(new_states[:,0],new_states[:,1])
-		# lims = self.state_lims
-		# ax.set_xlim((lims[0,0],lims[0,1]))
-		# ax.set_ylim((lims[1,0],lims[1,1]))
-		# ax.set_aspect( (lims[1,1]-lims[1,0]) / (lims[0,1]-lims[0,0]))
-		# ax.axis('equal')
+		ax.axis('equal')
 
 
 	def make_groups(self,encoding,target,robot):
@@ -384,16 +324,16 @@ class Example9(Problem):
 			states = np.array(states) # num datapoints x 6 x 1
 			encodings = np.array(encodings).squeeze(axis=2) # num datapoints x 2
 
-			# # plot value func contours
-			# if sim_result["instance"]["value_oracle"] is not None:
-			# 	value_oracle = sim_result["instance"]["value_oracle"]
-			# 	values = []
-			# 	for state in states: 
-			# 		value = value_oracle.eval(self,state)
-			# 		values.append(value)
-			# 	values = np.array(values).squeeze(axis=2)
-			# 	pcm = ax.tricontourf(encodings[:,0],encodings[:,1],values[:,0])
-			# 	fig.colorbar(pcm,ax=ax)	
+			# plot value func contours
+			if sim_result["instance"]["value_oracle"] is not None:
+				value_oracle = sim_result["instance"]["value_oracle"]
+				values = []
+				for state in states: 
+					value = value_oracle.eval(self,state)
+					values.append(value)
+				values = np.array(values).squeeze(axis=2)
+				pcm = ax.tricontourf(encodings[:,0],encodings[:,1],values[:,0])
+				fig.colorbar(pcm,ax=ax)	
 
 			# plot policy function 
 			if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
@@ -420,31 +360,5 @@ class Example9(Problem):
 				new_next_states = self.isaacs_transformation(next_states)
 				diff = new_next_states - new_states
 				
-				# new_states = encodings
-				# diff = np.zeros((actions.shape[0],2)) 
-				# diff[:,0] = np.sin(actions)
-				# diff[:,1] = np.cos(actions)
-
 				ax.quiver(new_states[:,0],new_states[:,1],diff[:,0],diff[:,1])
-				
-				ax.set_xlim((-15,15))
-				ax.set_ylim((-15,15))
-				ax.set_aspect( 1 )
-
-				# self.render_isaacs(fig=fig,ax=ax)
-
-			# plot final trajectory , obstacles and limits 
-			sim_result_states = sim_result["states"].squeeze()
-			self.render_isaacs(fig=fig,ax=ax,states=sim_result_states)
-
-			# capture radius 
-			circ = patches.Circle((0,0),self.desired_distance,facecolor='green',alpha=0.5,label="Capture")
-			ax.add_patch(circ)
-			ax.legend()
-
-			ax.set_xlim((-15,15))
-			ax.set_ylim((-15,15))
-			ax.set_aspect( 1 )
-
-			# sim_result_new_states = self.isaacs_transformation(sim_result_states)
-			# self.render_isaacs(fig=fig,ax=ax,states=sim_result_new_states)
+				self.render_isaacs(fig=fig,ax=ax)

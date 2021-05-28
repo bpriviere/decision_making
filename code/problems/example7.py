@@ -23,16 +23,16 @@ class Example7(Problem):
 		self.gamma = 0.99
 		self.desired_distance = 1.0
 		self.num_robots = 2 
-		self.state_dim_per_robot = 2 
-		self.action_dim_per_robot = 2
+		self.state_dim = 4 
+		self.action_dim = 4 
 		self.r_max = 100
 		self.r_min = -1 * self.r_max 
 		self.name = "example7"
 		self.position_idx = np.arange(2) 
 		self.state_control_weight = 1e-5 
 
-		self.state_dim = self.num_robots * self.state_dim_per_robot
-		self.action_dim = self.num_robots * self.action_dim_per_robot
+		self.state_idxs = [np.arange(2), 2 + np.arange(2)]
+		self.action_idxs = [np.arange(2), 2 + np.arange(2)]
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
@@ -75,13 +75,13 @@ class Example7(Problem):
 			(0,1),
 			))
 
-		self.Q = np.eye(self.state_dim_per_robot)
-		self.Ru = self.state_control_weight * np.eye(self.action_dim_per_robot)
+		self.Q = np.eye(2)
+		self.Ru = self.state_control_weight * np.eye(2)
 
 	def reward(self,s,a):
-		s_1 = s[0:self.state_dim_per_robot]
-		s_2 = s[self.state_dim_per_robot:]
-		a_1 = a[0:self.action_dim_per_robot]
+		s_1 = s[self.state_idxs[0]]
+		s_2 = s[self.state_idxs[1]]
+		a_1 = a[self.action_idxs[1]]
 		r = -1 * (
 			np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2) - self.desired_distance) + \
 			a_1.T @ self.Ru @ a_1).squeeze()
@@ -98,11 +98,9 @@ class Example7(Problem):
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		for robot in range(self.num_robots):
-			state_idx = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
-			action_idx = robot * self.action_dim_per_robot + np.arange(self.action_dim_per_robot)
-			Fd = np.eye(self.state_dim_per_robot) +  dt * self.Fc 
+			Fd = np.eye(len(self.state_idxs[robot])) +  dt * self.Fc 
 			Bd = dt * self.Bc 
-			s_tp1[state_idx,:] = np.dot(Fd,s[state_idx,:]) + np.dot(Bd,a[action_idx,:])
+			s_tp1[self.state_idxs[robot],:] = np.dot(Fd,s[self.state_idxs[robot],:]) + np.dot(Bd,a[self.action_idxs[robot],:])
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):
@@ -115,11 +113,11 @@ class Example7(Problem):
 
 			colors = plotter.get_n_colors(self.num_robots)
 			for robot in range(self.num_robots):
-				state_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+				robot_state_idxs = self.state_idxs[robot] 
 
-				ax.plot(states[:,state_idxs[0]], states[:,state_idxs[1]], color=colors[robot])
-				ax.plot(states[0,state_idxs[0]], states[0,state_idxs[1]], color=colors[robot],marker='o')
-				ax.plot(states[-1,state_idxs[0]], states[-1,state_idxs[1]], color=colors[robot],marker='s')
+				ax.plot(states[:,robot_state_idxs[0]], states[:,robot_state_idxs[1]], color=colors[robot])
+				ax.plot(states[0,robot_state_idxs[0]], states[0,robot_state_idxs[1]], color=colors[robot],marker='o')
+				ax.plot(states[-1,robot_state_idxs[0]], states[-1,robot_state_idxs[1]], color=colors[robot],marker='s')
 				
 			# ax.set_aspect(lims[0,1]-lims[0,0] / lims[1,1]-lims[1,0])
 
@@ -164,9 +162,8 @@ class Example7(Problem):
 				# contour
 				if encodings.shape[0] > 100:
 					fig,ax = plt.subplots() 
-					state_idx_per_robot = int(self.state_dim / self.num_robots)
-					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-					pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
+					robot_idxs = self.state_idxs[robot]
+					pcm = ax[0,robot].tricontourf(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],target[:,robot])
 					fig.colorbar(pcm,ax=ax[0,robot])
 					ax.set_title("{} Value for Robot {}".format(title,robot))
 					ax.set_xlim(self.state_lims[self.position_idx[0],:])
@@ -175,9 +172,8 @@ class Example7(Problem):
 				else:
 					# scatter
 					fig,ax = plt.subplots() 
-					state_idx_per_robot = int(self.state_dim / self.num_robots)
-					pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-					pcm = ax.scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=target[:,robot])
+					robot_idxs = self.state_idxs[robot]
+					pcm = ax[0,robot].tricontourf(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],target[:,robot])
 					fig.colorbar(pcm,ax=ax)
 					ax.set_title("{} Value for Robot {}".format(title,robot))
 					ax.set_xlim(self.state_lims[self.position_idx[0],:])
@@ -187,7 +183,7 @@ class Example7(Problem):
 				state = group[0][0:self.state_dim]
 				for other_robot in range(self.num_robots):
 					if other_robot != robot:
-						other_robot_idxs = other_robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+						other_robot_idxs = self.state_idxs[other_robot] 
 						# Circle((x,y),radius)
 						circ = patches.Circle((state[other_robot_idxs[0]], state[other_robot_idxs[1]]), \
 							self.approx_dist,facecolor='gray',alpha=0.5)
@@ -199,7 +195,7 @@ class Example7(Problem):
 
 		max_plots = 10
 
-		robot_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+		robot_idxs = self.state_idxs[robot]
 
 		groups = self.make_groups(dataset[0],dataset[1],robot)
 		if len(groups) > max_plots:
@@ -225,7 +221,7 @@ class Example7(Problem):
 			state = group[0][0:self.state_dim]
 			for other_robot in range(self.num_robots):
 				if other_robot != robot:
-					other_robot_idxs = other_robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+					other_robot_idxs = self.state_idxs[other_robot] 
 					# Circle((x,y),radius)
 					circ = patches.Circle((state[other_robot_idxs[0]], state[other_robot_idxs[1]]), \
 						self.approx_dist,facecolor='gray',alpha=0.5)
@@ -237,7 +233,7 @@ class Example7(Problem):
 
 		num_datapoints = encoding.shape[0]
 		groups = [] # list of list of lists
-		robot_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+		robot_idxs = self.state_idxs[robot]
 		not_robot_idxs = []
 		for i in range(self.state_dim):
 			if i not in robot_idxs:
@@ -271,7 +267,7 @@ class Example7(Problem):
 			fig,ax = plt.subplots()
 			inital_state = sim_result["states"][0]
 
-			robot_idxs = robot * self.state_dim_per_robot + np.arange(self.state_dim_per_robot)
+			robot_idxs = self.state_idxs[robot]
 			not_robot_idxs = []
 			for i in range(self.state_dim):
 				if i not in robot_idxs:
