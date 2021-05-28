@@ -20,7 +20,7 @@ class Example9(Problem):
 
 		self.t0 = 0
 		self.tf = 20
-		self.dt = 0.2
+		self.dt = 0.1
 		self.gamma = 1.0
 		self.num_robots = 2 
 		self.state_idxs = [
@@ -88,15 +88,27 @@ class Example9(Problem):
 			(0,0),
 			))
 
-	# def initialize(self):
-	# 	valid = False
-	# 	while not valid:
-	# 		state = sample_vector(self.init_lims)
-	# 		state[2,0] = 0
-	# 		state[3,0] = 0
-	# 		state[4,0] = 0
-	# 		valid = not self.is_terminal(state)
-	# 	return state
+	def initialize(self):
+		valid = False
+		u_a = np.pi/4
+		l_a = -np.pi/2
+		u_r = 3.0 
+		l_r = 1.2 * self.desired_distance
+		while not valid:
+			state = sample_vector(self.init_lims)
+			if np.random.uniform() < 0.4 : 
+				angle = np.random.uniform() * (u_a - l_a) + l_a
+				radius = np.random.uniform() * (u_r - l_r) + l_r
+				flip_x = 1 
+				if np.random.uniform() < 0.5:
+					flip_x = -1 
+				state[0,0] = flip_x * radius * np.cos(angle)
+				state[1,0] = radius * np.sin(angle)
+				state[2,0] = 0 
+				state[3,0] = 0 
+				state[4,0] = 0 
+			valid = not self.is_terminal(state)
+		return state
 
 	def reward(self,s,a):
 		return self.normalized_reward(s,a)
