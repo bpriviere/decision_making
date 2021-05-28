@@ -83,14 +83,8 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 		if verbose and not tqdm_on: print('\t\t t = {}/{}'.format(step,len(problem.times)))
 		
 		action = solver.policy(problem,curr_state)
-
-		dt = problem.dt 
-		if solver.solver_name in ["PUCT_V2","C_PUCT_V2"]:
-			dt = action[-1,0]
-			action = action[0:-1,:]
-
 		reward = problem.reward(curr_state,action)
-		next_state = problem.step(curr_state,action,dt)
+		next_state = problem.step(curr_state,action,problem.dt)
 		done = problem.is_terminal(next_state)
 
 		times.append(time)
