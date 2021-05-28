@@ -2,6 +2,9 @@
 import time 
 import sys 
 import numpy as np 
+import multiprocessing as mp
+import itertools
+from queue import Queue
 sys.path.append("../")
 
 from param import Param 
@@ -24,18 +27,16 @@ def worker(param):
     instance = make_instance(param)
     instance["initial_state"] = param.initial_state
     start = time.time()
-    
-    sim_result = run_instance(instance,verbose=False)
+    sim_result = run_instance(0,Queue(),0,instance,tqdm_on=False)
     duration = time.time() - start
     sim_result["duration_per_timestep"] = duration / len(sim_result["times"])
     # remove solver from instance because it can't pickle python bindings 
     del sim_result["instance"]["solver"] 
     return (param,sim_result)
 
-
 if __name__ == '__main__':
 
-    mode = 3
+    mode = 1
 
     # complete
     if mode == 0:
@@ -49,10 +50,10 @@ if __name__ == '__main__':
     
     # speed test 
     elif mode == 1:
-        number_simulations_lst = [50,100] #,500,1000] 
+        number_simulations_lst = [50,100,200] #,500,1000] 
         problem_name_lst = ["example1","example2"] #,"example4"] #,"example2","example4"]
-        solver_name_lst = ["PUCT_V1","PUCT_V2","C_PUCT_V1"]
-        num_trial = 5
+        solver_name_lst = ["PUCT_V1","C_PUCT_V1"]
+        num_trial = 10
 
     # custom 
     elif mode == 2:
@@ -105,7 +106,6 @@ if __name__ == '__main__':
     parallel_on = True
 
     if parallel_on:
-        import multiprocessing as mp
         pool = mp.Pool(mp.cpu_count()-1)
         sim_results = pool.map(worker, params) 
 
