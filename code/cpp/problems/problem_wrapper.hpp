@@ -40,6 +40,8 @@ class Problem_Wrapper
                 problem = new Example9(); 
             } else if (string == "example10"){
                 problem = new Example10(); 
+            } else if (string == "example11"){
+                problem = new Example6(); // uses the same example because only difference is obstacle arangement 
             } else if (string == "example12"){
                 problem = new Example12(); 
             }
