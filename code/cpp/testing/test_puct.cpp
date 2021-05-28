@@ -12,7 +12,7 @@ int main()
 {
 
     // problem stuff 
-    std::string problem_name = "example8";
+    std::string problem_name = "example6";
     std::string solver_name = "C_PUCT_V1";
 
     // 
@@ -87,6 +87,17 @@ int main()
             problem_settings.action_lims(action_shift+2,1) = acc_lim;
         }
     } else if (problem_name == "example6"){
+
+        problem_settings.state_idxs = {{0,1}};
+        problem_settings.action_idxs = {{0,1}};
+        problem_settings.state_dim = 2;
+        problem_settings.action_dim = 2;
+        problem_settings.num_robots = 1;
+        
+        Eigen::Matrix<float,-1,1> desired_state(2,1);
+        desired_state << 4,0;
+        problem_settings.desired_state = desired_state;
+
         problem_settings.state_lims.resize(2,2);
         problem_settings.state_lims << 
             -2.0,2.0,
@@ -204,7 +215,11 @@ int main()
     Solver_Wrapper solver_wrapper(solver_name,solver_settings,policy_network_wrappers,value_network_wrapper);
     
 
-    auto root_state = problem_wrapper.problem->initialize(solver_wrapper.solver->g_gen); 
+    // auto root_state = problem_wrapper.problem->initialize(solver_wrapper.solver->g_gen); 
+    Eigen::Matrix<float,-1,1> root_state(problem_wrapper.problem->m_state_dim,1); 
+    root_state(0,0) = 0.0;
+    root_state(1,0) = 0.0;
+
     Solver_Result solver_result = solver_wrapper.solver->search(problem_wrapper.problem,root_state,0);
 
     std::cout << "solver_result.success: " << solver_result.success << std::endl;
