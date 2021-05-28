@@ -96,7 +96,7 @@ class Example6(Problem):
 		reward = np.zeros((self.num_robots,1))
 		reward[0,0] = 0
 		if np.linalg.norm(s-self.s_des) < self.desired_distance:
-			reward[1,0] = 0
+			reward[0,0] = 0
 		return reward 
 
 	def step(self,s,a,dt):

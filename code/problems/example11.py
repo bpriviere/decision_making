@@ -18,7 +18,7 @@ class Example11(Problem):
 
 		self.t0 = 0
 		self.tf = 40
-		self.dt = 0.5
+		self.dt = 0.2
 		self.r_max = 10
 		self.r_min = -self.r_max
 		self.num_robots = 1
@@ -31,7 +31,8 @@ class Example11(Problem):
 		self.position_idx = np.arange(2)
 		self.desired_distance = 0.5
 		self.s_0 = np.array([[0],[0]])
-		self.s_des = np.array([[4],[0]])
+		# self.s_des = np.array([[4],[0]])
+		self.s_des = np.array([[-4],[0]])
 
 		self.state_idxs = [np.arange(2)]
 		self.action_idxs = [np.arange(2)]
@@ -72,7 +73,7 @@ class Example11(Problem):
 			]),
 			np.array([
 				[-2,-1],
-				[-l_slit/2,-2],
+				[-2,-l_slit/2],
 			])
 		]
 
@@ -105,7 +106,7 @@ class Example11(Problem):
 		reward = np.zeros((self.num_robots,1))
 		reward[0,0] = 0
 		if np.linalg.norm(s-self.s_des) < self.desired_distance:
-			reward[1,0] = 0
+			reward[0,0] = 0
 		return reward 
 
 	def step(self,s,a,dt):

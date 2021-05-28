@@ -94,7 +94,7 @@ class Example6 : public Problem {
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);\
 			r(0,0) = 0.0f; 
 			if ((state - m_desired_state).norm() < m_desired_distance) {
-				r(1,0) = 1.0f;
+				r(0,0) = 1.0f;
 			}
 			return r;
 		}
@@ -117,7 +117,6 @@ class Example6 : public Problem {
 					break; 
 				}
 			}
-			
 			return stateInBounds && collisionFree;
 		}
 
