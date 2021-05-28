@@ -72,7 +72,13 @@ class Example6(Problem):
 
 	def reward(self,s,a):
 		reward = np.zeros((self.num_robots,1))
-		reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
+
+		s_des = np.zeros((2,1))
+		s_des[0,0] = 4 
+		s_des[1,0] = 0
+		reward[0,0] = -1 * (np.dot((s-s_des).T,np.dot(self.Q,(s-s_des))) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
+
+		# reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
 		# if np.linalg.norm(s) < self.desired_distance:
 		# 	reward[0,0] = 1
 		return reward
