@@ -93,18 +93,19 @@ class C_PUCT(Solver):
 			problem_settings.m2 = problem.m2
 			problem_settings.c1 = problem.c1
 			problem_settings.c2 = problem.c2
-		elif problem.name == "example6":
+		elif problem.name in ["example6","example11"]:
 			problem_settings.obstacles = problem.obstacles
 			problem_settings.desired_distance = problem.desired_distance
+			problem_settings.desired_state = problem.s_des
 		elif problem.name == "example8":
 			problem_settings.desired_distance = problem.desired_distance
-		elif problem.name == "example9" or "example12":
+		elif problem.name in ["example9","example12"]:
 			problem_settings.desired_distance = problem.desired_distance
 			problem_settings.R = problem.R
 			problem_settings.c1 = problem.w1
 			problem_settings.c2 = problem.w2
 
-		if problem.name not in ["example{}".format(i) for i in [1,2,3,4,5,6,8,9,10,12]]:
+		if problem.name not in ["example{}".format(i) for i in [1,2,3,4,5,6,8,9,10,11,12]]:
 			print("problem not supported")
 			exit()
 

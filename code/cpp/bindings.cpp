@@ -40,6 +40,7 @@ PYBIND11_MODULE(bindings, m) {
         .def_readwrite("action_idxs", &Problem_Settings::action_idxs)
         .def_readwrite("init_lims", &Problem_Settings::init_lims)
         .def_readwrite("desired_distance", &Problem_Settings::desired_distance)
+        .def_readwrite("desired_state", &Problem_Settings::desired_state)
         .def_readwrite("r_max", &Problem_Settings::r_max)
         .def_readwrite("r_min", &Problem_Settings::r_min)
         .def_readwrite("g", &Problem_Settings::g)

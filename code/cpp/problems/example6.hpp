@@ -15,6 +15,7 @@ class Example6 : public Problem {
 		Eigen::Matrix<float,2,2> m_I; 
 		Eigen::Matrix<float,2,2> m_Q;
 		Eigen::Matrix<float,2,2> m_R;  
+		Eigen::Matrix<float,-1,1> m_desired_state;  
 		std::vector<Eigen::Matrix<float,2,2>> m_obstacles;
 		float m_r_max; 
 		float m_r_min; 
@@ -23,15 +24,16 @@ class Example6 : public Problem {
 
 		void set_params(Problem_Settings & problem_settings) override 
 		{
-            m_state_dim = problem_settings.state_dim;
-            m_action_dim = problem_settings.action_dim;
-            m_num_robots = problem_settings.num_robots;
-            m_state_idxs = problem_settings.state_idxs;
-            m_action_idxs = problem_settings.action_idxs;
+			m_state_dim = problem_settings.state_dim;
+			m_action_dim = problem_settings.action_dim;
+			m_num_robots = problem_settings.num_robots;
+			m_state_idxs = problem_settings.state_idxs;
+			m_action_idxs = problem_settings.action_idxs;
+			m_desired_state = problem_settings.desired_state;
 
-            // problem_settings.state_lims.resize(m_state_dim,2);
-            // problem_settings.action_lims.resize(m_action_dim,2);
-            // problem_settings.init_lims.resize(m_state_dim,2);
+			// problem_settings.state_lims.resize(m_state_dim,2);
+			// problem_settings.action_lims.resize(m_action_dim,2);
+			// problem_settings.init_lims.resize(m_state_dim,2);
 
 			m_timestep = problem_settings.timestep;
 			m_gamma = problem_settings.gamma;
@@ -74,32 +76,28 @@ class Example6 : public Problem {
 			Eigen::Matrix<float,-1,1> action) override
 		{ 
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-			
-			Eigen::Matrix<float,2,1> s_des;
-			s_des(0,0) = 4.0f;
-			s_des(1,0) = 0.0f;
-			r = -1 * ((state-s_des).transpose() * m_Q * (state-s_des) + action.transpose() * m_R * action); 
-			
-			// r = -1 * (state.transpose() * m_Q * state + action.transpose() * m_R * action); 
-			// if (state.norm() < m_desired_distance) {
-			// 	r(0,0) = 1;
-			// } else {
-			// 	r(0,0) = 0; 
-			// }
+			r = -1 * ((state-m_desired_state).transpose() * m_Q * (state-m_desired_state) + action.transpose() * m_R * action); 
 			return r;
 		}
 
 
-        Eigen::Matrix<float,-1,1> normalized_reward(
-            Eigen::Matrix<float,-1,1> state,
-            Eigen::Matrix<float,-1,1> action) override
-        {
-            Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-			r = reward(state,action);
-			r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
-			r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
-            return r;
-        }
+		Eigen::Matrix<float,-1,1> normalized_reward(
+			Eigen::Matrix<float,-1,1> state,
+			Eigen::Matrix<float,-1,1> action) override
+		{
+			// Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+			// r = reward(state,action);
+			// r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
+			// r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
+			// return r;
+
+			Eigen::Matrix<float,-1,1> r(m_num_robots,1);\
+			r(0,0) = 0.0f; 
+			if ((state - m_desired_state).norm() < m_desired_distance) {
+				r(1,0) = 1.0f;
+			}
+			return r;
+		}
 
 
 
@@ -123,9 +121,9 @@ class Example6 : public Problem {
 			return stateInBounds && collisionFree;
 		}
 
-        bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
-        {
-            return !is_valid(state);
-        }
+		bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
+		{
+			return !is_valid(state);
+		}
 		
 };

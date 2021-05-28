@@ -82,7 +82,7 @@ def get_problem(problem_name):
 		from problems.example5 import Example5
 		problem = Example5()
 
-	# 2d single integrator regulator with obstacles 
+	# bugtrap: 2d single integrator with obstacles 
 	elif problem_name == "example6":
 		from problems.example6 import Example6
 		problem = Example6() 
@@ -106,6 +106,11 @@ def get_problem(problem_name):
 	elif problem_name == "example10":
 		from problems.example10 import Example10
 		problem = Example10() 
+
+	# multiscale bugtrap: 2d single integrator with obstacles 
+	elif problem_name == "example11":
+		from problems.example11 import Example11
+		problem = Example11() 
 
 	# modified homicidal chauffer  
 	elif problem_name == "example12":

@@ -29,6 +29,7 @@ class Problem_Settings
         Eigen::Matrix<float,-1,2> state_lims;
         Eigen::Matrix<float,-1,2> action_lims;
         Eigen::Matrix<float,-1,2> init_lims;
+        Eigen::Matrix<float,-1,1> desired_state;
         std::vector<Eigen::Matrix<float,2,2>> obstacles;
         std::vector<std::vector<int>> state_idxs;
         std::vector<std::vector<int>> action_idxs;

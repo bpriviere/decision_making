@@ -30,6 +30,8 @@ class Example11(Problem):
 		self.name = "example11"
 		self.position_idx = np.arange(2)
 		self.desired_distance = 0.5
+		self.s_0 = np.array([[0],[0]])
+		self.s_des = np.array([[4],[0]])
 
 		self.state_idxs = [np.arange(2)]
 		self.action_idxs = [np.arange(2)]
@@ -79,25 +81,32 @@ class Example11(Problem):
 		self.Q = np.eye(self.state_dim)
 		self.Ru = self.state_control_weight * np.eye(self.action_dim)
 
+	def initialize(self,uniform=False):
+		if uniform:
+			valid = False
+			while not valid:
+				state = sample_vector(self.init_lims)
+				valid = not self.is_terminal(state)
+		else:
+			state = self.s_0
+		return state
+
 	def reward(self,s,a):
 		reward = np.zeros((self.num_robots,1))
-
-		s_des = np.zeros((2,1))
-		s_des[0,0] = 4 
-		s_des[1,0] = 0
-		reward[0,0] = -1 * (np.dot((s-s_des).T,np.dot(self.Q,(s-s_des))) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
-
-		# reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
-		# if np.linalg.norm(s) < self.desired_distance:
-		# 	reward[0,0] = 1
+		reward[0,0] = -1 * (np.dot((s-self.s_des).T,np.dot(self.Q,(s-self.s_des))) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
 		return reward
 
 	def normalized_reward(self,s,a): 
-		reward = self.reward(s,a)
-		r_max = self.r_max
-		r_min = -r_max
-		reward = np.clip(reward,r_min,r_max)
-		return (reward - r_min) / (r_max - r_min)
+		# reward = self.reward(s,a)
+		# r_max = self.r_max
+		# r_min = -r_max
+		# reward = np.clip(reward,r_min,r_max)
+		# return (reward - r_min) / (r_max - r_min)
+		reward = np.zeros((self.num_robots,1))
+		reward[0,0] = 0
+		if np.linalg.norm(s-self.s_des) < self.desired_distance:
+			reward[1,0] = 0
+		return reward 
 
 	def step(self,s,a,dt):
 		Fd = np.eye(self.state_dim) + self.Fc * dt 
@@ -117,8 +126,8 @@ class Example11(Problem):
 		if states is not None:
 			states = np.array(states)
 			ax.plot(states[:,0],states[:,1])
-			ax.plot(states[0,0],states[0,1],'o')
-			ax.plot(states[-1,0],states[-1,1],'s')
+			ax.plot(states[0,0],states[0,1],'o',color='b',label="Start")
+			ax.plot(states[-1,0],states[-1,1],'s',color='b',label="Terminal")
 
 		# plot obstacles 
 		for obstacle in self.obstacles:
@@ -128,6 +137,13 @@ class Example11(Problem):
 				(obstacle[1,1]-obstacle[1,0]), \
 				facecolor='gray')
 			ax.add_patch(rect)
+
+		# plot goal
+		circ = patches.Circle((self.s_des[0],self.s_des[1]),self.desired_distance,facecolor='green',
+			alpha=0.5,label="Goal")
+		ax.add_patch(circ)
+
+		ax.legend()
 
 		return fig,ax
 
