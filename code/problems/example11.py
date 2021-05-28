@@ -18,7 +18,7 @@ class Example11(Problem):
 
 		self.t0 = 0
 		self.tf = 40
-		self.dt = 0.2
+		self.dt = 0.5
 		self.r_max = 10
 		self.r_min = -self.r_max
 		self.num_robots = 1
@@ -31,8 +31,8 @@ class Example11(Problem):
 		self.position_idx = np.arange(2)
 		self.desired_distance = 0.5
 		self.s_0 = np.array([[0],[0]])
-		# self.s_des = np.array([[4],[0]])
-		self.s_des = np.array([[-4],[0]])
+		self.s_des = np.array([[4],[0]])
+		# self.s_des = np.array([[-4],[0]])
 
 		self.state_idxs = [np.arange(2)]
 		self.action_idxs = [np.arange(2)]
