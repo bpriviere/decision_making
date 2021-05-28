@@ -17,7 +17,7 @@ class Example11(Problem):
 		super(Example11,self).__init__()
 
 		self.t0 = 0
-		self.tf = 40
+		self.tf = 100
 		self.dt = 0.5
 		self.r_max = 10
 		self.r_min = -self.r_max
