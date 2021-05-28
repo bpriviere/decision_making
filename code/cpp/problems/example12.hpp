@@ -8,7 +8,7 @@
 #include <math.h>       /* sin , cos , tan */
 #include "problem.hpp"
 
-class Example9 : public Problem { 
+class Example12 : public Problem { 
 	
 	public:
 		float m_r_max; 
@@ -55,11 +55,11 @@ class Example9 : public Problem {
 			float timestep) override
 		{
 			Eigen::Matrix<float,-1,1> next_state(m_state_dim,1);
-			next_state(0,0) = state(0,0) + timestep * m_c1 * sin(action(0,0));
-			next_state(1,0) = state(1,0) + timestep * m_c1 * cos(action(0,0));
+			next_state(0,0) = state(0,0) + timestep * m_c1 * action(0,0);
+			next_state(1,0) = state(1,0) + timestep * m_c1 * action(1,0);
 			next_state(2,0) = state(2,0) + timestep * m_c2 * sin(state(4,0));
 			next_state(3,0) = state(3,0) + timestep * m_c2 * cos(state(4,0));
-			next_state(4,0) = state(4,0) + timestep * m_c2 / m_R * action(1,0);
+			next_state(4,0) = state(4,0) + timestep * m_c2 / m_R * action(2,0);
 			next_state(5,0) = state(5,0) + timestep;
 
 			// wrap angles

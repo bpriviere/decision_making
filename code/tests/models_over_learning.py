@@ -14,7 +14,7 @@ def eval_models(problem,policy_model_fns,policy_oracle_name,value_model_fns,valu
 	
 	states = []
 	for _ in range(num_eval):
-		state = problem.sample_state()
+		state = problem.initialize()
 		states.append(state)
 	states = np.array(states).squeeze(axis=2)
 

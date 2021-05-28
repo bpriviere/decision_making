@@ -9,7 +9,11 @@
 class Problem_Settings
 {
     public: 
+        int state_dim; 
+        int action_dim; 
+        int num_robots; 
         float timestep; 
+        float tf; 
         float gamma; 
         float mass; 
         float g; 
@@ -26,6 +30,8 @@ class Problem_Settings
         Eigen::Matrix<float,-1,2> action_lims;
         Eigen::Matrix<float,-1,2> init_lims;
         std::vector<Eigen::Matrix<float,2,2>> obstacles;
+        std::vector<std::vector<int>> state_idxs;
+        std::vector<std::vector<int>> action_idxs;
 };
 
 
@@ -43,6 +49,8 @@ public:
     Eigen::Matrix<float,-1,2> m_state_lims;  
     Eigen::Matrix<float,-1,2> m_action_lims;  
     Eigen::Matrix<float,-1,2> m_init_lims; 
+    std::vector<std::vector<int>> m_state_idxs;
+    std::vector<std::vector<int>> m_action_idxs;
     virtual ~Problem() { }
 
     virtual void set_params(Problem_Settings & problem_settings) 
@@ -140,11 +148,11 @@ public:
         return true;
     }
 
-    Eigen::Matrix<float,-1,1> policy_encoding(Eigen::Matrix<float,-1,1> state, int robot){
+    virtual Eigen::Matrix<float,-1,1> policy_encoding(Eigen::Matrix<float,-1,1> state, int robot){
         return state;
     }
 
-    Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state){
+    virtual Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state){
         return state;
     }
 

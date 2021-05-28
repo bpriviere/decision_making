@@ -14,7 +14,7 @@ from cpp.build.bindings import Policy_Network_Wrapper, Value_Network_Wrapper
 class C_PUCT(Solver):
 
 	def __init__(self,
-		policy_oracle=None,\
+		policy_oracle=[None],\
 		value_oracle=None,\
 		search_depth=10,\
 		number_simulations=1000,
@@ -50,10 +50,11 @@ class C_PUCT(Solver):
 	def policy(self,problem,root_state):
 		py_action = np.zeros((problem.action_dim,1))
 		for robot in range(problem.num_robots): 
-			action_idxs = robot * problem.action_dim_per_robot + \
-				np.arange(problem.action_dim_per_robot)
+			robot_action_idxs = problem.action_idxs[robot]
 			result = self.search(problem,root_state,turn=robot)
-			py_action[action_idxs,0] = result.best_action[action_idxs]
+			py_action[robot_action_idxs,0] = result.best_action[robot_action_idxs]
+
+			# exit()
 
 		if self.solver_name in ["C_PUCT_V2"]:
 			py_action = np.append(py_action,np.array(result.best_action[-1],ndmin=2),axis=0)
@@ -64,12 +65,18 @@ class C_PUCT(Solver):
 
 		# problem settings 
 		problem_settings = Problem_Settings()
+		problem_settings.state_dim = problem.state_dim
+		problem_settings.action_dim = problem.action_dim
+		problem_settings.num_robots = problem.num_robots
 		problem_settings.timestep = problem.dt
+		problem_settings.tf = problem.tf
 		problem_settings.gamma = problem.gamma
 		problem_settings.r_max = problem.r_max
 		problem_settings.r_min = problem.r_min
 		problem_settings.state_lims = problem.state_lims
 		problem_settings.action_lims = problem.action_lims 
+		problem_settings.state_idxs = problem.state_idxs
+		problem_settings.action_idxs = problem.action_idxs
 		problem_settings.init_lims = problem.init_lims 
 		problem_settings.state_control_weight = problem.state_control_weight
 
@@ -91,13 +98,13 @@ class C_PUCT(Solver):
 			problem_settings.desired_distance = problem.desired_distance
 		elif problem.name == "example8":
 			problem_settings.desired_distance = problem.desired_distance
-		elif problem.name == "example9":
+		elif problem.name == "example9" or "example12":
 			problem_settings.desired_distance = problem.desired_distance
 			problem_settings.R = problem.R
 			problem_settings.c1 = problem.w1
 			problem_settings.c2 = problem.w2
 
-		if problem.name not in ["example{}".format(i) for i in [1,2,3,4,5,6,8,9]]:
+		if problem.name not in ["example{}".format(i) for i in [1,2,3,4,5,6,8,9,10,12]]:
 			print("problem not supported")
 			exit()
 
@@ -105,7 +112,9 @@ class C_PUCT(Solver):
 		problem_wrapper = Problem_Wrapper(problem.name,problem_settings)
 
 		# 
+		# print('search')
 		result = cpp_search(problem_wrapper,self.solver_wrapper,root_state,turn)
+		# print('done')
 
 		if self.vis_on: 
 			tree_state = result.tree 

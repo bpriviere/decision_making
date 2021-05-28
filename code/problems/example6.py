@@ -17,7 +17,7 @@ class Example6(Problem):
 		super(Example6,self).__init__()
 
 		self.t0 = 0
-		self.tf = 20
+		self.tf = 40
 		self.dt = 0.5
 		self.r_max = 10
 		self.r_min = -self.r_max
@@ -31,11 +31,11 @@ class Example6(Problem):
 		self.position_idx = np.arange(2)
 		self.desired_distance = 0.5
 
+		self.state_idxs = [np.arange(2)]
+		self.action_idxs = [np.arange(2)]
 		self.times = np.arange(self.t0,self.tf,self.dt)
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
-		self.state_dim_per_robot = self.state_dim
-		self.action_dim_per_robot = self.action_dim
 
 		self.state_lims = np.array([
 			[-5,5],
@@ -72,7 +72,13 @@ class Example6(Problem):
 
 	def reward(self,s,a):
 		reward = np.zeros((self.num_robots,1))
-		reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
+
+		s_des = np.zeros((2,1))
+		s_des[0,0] = 4 
+		s_des[1,0] = 0
+		reward[0,0] = -1 * (np.dot((s-s_des).T,np.dot(self.Q,(s-s_des))) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
+
+		# reward[0,0] = -1 * (np.dot(s.T,np.dot(self.Q,s)) + np.dot(a.T,np.dot(self.Ru,a))).squeeze()
 		# if np.linalg.norm(s) < self.desired_distance:
 		# 	reward[0,0] = 1
 		return reward
@@ -136,27 +142,26 @@ class Example6(Problem):
 		# contour
 		if encodings.shape[0] > 100:
 			fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
-			state_idx_per_robot = int(self.state_dim / self.num_robots)
 			for robot in range(self.num_robots):
-				pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-				pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],target[:,robot])
+				robot_idxs = self.state_idxs[robot]
+				pcm = ax[0,robot].tricontourf(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],target[:,robot])
 				fig.colorbar(pcm,ax=ax[0,robot])
 				ax[0,robot].set_title("{} Value for Robot {}".format(title,robot))
 				ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
 				ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
 				self.render(fig=fig,ax=ax[0,robot])
 
-		# scatter
-		fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
-		state_idx_per_robot = int(self.state_dim / self.num_robots)
-		for robot in range(self.num_robots):
-			pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-			pcm = ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=target[:,robot])
-			fig.colorbar(pcm,ax=ax[0,robot])
-			ax[0,robot].set_title("{} Value for Robot {}".format(title,robot))
-			ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
-			ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
-			self.render(fig=fig,ax=ax[0,robot])
+		else:
+			# scatter
+			fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
+			for robot in range(self.num_robots):
+				robot_idxs = self.state_idxs[robot]
+				pcm = ax[0,robot].scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],c=target[:,robot])
+				fig.colorbar(pcm,ax=ax[0,robot])
+				ax[0,robot].set_title("{} Value for Robot {}".format(title,robot))
+				ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
+				ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
+				self.render(fig=fig,ax=ax[0,robot])
 
 
 	def plot_policy_dataset(self,dataset,title,robot):
@@ -167,11 +172,10 @@ class Example6(Problem):
 		fig,ax = plt.subplots(nrows=1,ncols=self.num_robots,squeeze=False)
 		
 		# quiver plot 
-		state_idx_per_robot = int(self.state_dim / self.num_robots)
-		pos_i_idxs = state_idx_per_robot * robot + np.arange(state_idx_per_robot)[self.position_idx]
-		ax[0,robot].quiver(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],\
+		robot_idxs = self.state_idxs[robot] 
+		ax[0,robot].quiver(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],\
 			target[:,0],target[:,1])
-		ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],s=2)
+		ax[0,robot].scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],s=2)
 		ax[0,robot].set_title("{} Policy for Robot {}".format(title,robot))
 		ax[0,robot].set_xlim(self.state_lims[self.position_idx[0],:])
 		ax[0,robot].set_ylim(self.state_lims[self.position_idx[0],:])
@@ -180,10 +184,10 @@ class Example6(Problem):
 		if target.shape[1] > 2:
 			C = np.linalg.norm(target[:,2:],axis=1)
 			if encodings.shape[0] > 100:
-				pcm = ax[0,robot].tricontourf(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],C,alpha=0.3)
+				pcm = ax[0,robot].tricontourf(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],C,alpha=0.3)
 				fig.colorbar(pcm,ax=ax[0,robot])
 			else:
-				ax[0,robot].scatter(encodings[:,pos_i_idxs[0]],encodings[:,pos_i_idxs[1]],c=C)
+				ax[0,robot].scatter(encodings[:,robot_idxs[0]],encodings[:,robot_idxs[1]],c=C)
 		
 		# render
 		self.render(fig=fig,ax=ax[0,robot])

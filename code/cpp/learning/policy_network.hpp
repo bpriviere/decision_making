@@ -11,7 +11,7 @@ class PolicyNetwork
         virtual ~PolicyNetwork() { }
 
         virtual Eigen::Matrix<float,-1,1> eval(
-            Problem * problem, Eigen::Matrix<float,-1,1> encoding, std::default_random_engine & gen) 
+            Problem * problem, Eigen::Matrix<float,-1,1> encoding, int robot, std::default_random_engine & gen) 
         {
             Eigen::Matrix<float,-1,1> result;
             return result;

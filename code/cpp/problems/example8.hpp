@@ -19,22 +19,24 @@ class Example8 : public Problem {
 		float m_r_min; 
 		float m_state_control_weight;
 		float m_dist;
+		float m_tf;
 		int m_state_dim_per_robot; 
 		int m_action_dim_per_robot;
 
 		void set_params(Problem_Settings & problem_settings) override 
 		{
-			m_state_dim_per_robot = 2;
-			m_action_dim_per_robot = 2;
-			m_num_robots = 2;
-			m_state_dim = m_state_dim_per_robot * m_num_robots;
-			m_action_dim = m_action_dim_per_robot * m_num_robots;
+            m_state_dim = problem_settings.state_dim;
+            m_action_dim = problem_settings.action_dim;
+            m_num_robots = problem_settings.num_robots;
+            m_state_idxs = problem_settings.state_idxs;
+            m_action_idxs = problem_settings.action_idxs;
 
-			problem_settings.state_lims.resize(m_state_dim,2);
-			problem_settings.action_lims.resize(m_action_dim,2);
-			problem_settings.init_lims.resize(m_state_dim,2);
+            // problem_settings.state_lims.resize(m_state_dim,2);
+            // problem_settings.action_lims.resize(m_action_dim,2);
+            // problem_settings.init_lims.resize(m_state_dim,2);
 
 			m_timestep = problem_settings.timestep;
+			m_tf = problem_settings.tf;
 			m_gamma = problem_settings.gamma;
 			m_r_max = problem_settings.r_max;
 			m_r_min = problem_settings.r_min;
@@ -66,16 +68,14 @@ class Example8 : public Problem {
 			Eigen::Matrix<float,2,2> Bd = m_Bc * timestep; 
 
             // dynamics 
-            int state_shift;
-            int action_shift;
             for (int ii = 0; ii < m_num_robots; ii++){
-                state_shift = ii * m_state_dim_per_robot;
-                action_shift = ii * m_action_dim_per_robot;
-                // block(i,j,p,q): Block of size (p,q), starting at (i,j) 
-                next_state.block(state_shift,0,m_state_dim_per_robot,1) = 
-                    Fd * state.block(state_shift,0,m_state_dim_per_robot,1) + 
-                    Bd * action.block(action_shift,0,m_action_dim_per_robot,1);
+				// block(i,j,p,q): Block of size (p,q), starting at (i,j) 
+                next_state.block(m_state_idxs[ii][0],0,m_state_idxs[ii].size(),1) = 
+                    Fd * state.block(m_state_idxs[ii][0],0,m_state_idxs[ii].size(),1) + 
+                    Bd * action.block(m_action_idxs[ii][0],0,m_action_idxs[ii].size(),1);
             }   
+            
+            next_state(4,0) = state(4,0) + timestep;
             return next_state;
 		}
 
@@ -84,25 +84,7 @@ class Example8 : public Problem {
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
         { 
-            Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-            Eigen::Matrix<float,-1,1> s1 = state.block(0,0,m_state_dim_per_robot,1);
-            Eigen::Matrix<float,-1,1> s2 = state.block(m_state_dim_per_robot,0,m_state_dim_per_robot,1);
-            Eigen::Matrix<float,-1,1> a1 = action.block(0,0,m_action_dim_per_robot,1);
-
-            // r(0,0) = -1.0f * ( (s1-s2).transpose() * m_Q * (s1-s2) + a1.transpose() * m_R * a1);
-			// r(0,0) = -1.0f * (s1-s2).transpose() * m_Q * (s1-s2);
-   			// r(1,0) = -1.0f * r(0,0); 
-
-            float dist = (s1-s2).norm();
-            if (dist < m_dist) {
-            	r(0,0) = 1.0;
-            	r(1,0) = 0.0;
-            } else { 
-            	r(0,0) = 0.0;
-            	r(1,0) = 0.0;
-            }
-
-            return r;
+            return normalized_reward(state,action);
         }
 
 
@@ -111,10 +93,20 @@ class Example8 : public Problem {
             Eigen::Matrix<float,-1,1> action) override
         {
 			Eigen::Matrix<float,-1,1> r(m_num_robots,1);
-			r = reward(state,action);
-			r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
-			r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
-			r(1,0) = 1 - r(0,0);
+			r(0,0) = 0.0;
+			r(1,0) = 0.0;
+			if (is_captured(state) || state(4,0) > m_tf){
+				r(0,0) = state(4,0) / m_tf;
+				r(1,0) = 1 - r(0,0);
+			} else if ( !(
+				(state.block(0,0,2,1).array() >= m_state_lims.block(0,0,2,1).array()).all() && 
+				(state.block(0,0,2,1).array() <= m_state_lims.block(0,1,2,1).array()).all() )) {
+				r(0,0) = -1;
+			} else if ( !(
+				(state.block(2,0,2,1).array() >= m_state_lims.block(2,0,2,1).array()).all() &&
+				(state.block(2,0,2,1).array() <= m_state_lims.block(2,1,2,1).array()).all() )) {
+				r(1,0) = -1;
+			}
             return r;
         }
 
@@ -126,7 +118,12 @@ class Example8 : public Problem {
 
         bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
         {
-            return !is_valid(state);
+            // return !is_valid(state);
+            return ( (!is_valid(state))) || is_captured(state);
+        }
+
+        bool is_captured(Eigen::Matrix<float,-1,1> state) {
+        	return (state.block(0,0,2,1) - state.block(2,0,2,1)).norm() < m_dist;
         }
 		
 };
