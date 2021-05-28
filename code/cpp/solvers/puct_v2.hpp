@@ -2,9 +2,10 @@
 #pragma once 
 #include "solver.hpp"
 
-// changes to PUCT_V1:
-// - resize_node
-// - expand_node
+// changes in PUCT_V1:
+// 	- 'select_action' 
+// 	- 'export_child_distribution' 
+// 	- 'resize_node' 
 
 class PUCT_V2 : public Solver {
 
@@ -23,7 +24,10 @@ class PUCT_V2 : public Solver {
 			m_alpha_pw = solver_settings.alpha_pw;
 			m_beta_policy = solver_settings.beta_policy;
 			m_beta_value = solver_settings.beta_value;
+			m_policy_network_wrappers = policy_network_wrappers;
+			m_value_network_wrapper = value_network_wrapper;
 		}
+
 
 		struct Node { 
 			Eigen::Matrix<float,-1,1> state;
@@ -56,7 +60,7 @@ class PUCT_V2 : public Solver {
 			Solver_Result solver_result;
 
 			m_nodes.clear();
-			m_nodes.reserve(m_num_simulations * (m_search_depth+1) + 1);
+			m_nodes.reserve(m_num_simulations * m_search_depth +1);
 			m_nodes.resize(1);
 
 			auto& root_node = m_nodes[0];
@@ -69,39 +73,61 @@ class PUCT_V2 : public Solver {
 				return solver_result; 
 			}
 
-			for (int ii = 1; ii <= m_num_simulations; ii++){
+			for (int ii = 0; ii < m_num_simulations; ii++){
 
 				Node* curr_node_ptr = root_node_ptr;
 				std::vector< Eigen::Matrix<float,-1,1> > rewards(m_search_depth+1);
 				std::vector<Node*> path(m_search_depth+1);
+				int max_depth = m_search_depth;
 
-				for (int d = 0; d <= m_search_depth; d++){
+				for (int d = 0; d < m_search_depth; d++){
 					int robot_turn = (d + turn) % problem->m_num_robots;
 					Node* child_node_ptr;
+					bool valid_expansion = true;
+					Eigen::Matrix<float,-1,1> action(problem->m_action_dim+1,1); 
 					if (is_expanded(curr_node_ptr)){
 						child_node_ptr = best_child(curr_node_ptr,robot_turn);
+						action = child_node_ptr->action_to_node;
 					} else {
-						child_node_ptr = expand_node(problem,curr_node_ptr); 
+						action = select_action(problem,curr_node_ptr); 						
+						auto next_state = problem->step(curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),problem->m_timestep);
+						valid_expansion = problem->is_valid(next_state);
+						if (valid_expansion) {
+							child_node_ptr = make_child(problem, curr_node_ptr, next_state, action);
+						} else { 
+							max_depth = d;
+							break;
+						}
 					}
-					path[d] = curr_node_ptr;
-					rewards[d] = powf(problem->m_gamma,d)*problem->normalized_reward(
-						curr_node_ptr->state,child_node_ptr->action_to_node.block(0,0,problem->m_action_dim,1));
-					curr_node_ptr = child_node_ptr; 
-				}
-				rewards[m_search_depth] = powf(problem->m_gamma,m_search_depth) * default_policy(problem,curr_node_ptr);
-				path[m_search_depth] = curr_node_ptr; 
 
-				for (int d = 0; d <= m_search_depth; d++){
+					path[d] = curr_node_ptr;
+					rewards[d] = problem->normalized_reward(curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1));
+
+					if (valid_expansion) {
+						curr_node_ptr = child_node_ptr; 
+					} else { 
+						max_depth = d;
+						break;
+					}
+				}
+
+				rewards[max_depth] = default_policy(problem,curr_node_ptr);
+				path[max_depth] = curr_node_ptr; 
+
+				for (int d = 0; d <= max_depth; d++){
 					path[d]->num_visits += 1;
-					path[d]->total_value += calc_value(rewards,d,m_search_depth+1,problem->m_gamma,problem->m_num_robots);
+					path[d]->total_value += calc_value(rewards,d,max_depth+1,problem->m_gamma,problem->m_num_robots);
 				}
 			};
 
-			solver_result.success = true;
-			solver_result.best_action = most_visited(root_node_ptr,0)->action_to_node; 
-			solver_result.child_distribution = export_child_distribution(problem);
-			solver_result.tree = export_tree(problem);
-			solver_result.value = root_node_ptr->total_value / root_node_ptr->num_visits;
+			if (int(root_node_ptr->children.size()) > 0) {
+				solver_result.success = true;
+				solver_result.best_action = most_visited(root_node_ptr,0)->action_to_node; 
+				solver_result.child_distribution = export_child_distribution(problem);
+				solver_result.tree = export_tree(problem);
+				solver_result.value = root_node_ptr->total_value / root_node_ptr->num_visits;
+				solver_result.num_visits = root_node_ptr->num_visits;
+			}
 			return solver_result;
 		}
 
@@ -160,13 +186,32 @@ class PUCT_V2 : public Solver {
 		}
 
 
-		Node* expand_node(Problem * problem,Node* parent_node_ptr){
-			m_nodes.resize(m_nodes.size() + 1);
+		Eigen::Matrix<float,-1,1> select_action(Problem * problem, Node * parent_node_ptr){
 			Eigen::Matrix<float,-1,1> action(problem->m_action_dim+1,1);
 			action.block(0,0,problem->m_action_dim,1) = problem->sample_action(g_gen);
-			action(problem->m_action_dim) = problem->sample_timestep(g_gen,problem->m_timestep); 
-			auto next_state = problem->step(parent_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action(problem->m_action_dim));
-			auto& child_node = m_nodes[m_nodes.size()-1];
+			if (problem->dist(g_gen) < m_beta_policy){
+				for (int ii = 0; ii < problem->m_num_robots; ii++) {
+					if (m_policy_network_wrappers[ii].valid){
+						auto encoding = problem->policy_encoding(parent_node_ptr->state,ii); 
+						action.block(problem->m_action_idxs[ii][0],0,problem->m_action_idxs[ii].size(),1) = 
+							m_policy_network_wrappers[ii].policy_network->eval(problem, encoding, ii, g_gen);
+					}
+				} 
+			} 
+			float timestep = problem->sample_timestep(g_gen, problem->m_timestep);
+			action(problem->m_action_dim,0) = timestep;
+			return action; 
+		}
+
+
+		Node* make_child(
+			Problem * problem, 
+			Node * parent_node_ptr, 
+			Eigen::Matrix<float,-1,1> next_state, 
+			Eigen::Matrix<float,-1,1> action) 
+		{ 
+			m_nodes.resize(m_nodes.size() + 1); // increase size by 1 
+			auto& child_node = m_nodes[m_nodes.size()-1]; // take last index of newly sized vector
 			child_node.parent = parent_node_ptr;
 			child_node.resize_node(problem);
 			child_node.action_to_node = action;
@@ -180,14 +225,20 @@ class PUCT_V2 : public Solver {
 			Eigen::Matrix<float,-1,1> value = Eigen::Matrix<float,-1,1>::Zero(problem->m_num_robots,1);
 			Eigen::Matrix<float,-1,1> curr_state = node_ptr->state; 
 			int depth = 0; 
-			while (! problem->is_terminal(curr_state) && depth < m_search_depth) 
-			{
-				auto action = problem->sample_action(g_gen);
-				auto next_state = problem->step(curr_state,action,problem->m_timestep);
-				float discount = powf(problem->m_gamma,depth); 
-				value += discount * problem->normalized_reward(curr_state,action);
-				curr_state = next_state;
-				depth += 1;
+			if (m_value_network_wrapper.valid && problem->dist(g_gen) < m_beta_value) {
+				auto encoding = problem->value_encoding(curr_state);
+				value = m_value_network_wrapper.value_network->eval(problem,encoding,g_gen);
+			} else { 
+				while (true) {
+					auto action = problem->sample_action(g_gen);
+					auto next_state = problem->step(curr_state,action,problem->m_timestep);
+					value += powf(problem->m_gamma,depth) * problem->normalized_reward(curr_state,action);
+					if ((problem->is_terminal(curr_state)) || (depth > m_search_depth)) {
+						break;
+					}
+					curr_state = next_state;
+					depth += 1;
+				}
 			}
 			return value; 
 		}
@@ -222,8 +273,13 @@ class PUCT_V2 : public Solver {
 			Eigen::MatrixXf child_distribution(int(root_node_ptr->children.size()), problem->m_action_dim + 1);
 			int count = 0 ;			
 			for (Node* c : root_node_ptr->children) {
-				// child_distribution.row(count).head(problem->m_action_dim) = c->action_to_node.block(0,0,problem->m_action_dim,1);
-				child_distribution.row(count).head(problem->m_action_dim) = c->action_to_node.head(problem->m_action_dim);
+				// std::cout << "action: " << c->action_to_node.block(0,0,problem->m_action_dim,1).array() << std::endl;
+				// std::cout << "child: " << child_distribution.block(count,0,1,problem->m_action_dim).array() << std::endl;
+				// child_distribution.row(count).head(problem->m_action_dim) = c->action_to_node.block(0,0,problem->m_action_dim,1).array();
+				// child_distribution.block(count,0,1,problem->m_action_dim).array() = c->action_to_node.block(0,0,problem->m_action_dim,1).array();
+				for (int ii = 0; ii < problem->m_action_dim; ii++){
+					child_distribution(count,ii) = c->action_to_node(ii,0);
+				}
 				child_distribution(count,problem->m_action_dim) = c->num_visits;
 				count = count + 1;
 			}

@@ -25,6 +25,7 @@ class PUCT_V1 : public Solver {
 			m_value_network_wrapper = value_network_wrapper;
 		}
 
+
 		struct Node { 
 			Eigen::Matrix<float,-1,1> state;
 			Node* parent = nullptr; 
@@ -80,7 +81,7 @@ class PUCT_V1 : public Solver {
 					int robot_turn = (d + turn) % problem->m_num_robots;
 					Node* child_node_ptr;
 					bool valid_expansion = true;
-					Eigen::Matrix<float,-1,1> action; 
+					Eigen::Matrix<float,-1,1> action(problem->m_action_dim,1); 
 					if (is_expanded(curr_node_ptr)){
 						child_node_ptr = best_child(curr_node_ptr,robot_turn);
 						action = child_node_ptr->action_to_node;
@@ -89,7 +90,6 @@ class PUCT_V1 : public Solver {
 						auto next_state = problem->step(curr_node_ptr->state,action,problem->m_timestep);
 						valid_expansion = problem->is_valid(next_state);
 						if (valid_expansion) {
-						// if (problem->is_valid(next_state)) {
 							child_node_ptr = make_child(problem, curr_node_ptr, next_state, action);
 						} else { 
 							max_depth = d;
@@ -215,79 +215,15 @@ class PUCT_V1 : public Solver {
 			return &child_node;
 		}
 
-		Node* expand_node(Problem * problem,Node* parent_node_ptr){
-			m_nodes.resize(m_nodes.size() + 1);
-
-			// Eigen::Matrix<float,-1,1> action;
-			// Eigen::Matrix<float,-1,1> next_state;
-			// bool valid;
-			// do {
-			// 	auto action = problem->sample_action(g_gen);
-			// 	if (problem->dist(g_gen) < m_beta_policy){
-			// 		int action_dim_per_robot = int(problem->m_action_dim / problem->m_num_robots);
-			// 		for (int i = 0; i < problem->m_num_robots; i++) {
-			// 			if (m_policy_network_wrappers[i].valid){
-			// 				auto encoding = problem->policy_encoding(parent_node_ptr->state,i); 
-			// 				action.block(action_dim_per_robot*i,0,action_dim_per_robot,1) = 
-			// 					m_policy_network_wrappers[i].policy_network->eval(problem, encoding, g_gen);
-			// 			}
-			// 		} 
-			// 	} 
-			// 	auto next_state = problem->step(parent_node_ptr->state,action,problem->m_timestep);
-			// 	bool valid = problem->is_valid(next_state);
-			// } while (!valid);
-
-			
-			auto action = problem->sample_action(g_gen);
-			if (problem->dist(g_gen) < m_beta_policy){
-				for (int ii = 0; ii < problem->m_num_robots; ii++) {
-					if (m_policy_network_wrappers[ii].valid){
-						auto encoding = problem->policy_encoding(parent_node_ptr->state,ii); 
-						action.block(problem->m_action_idxs[ii][0],0,problem->m_action_idxs[ii].size(),1) = 
-							m_policy_network_wrappers[ii].policy_network->eval(problem, encoding, ii, g_gen);
-					}
-				} 
-			} 
-
-			auto next_state = problem->step(parent_node_ptr->state,action,problem->m_timestep);
-			auto& child_node = m_nodes[m_nodes.size()-1];
-			child_node.parent = parent_node_ptr;
-			child_node.resize_node(problem);
-			child_node.action_to_node = action;
-			child_node.state = next_state;
-			parent_node_ptr->children.push_back(&child_node);
-			return &child_node;
-		}
-
 
 		Eigen::Matrix<float,-1,1> default_policy(Problem * problem,Node* node_ptr){
 			Eigen::Matrix<float,-1,1> value = Eigen::Matrix<float,-1,1>::Zero(problem->m_num_robots,1);
 			Eigen::Matrix<float,-1,1> curr_state = node_ptr->state; 
 			int depth = 0; 
-			// int depth = node_ptr->calc_depth(); 
-
 			if (m_value_network_wrapper.valid && problem->dist(g_gen) < m_beta_value) {
 				auto encoding = problem->value_encoding(curr_state);
 				value = m_value_network_wrapper.value_network->eval(problem,encoding,g_gen);
 			} else { 
-				// while ( (!problem->is_terminal(curr_state)) && (depth < m_search_depth)) {
-				// 	auto action = problem->sample_action(g_gen);
-				// 	auto next_state = problem->step(curr_state,action,problem->m_timestep);
-				// 	float discount = powf(problem->m_gamma,depth); 
-				// 	value += discount * problem->normalized_reward(curr_state,action);
-				// 	curr_state = next_state;
-				// 	depth += 1;
-				// }
-
-				// do {
-				// 	auto action = problem->sample_action(g_gen);
-				// 	auto next_state = problem->step(curr_state,action,problem->m_timestep);
-				// 	value += powf(problem->m_gamma,depth) * problem->normalized_reward(curr_state,action);
-				// 	curr_state = next_state;
-				// 	depth += 1;
-				// } while (! problem->is_terminal(curr_state)) ;
-				// } while (! problem->is_terminal(curr_state) && depth < m_search_depth) ;
-
 				while (true) {
 					auto action = problem->sample_action(g_gen);
 					auto next_state = problem->step(curr_state,action,problem->m_timestep);
@@ -299,7 +235,6 @@ class PUCT_V1 : public Solver {
 					depth += 1;
 				}
 			}
-
 			return value; 
 		}
 
