@@ -91,7 +91,8 @@ class PUCT_V2 : public Solver {
 					} else {
 						action = select_action(problem,curr_node_ptr); 						
 						auto next_state = problem->step(curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action(problem->m_action_dim,0));
-						valid_expansion = problem->is_valid(next_state);
+						// valid_expansion = problem->is_valid(next_state);
+						valid_expansion = is_line_valid(problem,curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action(problem->m_action_dim,0));
 						if (valid_expansion) {
 							child_node_ptr = make_child(problem, curr_node_ptr, next_state, action);
 						} else { 
@@ -286,6 +287,22 @@ class PUCT_V2 : public Solver {
 			return child_distribution;
 		}
 
+
+		bool is_line_valid(Problem * problem, Eigen::Matrix<float,-1,1> curr_state, Eigen::Matrix<float,-1,1> action, float duration) {
+			// problem,curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action(problem->m_action_dim,0)) {
+			float curr_time = 0;
+			bool valid = true; 
+			do {
+				if (!problem->is_valid(curr_state)) {
+					valid = false;
+					break;
+				} else {
+					curr_state = problem->step(curr_state,action,problem->m_timestep); 
+					curr_time += problem->m_timestep;
+				}
+			} while (curr_time <= duration);
+			return valid;
+		}
 
 	private: 
 		int m_num_simulations;

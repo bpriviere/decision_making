@@ -122,8 +122,10 @@ public:
 
     float sample_timestep(std::default_random_engine & gen, float dt) 
     {
-        float alpha = dist(gen) - 1.0f; // (-1,0)
-        float timestep = dt * pow(10.0f,alpha);
+        // float alpha = 2.0f * dist(gen) - 1.0f; // (-1,1)
+        float alpha = 0.5f * dist(gen); // (0,0.5)
+
+        float timestep = dt * pow(10.0f,alpha); 
         return timestep; 
     }
 
