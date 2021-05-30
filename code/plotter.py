@@ -292,11 +292,16 @@ def plot_regression_test(results,render_on=True):
 
 	# render each sim result 
 	if render_on:
-		for (param, sim_result) in results:
-			fig,ax = sim_result["instance"]["problem"].render(states=sim_result["states"])
-			fig.suptitle(param.key)
+		for sim_result in results:
+		# for (param, sim_result) in results:
+			fig,ax = sim_result["problem"].render(states=sim_result["states"])
+			fig.suptitle(sim_result["param"]["key"])
 	else:
-		param, sim_result = results[0]
+		sim_result = results[0]
+
+	from param import Param 
+	param = Param() 
+	param.from_dict(sim_result["param"])
 
 	# for each problem, 
 	# 	- plot duration per timestep across number of simulations for each solver 
@@ -311,7 +316,9 @@ def plot_regression_test(results,render_on=True):
 		len(param.number_simulations_lst),
 		len(param.solver_name_lst),
 		param.num_trial))
-	for (param,sim_result) in results: 
+	for sim_result in results: 
+		param = Param() 
+		param.from_dict(sim_result["param"])
 		i_pn = param.problem_name_lst.index(param.problem_name)
 		i_ns = param.number_simulations_lst.index(param.number_simulations)
 		i_sn = param.solver_name_lst.index(param.solver_name)

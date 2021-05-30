@@ -3,6 +3,7 @@
 import numpy as np 
 import multiprocessing as mp
 import itertools
+import glob 
 from queue import Queue
 
 # custom 
@@ -11,7 +12,7 @@ from problems.problem import get_problem
 from solvers.solver import get_solver 
 from learning.oracles import get_oracles 
 import plotter 
-from util import init_tqdm, update_tqdm
+from util import init_tqdm, update_tqdm, write_sim_result, format_dir, load_sim_result
 
 
 def make_instance(param):
@@ -43,6 +44,7 @@ def make_instance(param):
 	instance["problem"] = problem 
 	instance["solver"] = solver 
 	instance["initial_state"] = problem.initialize()
+	instance["param"] = param.to_dict()
 
 	# instance["initial_state"] = np.array([
 	# 	# [-1],[3], # state for single robot, 2d single integrator problems
@@ -104,11 +106,14 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 	if verbose: problem.render(states=np.array(states))
 
 	sim_result = dict()
-	sim_result["instance"] = instance
+	sim_result["rank"] = rank
+	# sim_result["instance"] = instance
 	sim_result["times"] = times 
 	sim_result["states"] = np.array(states)
 	sim_result["actions"] = np.array(actions)
 	sim_result["rewards"] = np.array(rewards)
+	sim_result["param"] = instance["param"]
+	sim_result["problem"] = instance["problem"]
 
 	return sim_result
 
@@ -128,39 +133,52 @@ if __name__ == '__main__':
 
 	param = Param()
 
-	print('running sim...')
-	if param.parallel_on:
-		pool = mp.Pool(mp.cpu_count() - 1)
-		params = [Param() for _ in range(param.num_trials)]
-		seeds = [np.random.randint(10000) for _ in range(param.num_trials)]
-		args = list(zip(
-			itertools.count(), 
-			itertools.repeat(mp.Manager().Queue()),
-			itertools.repeat(param.num_trials),
-			params,seeds))
-		sim_results = pool.imap_unordered(_worker_run_instance, args)
-		# sim_results = pool.map(_worker, args)
-		pool.close()
-		pool.join()
-	else:
-		instance = make_instance(param)
-		sim_results = [run_instance(0,Queue(),len(instance["problem"].times),instance,verbose=True)]
+	run_on = True
+	if run_on:
+		print('running sim...')
+
+		# todo: clean directory 
+		format_dir(clean_dirnames=["results"])
+
+		if param.parallel_on:
+			pool = mp.Pool(mp.cpu_count() - 1)
+			params = [Param() for _ in range(param.num_trials)]
+			seeds = [np.random.randint(10000) for _ in range(param.num_trials)]
+			args = list(zip(
+				itertools.count(), 
+				itertools.repeat(mp.Manager().Queue()),
+				itertools.repeat(param.num_trials),
+				params,seeds))
+			sim_results = pool.imap_unordered(_worker_run_instance, args)
+			# sim_results = pool.map(_worker, args)
+			pool.close()
+			pool.join()
+		else:
+			instance = make_instance(param)
+			sim_results = [run_instance(0,Queue(),len(instance["problem"].times),instance,verbose=True)]
+
+		# write sim results
+		for sim_result in sim_results:
+			write_sim_result(sim_result,"../current/results/sim_result_{}".format(sim_result["rank"]))
+
+	# read sim_results 
+	sim_results = [] 
+	for fn in glob.glob("../current/results/sim_result**"):
+		sim_result = load_sim_result(fn)
+		sim_results.append(sim_result)
 
 	if param.movie_on: 
 		print('making movie...')
 		plotter.make_movie(sim_results[0],sim_result[0]["instance"],"../current/plots/vid.mp4")
 		plotter.open_figs("../current/plots/vid.mp4")	
 
-	# save/load results
-	# todo
-
 	# plotting 
 	print('plotting results...')
 	for sim_result in sim_results:
 		# plotter.plot_sim_result(sim_result)
-		sim_result["instance"]["problem"].render(states=sim_result["states"])
-		if param.pretty_plot_on and hasattr(sim_result["instance"]["problem"], 'pretty_plot') :
-			sim_result["instance"]["problem"].pretty_plot(sim_result)
+		sim_result["problem"].render(states=sim_result["states"])
+		if param.pretty_plot_on and hasattr(sim_result["problem"], 'pretty_plot') :
+			sim_result["problem"].pretty_plot(sim_result)
 
 	plotter.save_figs("../current/plots/run.pdf")
 	plotter.open_figs("../current/plots/run.pdf")

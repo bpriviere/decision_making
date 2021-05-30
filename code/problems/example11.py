@@ -229,9 +229,17 @@ class Example11(Problem):
 			states.append(self.initialize())
 		states = np.array(states).squeeze(axis=2)
 
+		from learning.oracles import get_oracles 
+		policy_oracle,value_oracle = get_oracles(sim_result["problem"],
+			value_oracle_name = sim_result["param"]["value_oracle_name"],
+			value_oracle_path = sim_result["param"]["value_oracle_path"],
+			policy_oracle_name = sim_result["param"]["policy_oracle_name"],
+			policy_oracle_paths = sim_result["param"]["policy_oracle_paths"]
+			)
+
 		# plot value func contours
-		if sim_result["instance"]["value_oracle"] is not None:
-			value_oracle = sim_result["instance"]["value_oracle"]
+		if sim_result["param"]["value_oracle_path"] is not None:
+			# value_oracle = sim_result["instance"]["value_oracle"]
 			values = []
 			for state in states: 
 				value = value_oracle.eval(self,state)
@@ -242,8 +250,8 @@ class Example11(Problem):
 			fig.colorbar(pcm,ax=ax)	
 
 		# plot policy function 
-		if not all([a is None for a in sim_result["instance"]["policy_oracle"]]):
-			policy_oracle = sim_result["instance"]["policy_oracle"]
+		if not all([a is None for a in sim_result["param"]["policy_oracle_paths"]]):
+			# policy_oracle = sim_result["param"]["policy_oracle_paths"]
 			actions = []
 			robot = 0 
 			for state in states: 

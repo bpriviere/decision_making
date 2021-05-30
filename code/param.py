@@ -47,3 +47,7 @@ class Param:
 
 	def to_dict(self):
 		return self.__dict__
+
+	def from_dict(self,some_dict):
+		for key,value in some_dict.items():
+			setattr(self,key,value)
