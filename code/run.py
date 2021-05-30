@@ -83,7 +83,8 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 		if verbose and not tqdm_on: print('\t\t t = {}/{}'.format(step,len(problem.times)))
 		
 		action = solver.policy(problem,curr_state)
-		reward = problem.reward(curr_state,action)
+		# reward = problem.reward(curr_state,action)
+		reward = problem.normalized_reward(curr_state,action)
 		next_state = problem.step(curr_state,action,problem.dt)
 		done = problem.is_terminal(next_state)
 
@@ -156,7 +157,7 @@ if __name__ == '__main__':
 	# plotting 
 	print('plotting results...')
 	for sim_result in sim_results:
-		plotter.plot_sim_result(sim_result)
+		# plotter.plot_sim_result(sim_result)
 		sim_result["instance"]["problem"].render(states=sim_result["states"])
 		if param.pretty_plot_on and hasattr(sim_result["instance"]["problem"], 'pretty_plot') :
 			sim_result["instance"]["problem"].pretty_plot(sim_result)
