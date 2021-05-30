@@ -18,7 +18,7 @@ class Example11(Problem):
 
 		self.t0 = 0
 		self.tf = 100
-		self.dt = 0.5
+		self.dt = 0.25
 		self.r_max = 10
 		self.r_min = -self.r_max
 		self.num_robots = 1
@@ -53,7 +53,7 @@ class Example11(Problem):
 			[-5,5]
 		])
 
-		l_slit = 0.5
+		l_slit = 1.0
 		self.obstacles = [
 			np.array([
 				[1,2],
