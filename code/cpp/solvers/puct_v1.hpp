@@ -249,7 +249,8 @@ class PUCT_V1 : public Solver {
 
 
 		Eigen::MatrixXf export_tree(Problem * problem){
-			Eigen::MatrixXf tree(m_nodes.size(), problem->m_state_dim + 1);
+			// Eigen::MatrixXf tree(m_nodes.size(), problem->m_state_dim + 1);
+			Eigen::MatrixXf tree(m_nodes.size(), problem->m_state_dim + problem->m_num_robots + 1);
 			for (int ii = 0; ii < m_nodes.size(); ++ii) {
 				tree.row(ii).head(problem->m_state_dim) = m_nodes[ii].state.array();
 				
@@ -258,6 +259,9 @@ class PUCT_V1 : public Solver {
 					parentIdx = m_nodes[ii].parent - &m_nodes[0];
 				}
 				tree(ii,problem->m_state_dim) = parentIdx;
+
+				tree.row(ii).tail(problem->m_num_robots) = m_nodes[ii].total_value.array();
+
 			}
 			return tree; 
 		}

@@ -127,7 +127,8 @@ def plot_loss(losses):
 
 
 def plot_tree_state(problem,tree_state,zoom_on=True):
-	# tree state : nd array in [num_nodes x state_dim + 1]
+	# tree state : nd array in [num_nodes x state_dim + 1 + num_robots]
+	# 								- state, parent_idx, value
 
 
 	position_idxs = problem.position_idx
@@ -154,22 +155,26 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 
 		segments = [[] for _ in range(problem.num_robots)]
 		nodes = [[] for _ in range(problem.num_robots)]
+		values = [[] for _ in range(problem.num_robots)]
+		value_idxs = 1 + problem.state_dim + np.arange(problem.num_robots)
 		for i_row,row in enumerate(tree_state):
-			parentIdx = int(row[-1])
+			parentIdx = int(row[problem.state_dim])
 
 			for robot in range(problem.num_robots):
 				robot_state_idxs = problem.state_idxs[robot]
 				robot_position_idx = robot_state_idxs[position_idxs]
 				nodes[robot].append(row[robot_position_idx])
+				values[robot].append(row[value_idxs[robot]])
 				if parentIdx >= 0:
 					segments[robot].append([row[robot_position_idx], tree_state[parentIdx][robot_position_idx]])
 
+		values = np.array(values)
 		# nodes = np.array(nodes[robot])
 		for robot in range(problem.num_robots):
 			ln_coll = matplotlib.collections.LineCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
-			ax.scatter(nodes[robot][0][0],nodes[robot][0][1])
-
+			ax.scatter(nodes[robot][0][0],nodes[robot][0][1],s=5)
+			ax.scatter(np.array(nodes[robot][:])[:,0],np.array(nodes[robot][:])[:,1],s=0.3,c=values[robot,:])
 
 		if not zoom_on: 
 			lims = problem.state_lims

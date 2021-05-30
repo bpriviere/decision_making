@@ -185,7 +185,7 @@ class PUCT_V1(Solver):
 		to_add = [(root_node,-1)]
 		while len(to_add) > 0:
 			curr_node,parent_idx = to_add.pop(0)
-			tree.append(np.append(curr_node.state,parent_idx))
+			tree.append(np.append(curr_node.state,parent_idx,curr_node.total_value))
 			parent_idx = len(tree) - 1
 			for child in curr_node.children: 
 				to_add.append((child,parent_idx))
