@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     # complete
     if mode == 0:
-        number_simulations_lst = [100,200,500,1000]
+        number_simulations_lst = [100,500,1000,5000,10000]
         # problem_name_lst = ["example1","example2",["example4"]
         problem_name_lst = ["example11"]
         # solver_name_lst = ["PUCT","C_PUCT"]
