@@ -89,10 +89,14 @@ class PUCT_V2 : public Solver {
 						child_node_ptr = best_child(curr_node_ptr,robot_turn);
 						action = child_node_ptr->action_to_node;
 					} else {
-						action = select_action(problem,curr_node_ptr); 						
-						auto next_state = problem->step(curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action(problem->m_action_dim,0));
+						action = select_action(problem,curr_node_ptr);
+						float action_duration = problem->m_timestep;
+						if (d > 0){
+							action_duration = action(problem->m_action_dim,0);
+						}
+						auto next_state = problem->step(curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action_duration);
 						// valid_expansion = problem->is_valid(next_state);
-						valid_expansion = is_line_valid(problem,curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action(problem->m_action_dim,0));
+						valid_expansion = is_line_valid(problem,curr_node_ptr->state,action.block(0,0,problem->m_action_dim,1),action_duration);
 						if (valid_expansion) {
 							child_node_ptr = make_child(problem, curr_node_ptr, next_state, action);
 						} else { 
