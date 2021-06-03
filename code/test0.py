@@ -53,16 +53,11 @@ if __name__ == '__main__':
 
         # complete
         if mode == 0:
-            # number_simulations_lst = [100,500,1000,5000,10000]
-            number_simulations_lst = [50]
-            # problem_timestep_lst = [0.01, 0.05, 0.1, 0.5, 1.0, 5.0]
-            problem_timestep_lst = [0.1, 0.5] 
-            # problem_name_lst = ["example1","example2",["example4"]
+            number_simulations_lst = [5000]
+            problem_timestep_lst = [0.01, 0.05, 0.1, 0.5, 1.0, 5.0]
             problem_name_lst = ["example11"]
-            # solver_name_lst = ["PUCT","C_PUCT"]
-            # solver_name_lst = ["PUCT_V0","C_PUCT_V0","PUCT_V1","C_PUCT_V1"]
-            solver_name_lst = ["C_PUCT_V1","C_PUCT_V2"] #,"PUCT_V1","C_PUCT_V1"]
-            num_trial = 2
+            solver_name_lst = ["C_PUCT_V1","C_PUCT_V2"] 
+            num_trial = 10
         
         # speed test 
         elif mode == 1:
