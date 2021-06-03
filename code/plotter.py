@@ -174,7 +174,7 @@ def plot_tree_state(problem,tree_state,zoom_on=True):
 			ln_coll = matplotlib.collections.LineCollection(segments[robot], linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
 			ax.scatter(nodes[robot][0][0],nodes[robot][0][1],s=5)
-			ax.scatter(np.array(nodes[robot][:])[:,0],np.array(nodes[robot][:])[:,1],s=0.3,c=values[robot,:])
+			# ax.scatter(np.array(nodes[robot][:])[:,0],np.array(nodes[robot][:])[:,1],s=0.3,c=values[robot,:])
 
 		if not zoom_on: 
 			lims = problem.state_lims
@@ -360,6 +360,78 @@ def plot_regression_test(results,render_on=True):
 				label = solver_name)
 			axs[0,i_pn].fill_between(
 				np.array(param.number_simulations_lst),
+				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1) - np.std(reward_plot_data[i_pn,:,i_sn,:],axis=1),
+				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1) + np.std(reward_plot_data[i_pn,:,i_sn,:],axis=1),
+				color = lns[0].get_color(),
+				alpha = 0.5)
+		axs[0,i_pn].set_xscale('log')
+		axs[0,i_pn].set_title(problem_name)
+		axs[0,i_pn].tick_params(axis='x', rotation=45)
+	axs[0,0].legend(loc='best')
+	axs[0,0].set_ylabel("Total Reward")
+	fig.suptitle("Total Reward Regression Test")
+
+
+def plot_test0(results):
+
+	sim_result = results[0]
+
+	from param import Param 
+	param = Param() 
+	param.from_dict(sim_result["param"])
+
+	# for each problem, 
+	# 	- plot duration per timestep across number of simulations for each solver 
+	# 	- plot total reward ""
+	duration_plot_data = np.zeros((
+		len(param.problem_name_lst),
+		len(param.problem_timestep_lst),
+		len(param.solver_name_lst),
+		param.num_trial))
+	reward_plot_data = np.zeros((
+		len(param.problem_name_lst),
+		len(param.problem_timestep_lst),
+		len(param.solver_name_lst),
+		param.num_trial))
+	for sim_result in results: 
+		param = Param() 
+		param.from_dict(sim_result["param"])
+		i_pn = param.problem_name_lst.index(param.problem_name)
+		i_ns = param.problem_timestep_lst.index(param.timestep)
+		i_sn = param.solver_name_lst.index(param.solver_name)
+		duration_plot_data[i_pn,i_ns,i_sn,param.trial] = sim_result["duration_per_timestep"]
+		reward_plot_data[i_pn,i_ns,i_sn,param.trial] = np.sum(sim_result["rewards"][:,0])
+	
+	fig,axs = plt.subplots(ncols=len(param.problem_name_lst),nrows=1,squeeze=False)
+	for i_pn, problem_name in enumerate(param.problem_name_lst):
+		for i_sn, solver_name in enumerate(param.solver_name_lst):
+			lns = axs[0,i_pn].plot(
+				np.array(param.problem_timestep_lst),
+				np.mean(duration_plot_data[i_pn,:,i_sn,:],axis=1),
+				label = solver_name)
+			axs[0,i_pn].fill_between(
+				np.array(param.problem_timestep_lst),
+				np.mean(duration_plot_data[i_pn,:,i_sn,:],axis=1) - np.std(duration_plot_data[i_pn,:,i_sn,:],axis=1),
+				np.mean(duration_plot_data[i_pn,:,i_sn,:],axis=1) + np.std(duration_plot_data[i_pn,:,i_sn,:],axis=1),
+				color = lns[0].get_color(),
+				alpha = 0.5)
+		axs[0,i_pn].set_xscale('log')
+		axs[0,i_pn].set_yscale('log')
+		axs[0,i_pn].set_title(problem_name)
+		axs[0,i_pn].tick_params(axis='x', rotation=45)
+	axs[0,0].legend(loc='best')
+	axs[0,0].set_ylabel("WCT / Timestep")
+	fig.suptitle("Computation Time Regression Test")
+
+	fig,axs = plt.subplots(ncols=len(param.problem_name_lst),nrows=1,squeeze=False)
+	for i_pn, problem_name in enumerate(param.problem_name_lst):
+		for i_sn, solver_name in enumerate(param.solver_name_lst):
+			lns = axs[0,i_pn].plot(
+				np.array(param.problem_timestep_lst),
+				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1),
+				label = solver_name)
+			axs[0,i_pn].fill_between(
+				np.array(param.problem_timestep_lst),
 				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1) - np.std(reward_plot_data[i_pn,:,i_sn,:],axis=1),
 				np.mean(reward_plot_data[i_pn,:,i_sn,:],axis=1) + np.std(reward_plot_data[i_pn,:,i_sn,:],axis=1),
 				color = lns[0].get_color(),
