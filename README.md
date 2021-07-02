@@ -1,4 +1,7 @@
 
+This repository contains code for the following publication, please cite our work if you use this repo:
+
+B. Riviere, W. Hönig, M. Anderson, S-J. Chung. "Neural Tree Expansion for Multi-Robot Planning in Non-Cooperative Environments" in IEEE Robotics and Automation Letters (RA-L) June 2021. 
 
 
 ## Dependencies:
