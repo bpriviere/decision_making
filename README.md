@@ -48,3 +48,15 @@ Train neural networks by modifying parameters in `code/train.py` then, from `~\c
 ```
 python train.py
 ```
+
+## Error Messages
+
+If you get an error message such as: 
+
+```No such file or directory: '/home/ben/projects/decision_making/saved/example9/model_value_l0.pt```
+
+it means that the solver tried to query a neural network oracle that does not exist. You can either disable neural network search or create a new model. 
+
+To disable the neural network search, change `oracles_on` in `param.py` to `oracles_on = False`
+
+To create a model, run `python train.py`. After training, you can query the newly created model (in `../current/models/`) by changing the `dirname` parameter in `param.py` to the corresponding location. 
