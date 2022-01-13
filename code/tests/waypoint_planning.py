@@ -3,10 +3,12 @@
 import numpy as np 
 import scipy.io 
 import sys 
+from queue import Queue
 sys.path.append("../")
 
 from param import Param 
 from run import make_instance, run_instance
+import time as timer
 
 def relative_pos_to_state(pos_i):
 	# assume s2 is at (0,0,0), pos_i = s_2-s_1
@@ -27,7 +29,7 @@ if __name__ == '__main__':
 	# prepare problem/solver 
 	param = Param() 
 	param.problem_name = "example4" # only example4 is supported 
-	param.solver_name = "C_PUCT"
+	param.solver_name = "C_PUCT_V1"
 	instance = make_instance(param)
 	instance["problem"].tf = 5 
 	instance["problem"].times = np.arange(
@@ -36,8 +38,12 @@ if __name__ == '__main__':
 		instance["problem"].dt)
 	instance["initial_state"] = relative_pos_to_state(pos[0,:])
 
-	sim_result = run_instance(instance)
+	start = timer.time()
+	# sim_result = run_instance(instance)
+	sim_result = run_instance(0,Queue(),1, instance, verbose=False,tqdm_on=False)
+	dur = timer.time() - start
 	print('sim_result["states"][:,0:3]',sim_result["states"][:,0:3])
+	print("duration: {}s".format(dur))
 
 	
 
