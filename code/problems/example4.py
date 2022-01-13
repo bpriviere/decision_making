@@ -19,7 +19,7 @@ class Example4(Problem):
 		self.tf = 10
 		self.dt = 0.1
 		self.gamma = 1.0
-		self.desired_distance = 0.5
+		self.desired_distance = 2.0 # 0.5
 		self.mass = 1
 		self.num_robots = 2 
 		self.state_dim = 12
@@ -39,21 +39,38 @@ class Example4(Problem):
 		self.policy_encoding_dim = self.state_dim
 		self.value_encoding_dim = self.state_dim
 
-		self.state_lims = np.array((
+		# x, y, z, vx, vy, vz
+		state_box = np.array((
 			(-2,2), 
-			(-5,5), 
+			(-5,20), 
 			(-2,2), 
 			(-1,1), 
 			(-1,1), 
-			(-1,1), 
-			(-2,2), 
-			(-5,5),
-			(-2,2),
+			(-1,1)
+		)) 
+
+		# x1, y1, z1, vx1, vy1, vz1, x2, y2, z2, vx2, vy2, vz2
+		self.state_lims = np.zeros((self.num_robots*state_dim_per_robot,2))
+		self.state_lims[0:state_dim_per_robot,:] = state_box
+		self.state_lims[state_dim_per_robot:,:] = state_box
+
+		self.init_lims = np.array((
 			(-1,1),
+			(-4,-4), 
 			(-1,1),
+			( 0,0),
+			# ( 0,0), #( 0.5,0.5),
+			( 0.5,0.5),
+			( 0,0),
 			(-1,1),
+			( 0,0),
+			(-1,1),
+			( 0,0),
+			( 0.5,0.5),
+			( 0,0),
 			))
 
+		# ax1, ay1, az1, ax2, ay2, az2
 		self.action_lims = 0.75*np.array((
 			(-1,1),
 			(-1,1),
@@ -63,20 +80,6 @@ class Example4(Problem):
 			(-1,1),
 			))
 
-		self.init_lims = np.array((
-			(-1,1),
-			(-4,-4), 
-			(-1,1),
-			( 0,0),
-			( 0,0), #( 0.5,0.5),
-			( 0,0),
-			(-1,1),
-			( 0,0),
-			(-1,1),
-			( 0,0),
-			( 0,0), #( 0.5,0.5),
-			( 0,0),
-			))
 
 		self.Fc = np.array((
 			(0,0,0,1,0,0),
@@ -155,8 +158,28 @@ class Example4(Problem):
 			ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
 
 			for robot in range(self.num_robots):
-				ax.scatter(np.nan,np.nan,np.nan,color=colors[robot],label="Robot {}".format(robot))
+				if robot == 0:
+					label = "Pursuer"
+				else:
+					label = "Evader"
+				ax.scatter([np.nan,np.nan,np.nan],[np.nan,np.nan,np.nan],color=colors[robot],label=label)
+
+			ax.plot(np.nan,np.nan,marker="o",label="Start",color="black")
+			ax.plot(np.nan,np.nan,marker="s",label="End",color="black")
 			ax.legend(loc='best')
+
+			# plot desired distance sphere from pursuer, from: https://matplotlib.org/2.0.0/examples/mplot3d/surface3d_demo2.html
+
+			# Make data
+			sphere_u = np.linspace(0, 2 * np.pi, 100)
+			sphere_v = np.linspace(0, np.pi, 100)
+			u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+			sphere_x = states[-1, 0] + self.desired_distance * np.outer(np.cos(sphere_u), np.sin(sphere_v))
+			sphere_y = states[-1, 1] + self.desired_distance * np.outer(np.sin(sphere_u), np.sin(sphere_v))
+			sphere_z = states[-1, 2] + self.desired_distance * np.outer(np.ones(np.size(sphere_u)), np.cos(sphere_v))
+			# Plot the surface
+			# ax.plot_surface(sphere_x, sphere_y, sphere_z, color='green', alpha=0.5)
+			ax.plot_surface(sphere_x, sphere_y, sphere_z, rstride=1, cstride=1, color='green', alpha=0.5)
 
 		return fig,ax 
 
@@ -172,3 +195,8 @@ class Example4(Problem):
 	def value_encoding(self,state):
 		return state 
 
+	def plot_value_dataset(self, dataset, title):
+		pass
+
+	def plot_policy_dataset(self, dataset, title, robot):
+		pass

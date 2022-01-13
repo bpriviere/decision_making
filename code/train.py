@@ -23,8 +23,13 @@ from run import run_instance
 from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_temp_fn, init_tqdm, update_tqdm
 
 # solver 
+
 num_simulations = 2000
 search_depth = 100
+
+# num_simulations = 200
+# search_depth = 100
+
 C_pw = 2.0
 alpha_pw = 0.5
 C_exp = 1.0
@@ -34,21 +39,26 @@ beta_value = 0.5
 parallel_on = True
 solver_name = "C_PUCT_V1"
 # solver_name = "PUCT_V1"
-problem_name = "example6"
+problem_name = "example4"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
 
 dirname = "../current/models"
 
 # learning 
-L = 40
+L = 10  # num learning iterations
 mode = 1 # 0: weighted sum, 1: best child, 2: subsamples 
-# num_D_pi = 10000
+
 num_D_pi = 2000
-# num_D_pi = 200
 num_pi_eval = 2000
 num_D_v = 10000
 num_v_eval = 5000
+
+# num_D_pi = 200
+# num_pi_eval = 200
+# num_D_v = 100
+# num_v_eval = 500
+
 num_subsamples = 5
 num_self_play_plots = 10 
 learning_rate = 0.001
