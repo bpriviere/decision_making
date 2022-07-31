@@ -78,18 +78,22 @@ class PUCT_V1 : public Solver {
 				int max_depth = m_search_depth;
 				for (int d = 0; d < m_search_depth; d++){
 					int robot_turn = (d + turn) % problem->m_num_robots;
-					Node* child_node_ptr;
+					Node* child_node_ptr = nullptr;
 					if (is_expanded(curr_node_ptr)){
 						child_node_ptr = best_child(curr_node_ptr,robot_turn);
 					} else {
 						child_node_ptr = expand_node(problem,curr_node_ptr); 
 					}
-					path[d] = curr_node_ptr;
-					rewards[d] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
-					
-					curr_node_ptr = child_node_ptr; 
-					if (problem->is_terminal(child_node_ptr->state)){
-						max_depth = d+1;
+					if (child_node_ptr) {
+						path[d] = curr_node_ptr;
+						rewards[d] = problem->normalized_reward(curr_node_ptr->state,child_node_ptr->action_to_node);
+						curr_node_ptr = child_node_ptr; 
+						if (problem->is_terminal(child_node_ptr->state)){
+							max_depth = d+1;
+							break;
+						}
+					} else {
+						max_depth = d;
 						break;
 					}
 				}
@@ -121,16 +125,16 @@ class PUCT_V1 : public Solver {
 		}
 
 
-		Node* select_node(Problem* problem,Node* node_ptr,int robot_turn){
-			while ( !problem->is_terminal(node_ptr->state) ){
-				if ( is_expanded(node_ptr) ){
-					node_ptr = best_child(node_ptr,robot_turn);
-				} else {
-					return node_ptr;
-				}
-			}
-			return node_ptr;
-		}
+		// Node* select_node(Problem* problem,Node* node_ptr,int robot_turn){
+		// 	while ( !problem->is_terminal(node_ptr->state) ){
+		// 		if ( is_expanded(node_ptr) ){
+		// 			node_ptr = best_child(node_ptr,robot_turn);
+		// 		} else {
+		// 			return node_ptr;
+		// 		}
+		// 	}
+		// 	return node_ptr;
+		// }
 
 
 		Node* best_child(Node* node_ptr,int robot_turn){
