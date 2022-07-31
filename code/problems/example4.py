@@ -10,16 +10,30 @@ from util import sample_vector, contains
 import plotter 
 
 # 3d double integrator , multi robot uncooperative target  
+# robot 0 is pursuer 
+# robot 1 is evader
 class Example4(Problem):
 
 	def __init__(self): 
 		super(Example4,self).__init__()
 
+		# old
+		# self.t0 = 0
+		# self.tf = 10
+		# self.dt = 0.1
+		# self.gamma = 1.0
+		# # self.desired_distance = 2.0 # 0.5
+		# self.desired_distance = 0.5 # 0.5
+
+		# new
 		self.t0 = 0
-		self.tf = 10
-		self.dt = 0.1
+		self.tf = 100
+		self.dt = 1.0
 		self.gamma = 1.0
-		self.desired_distance = 2.0 # 0.5
+		# self.desired_distance = 2.0 # 0.5
+		self.desired_distance = 10.0 # 0.5
+		self.normalized_desired_distance = 0.10
+
 		self.mass = 1
 		self.num_robots = 2 
 		self.state_dim = 12
@@ -41,12 +55,20 @@ class Example4(Problem):
 
 		# x, y, z, vx, vy, vz
 		state_box = np.array((
-			(-2,2), 
-			(-5,20), 
-			(-2,2), 
-			(-1,1), 
-			(-1,1), 
-			(-1,1)
+			# old 
+			# (-2,2), 
+			# (-5,20), 
+			# (-2,2), 
+			# (-1,1), 
+			# (-1,1), 
+			# (-1,1)
+			# new 
+			(-150,150), 
+			(-150,150), 
+			(-150,150), 
+			(-15,15), 
+			(-15,15), 
+			(-15,15),
 		)) 
 
 		# x1, y1, z1, vx1, vy1, vz1, x2, y2, z2, vx2, vy2, vz2
@@ -55,29 +77,93 @@ class Example4(Problem):
 		self.state_lims[state_dim_per_robot:,:] = state_box
 
 		self.init_lims = np.array((
-			(-1,1),
-			(-4,-4), 
-			(-1,1),
-			( 0,0),
-			# ( 0,0), #( 0.5,0.5),
-			( 0.5,0.5),
-			( 0,0),
-			(-1,1),
-			( 0,0),
-			(-1,1),
-			( 0,0),
-			( 0.5,0.5),
-			( 0,0),
+			# old
+			# (-1,1),
+			# # (-4,-4), 
+			# (-4,-1), 
+			# (-1,1),
+			# ( 0,0),
+			# # ( 0,0), #( 0.5,0.5),
+			# # ( 0.5,0.5),
+			# ( 0,0),
+			# ( 0,0),
+			# (-1,1),
+			# ( 0,0),
+			# (-1,1),
+			# ( 0,0),
+			# # ( 0.5,0.5),
+			# ( 0.0,0.0),
+			# ( 0,0),
+			# new
+			(-150,150), 
+			(-150,150), 
+			(-150,150), 
+			(-15,15), 
+			(-15,15), 
+			(-15,15),
+			(-150,150), 
+			(-150,150), 
+			(-150,150), 
+			(-15,15), 
+			(-15,15), 
+			(-15,15),
+			# test
+			# (-20,20), # px_p
+			# (-20,20), # py_p
+			# (-20,20), # pz_p
+			# (-5,5), # vx_p
+			# (-5,5), # vy_p
+			# (-5,5), # vz_p
+			# (-20,20), # px_e
+			# (-20,20), # py_e
+			# (-20,20), # pz_e
+			# (-5,5), # vx_e
+			# (-5,5), # vy_e
+			# (-5,5), # vz_e
+			# 
+			# (-5,5), # px_p
+			# (-5,5), # py_p
+			# (-5,5), # pz_p
+			# (-5,5), # vx_p
+			# (-5,5), # vy_p
+			# (-5,5), # vz_p
+			# ( 100,110), # px_e
+			# (-5,5), # py_e
+			# ( 2.5,5), # pz_e
+			# (-5,5), # vx_e
+			# (-5,5), # vy_e
+			# (-5,5), # vz_e
+			# full 
+			# (-100,100), 
+			# (-100,100), 
+			# (-100,100), 
+			# (-5,5), 
+			# (-5,5), 
+			# (-5,5),
+			# (-100,100), 
+			# (-100,100), 
+			# (-100,100), 
+			# (-5,5), 
+			# (-5,5), 
+			# (-5,5),
 			))
 
 		# ax1, ay1, az1, ax2, ay2, az2
-		self.action_lims = 0.75*np.array((
-			(-1,1),
-			(-1,1),
-			(-1,1),
-			(-1,1),
-			(-1,1),
-			(-1,1),
+		self.action_lims = np.array((
+			# old
+			# (-1,1),
+			# (-1,1),
+			# (-1,1),
+			# (-1,1),
+			# (-1,1),
+			# (-1,1),
+			# new 
+			(-2,2), # ax_p
+			(-2,2), # ay_p
+			(-2,2), # az_p
+			(-2,2), # ax_e
+			(-2,2), # ay_e
+			(-2,2), # az_e
 			))
 
 
@@ -106,18 +192,39 @@ class Example4(Problem):
 		s_1 = s[self.state_idxs[0]]
 		s_2 = s[self.state_idxs[1]]
 		a_1 = a[self.action_idxs[0]]
-		r = -1 * (
-			np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2) - self.desired_distance) + \
-			a_1.T @ self.Ru @ a_1).squeeze()
-		reward = np.array([[r],[-r]])
+
+		# old 
+		# r = -1 * (
+		# 	np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2) - self.desired_distance) + \
+		# 	a_1.T @ self.Ru @ a_1).squeeze()
+
+		# new
+		Q = np.zeros((6,6))
+		for i in range(6):
+			Q[i,i] = 1 / (self.state_lims[i,1] - self.state_lims[i,0]) ** 2.0
+
+		x = (s_1 - s_2).T @ Q @ (s_1 - s_2)
+		x = x / 6
+
+		reward = np.zeros((2,1))
+		reward[0,0] = 1 - x 
+		reward[1,0] = x
+
 		return reward
 
 	def normalized_reward(self,s,a): 
 		reward = self.reward(s,a)
-		reward = np.clip(reward,self.r_min,self.r_max)
-		reward = (reward - self.r_min) / (self.r_max - self.r_min)
-		reward = np.array([[reward[0,0]],[1-reward[0,0]]])
+		# print("reward",reward)
 		return reward
+
+		# reward = np.clip(reward,self.r_min,self.r_max)
+		# reward = (reward - self.r_min) / (self.r_max - self.r_min)
+		# reward = np.array([[reward[0,0]],[1-reward[0,0]]])
+		# normalized_reward = np.zeros((2,1))
+		# normalized_reward[0,0] = np.exp(-1 * reward[0,0])
+		# normalized_reward[1,0] = np.exp(-1 * reward[1,0])
+		# print("normalized_reward",normalized_reward)
+		# return reward
 		
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
@@ -140,9 +247,12 @@ class Example4(Problem):
 			for robot in range(self.num_robots):
 				robot_state_idxs = self.state_idxs[robot] 
 
-				ax.plot(states[:,robot_state_idxs[0]].squeeze(axis=1), states[:,robot_state_idxs[1]].squeeze(axis=1),states[:,robot_state_idxs[2]].squeeze(axis=1),color=colors[robot])
-				ax.plot(states[0,robot_state_idxs[0]], states[0,robot_state_idxs[1]], states[0,robot_state_idxs[2]], color=colors[robot],marker='o')
-				ax.plot(states[-1,robot_state_idxs[0]], states[-1,robot_state_idxs[1]], states[-1,robot_state_idxs[2]], color=colors[robot],marker='s')
+				ax.plot(states[:,robot_state_idxs[0]].squeeze(axis=1), 
+					states[:,robot_state_idxs[1]].squeeze(axis=1),states[:,robot_state_idxs[2]].squeeze(axis=1),color=colors[robot])
+				ax.plot(states[0,robot_state_idxs[0]], 
+					states[0,robot_state_idxs[1]], states[0,robot_state_idxs[2]], color=colors[robot],marker='o')
+				ax.plot(states[-1,robot_state_idxs[0]], 
+					states[-1,robot_state_idxs[1]], states[-1,robot_state_idxs[2]], color=colors[robot],marker='s')
 				
 				# projections 
 				ax.plot(lims[0,0]*np.ones(states.shape[0]),states[:,robot_state_idxs[1]].squeeze(),states[:,robot_state_idxs[2]].squeeze(),\
@@ -169,17 +279,16 @@ class Example4(Problem):
 			ax.legend(loc='best')
 
 			# plot desired distance sphere from pursuer, from: https://matplotlib.org/2.0.0/examples/mplot3d/surface3d_demo2.html
-
-			# Make data
-			sphere_u = np.linspace(0, 2 * np.pi, 100)
-			sphere_v = np.linspace(0, np.pi, 100)
-			u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-			sphere_x = states[-1, 0] + self.desired_distance * np.outer(np.cos(sphere_u), np.sin(sphere_v))
-			sphere_y = states[-1, 1] + self.desired_distance * np.outer(np.sin(sphere_u), np.sin(sphere_v))
-			sphere_z = states[-1, 2] + self.desired_distance * np.outer(np.ones(np.size(sphere_u)), np.cos(sphere_v))
-			# Plot the surface
-			# ax.plot_surface(sphere_x, sphere_y, sphere_z, color='green', alpha=0.5)
-			ax.plot_surface(sphere_x, sphere_y, sphere_z, rstride=1, cstride=1, color='green', alpha=0.5)
+			# Make data (no longer makes sense)
+			# sphere_u = np.linspace(0, 2 * np.pi, 100)
+			# sphere_v = np.linspace(0, np.pi, 100)
+			# u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+			# sphere_x = states[-1, 0] + self.desired_distance * np.outer(np.cos(sphere_u), np.sin(sphere_v))
+			# sphere_y = states[-1, 1] + self.desired_distance * np.outer(np.sin(sphere_u), np.sin(sphere_v))
+			# sphere_z = states[-1, 2] + self.desired_distance * np.outer(np.ones(np.size(sphere_u)), np.cos(sphere_v))
+			# # Plot the surface
+			# # ax.plot_surface(sphere_x, sphere_y, sphere_z, color='green', alpha=0.5)
+			# ax.plot_surface(sphere_x, sphere_y, sphere_z, rstride=1, cstride=1, color='green', alpha=0.5)
 
 		return fig,ax 
 
