@@ -66,10 +66,18 @@ class Example4 : public Problem {
 
             m_I.setIdentity();
 
-            m_Q.setZero(); 
-            m_Q(0,0) = 1;
-            m_Q(1,1) = 1; 
-            m_Q(2,2) = 1; 
+            // m_Q.setZero(); 
+            // m_Q(0,0) = 1;
+            // m_Q(1,1) = 1; 
+            // m_Q(2,2) = 1; 
+
+            m_Q.setZero();
+            m_Q(0,0) = 1.0 / pow(m_state_lims(0,1) - m_state_lims(0,0), 2.0);
+            m_Q(1,1) = 1.0 / pow(m_state_lims(1,1) - m_state_lims(1,0), 2.0);
+            m_Q(2,2) = 1.0 / pow(m_state_lims(2,1) - m_state_lims(2,0), 2.0);
+            m_Q(3,3) = 1.0 / pow(m_state_lims(3,1) - m_state_lims(3,0), 2.0);
+            m_Q(4,4) = 1.0 / pow(m_state_lims(4,1) - m_state_lims(4,0), 2.0);
+            m_Q(5,5) = 1.0 / pow(m_state_lims(5,1) - m_state_lims(5,0), 2.0);
 
             m_R.setIdentity();
             m_R = m_R * m_state_control_weight;
@@ -95,6 +103,19 @@ class Example4 : public Problem {
                     Fd * state.block(m_state_idxs[ii][0],0,m_state_idxs[ii].size(),1) + 
                     Bd * action.block(m_action_idxs[ii][0],0,m_action_idxs[ii].size(),1);
             }   
+            
+            // // todo: artificial velocity bound 
+            // next_state(3,0) = std::max(std::min(next_state(3,0), m_state_lims(3,1)), m_state_lims(3,0));
+            // next_state(4,0) = std::max(std::min(next_state(4,0), m_state_lims(4,1)), m_state_lims(4,0));
+            // next_state(5,0) = std::max(std::min(next_state(5,0), m_state_lims(5,1)), m_state_lims(5,0));
+            // next_state(9,0) = std::max(std::min(next_state(9,0), m_state_lims(9,1)), m_state_lims(9,0));
+            // next_state(10,0) = std::max(std::min(next_state(10,0), m_state_lims(10,1)), m_state_lims(10,0));
+            // next_state(11,0) = std::max(std::min(next_state(11,0), m_state_lims(11,1)), m_state_lims(11,0));
+
+
+            // std::cout << "next_state " << next_state << std::endl;
+
+
             return next_state;
         }
 
@@ -103,13 +124,44 @@ class Example4 : public Problem {
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
         { 
+            // // old
+            // Eigen::Matrix<float,-1,1> r(m_num_robots,1);
+            // Eigen::Matrix<float,-1,1> s1 = state.block(m_state_idxs[0][0],0,m_state_idxs[0].size(),1);
+            // Eigen::Matrix<float,-1,1> s2 = state.block(m_state_idxs[1][0],0,m_state_idxs[1].size(),1);
+            // Eigen::Matrix<float,-1,1> a1 = action.block(m_action_idxs[0][0],0,m_action_idxs[0].size(),1);
+
+            // r(0) = -1 * (abs((s1-s2).transpose() * m_Q * (s1-s2) - m_desired_distance) + a1.transpose() * m_R * a1);
+            // r(1) = -1 * r(0); 
+            
+            // std::cout << "reward fnc" << std::endl;
+
+
+            // // new
             Eigen::Matrix<float,-1,1> r(m_num_robots,1);
             Eigen::Matrix<float,-1,1> s1 = state.block(m_state_idxs[0][0],0,m_state_idxs[0].size(),1);
             Eigen::Matrix<float,-1,1> s2 = state.block(m_state_idxs[1][0],0,m_state_idxs[1].size(),1);
-            Eigen::Matrix<float,-1,1> a1 = action.block(m_action_idxs[0][0],0,m_action_idxs[0].size(),1);
 
-            r(0) = -1 * (abs((s1-s2).transpose() * m_Q * (s1-s2) - m_desired_distance) + a1.transpose() * m_R * a1);
-            r(1) = -1 * r(0); 
+            // std::cout << "s1 " << s1 << std::endl;
+            // std::cout << "s2 " << s2 << std::endl;
+            
+            // calc error 
+            float x = (s1 - s2).transpose() * m_Q * (s1 - s2); // x in [0,1]
+
+            x = x / 6.0;
+
+            // std::cout << "x " << x << std::endl;
+
+            // pursuer gets points if x is small
+            r(0,0) = 1.0 - x;
+            // evader gets points if x is large
+            r(1,0) = x;
+
+            // make sure we are within 0,1 range
+            r(0,0) = std::max(std::min(r(0,0), 1.0f), 0.0f);
+            r(1,0) = std::max(std::min(r(1,0), 1.0f), 0.0f);
+
+            // std::cout << "r " << r << std::endl;
+            
             return r;
         }
 
@@ -118,11 +170,19 @@ class Example4 : public Problem {
             Eigen::Matrix<float,-1,1> state,
             Eigen::Matrix<float,-1,1> action) override
         {
+            // // old
+            // Eigen::Matrix<float,-1,1> r = Eigen::Matrix<float,-1,1>::Zero(m_num_robots,1);
+            // r = reward(state,action);
+            // r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
+            // r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
+            // r(1) = 1 - r(0);
+
+            // new
             Eigen::Matrix<float,-1,1> r = Eigen::Matrix<float,-1,1>::Zero(m_num_robots,1);
-            r = reward(state,action);
-            r = r.cwiseMin(m_r_max).cwiseMax(m_r_min);
-            r.array() = (r.array() - m_r_min) / (m_r_max - m_r_min);
-            r(1) = 1 - r(0);
+            r = reward(state, action);
+
+            // std::cout << "normalized_reward " << r << std::endl;
+
             return r;
         }
 
