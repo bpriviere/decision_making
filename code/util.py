@@ -39,6 +39,12 @@ def write_dataset(dataset,fn):
 	# 	pickle.dump(dataset, h)
 	np.save(fn,dataset)
 
+def read_dataset(fn):
+	# with open(fn, 'xb') as h:
+	# 	pickle.dump(dataset, h)
+	dataset = np.load(fn)
+	return dataset
+
 def get_dataset_fn(oracle_name,l,robot=0):
 	# return "../current/data/{}_l{}_i{}.pickle".format(oracle,l,robot)
 	return "../current/data/{}_l{}_i{}.npy".format(oracle_name,l,robot)
