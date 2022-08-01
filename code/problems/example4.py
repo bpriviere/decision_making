@@ -27,7 +27,8 @@ class Example4(Problem):
 
 		# new
 		self.t0 = 0
-		self.tf = 50
+		# self.tf = 25
+		self.tf = 200
 		# self.tf = 3
 		# self.dt = 1.0
 		self.dt = 0.5
@@ -66,21 +67,20 @@ class Example4(Problem):
 			# (-1,1), 
 			# (-1,1), 
 			# (-1,1)
-			# # new 
-			# (-150,150), 
-			# (-150,150), 
-			# (-150,150), 
-			# (-15,15), 
-			# (-15,15), 
-			# (-15,15),
-			# new 
-			(-500,500), 
-			(-500,500), 
+			# # new eval
+			(-1000,1000), 
+			(-1000,1000), 
+			(-1000,1000), 
+			(-15,15), 
+			(-15,15), 
+			(-15,15),
+			# # # new training
 			# (-500,500), 
-			(-150,150), 
-			(-15,15), 
-			(-15,15), 
-			(-15,15), 
+			# (-500,500), 
+			# (-150,150), 
+			# (-15,15), 
+			# (-15,15), 
+			# (-15,15), 
 		)) 
 
 		# x1, y1, z1, vx1, vy1, vz1, x2, y2, z2, vx2, vy2, vz2
@@ -119,7 +119,7 @@ class Example4(Problem):
 			(-15,15), 
 			(-15,15), 
 			(-15,15),
-			# test
+			# # test
 			# (-20,20), # px_p
 			# (-20,20), # py_p
 			# (-20,20), # pz_p
@@ -132,32 +132,6 @@ class Example4(Problem):
 			# (-5,5), # vx_e
 			# (-5,5), # vy_e
 			# (-5,5), # vz_e
-			# 
-			# (-5,5), # px_p
-			# (-5,5), # py_p
-			# (-5,5), # pz_p
-			# (-5,5), # vx_p
-			# (-5,5), # vy_p
-			# (-5,5), # vz_p
-			# ( 100,110), # px_e
-			# (-5,5), # py_e
-			# ( 2.5,5), # pz_e
-			# (-5,5), # vx_e
-			# (-5,5), # vy_e
-			# (-5,5), # vz_e
-			# full 
-			# (-100,100), 
-			# (-100,100), 
-			# (-100,100), 
-			# (-5,5), 
-			# (-5,5), 
-			# (-5,5),
-			# (-100,100), 
-			# (-100,100), 
-			# (-100,100), 
-			# (-5,5), 
-			# (-5,5), 
-			# (-5,5),
 			))
 
 		# ax1, ay1, az1, ax2, ay2, az2
@@ -296,9 +270,9 @@ class Example4(Problem):
 
 			# traj
 			ax.plot(p1[:,0],p1[:,1],p1[:,2],
-				color=colors[0], marker="o", markersize=2, alpha=0.5, linewidth=1)
+				color=colors[0], marker="o", markersize=0.5, alpha=0.25, linewidth=1)
 			ax.plot(p2[:,0],p2[:,1],p2[:,2],
-				color=colors[1], marker="o", markersize=2, alpha=0.5, linewidth=1)
+				color=colors[1], marker="o", markersize=0.5, alpha=0.25, linewidth=1)
 
 			# line segments
 			from mpl_toolkits.mplot3d.art3d import Line3DCollection
