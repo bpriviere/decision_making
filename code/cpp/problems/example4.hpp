@@ -104,17 +104,11 @@ class Example4 : public Problem {
                     Bd * action.block(m_action_idxs[ii][0],0,m_action_idxs[ii].size(),1);
             }   
             
-            // // todo: artificial velocity bound 
-            // next_state(3,0) = std::max(std::min(next_state(3,0), m_state_lims(3,1)), m_state_lims(3,0));
-            // next_state(4,0) = std::max(std::min(next_state(4,0), m_state_lims(4,1)), m_state_lims(4,0));
-            // next_state(5,0) = std::max(std::min(next_state(5,0), m_state_lims(5,1)), m_state_lims(5,0));
-            // next_state(9,0) = std::max(std::min(next_state(9,0), m_state_lims(9,1)), m_state_lims(9,0));
-            // next_state(10,0) = std::max(std::min(next_state(10,0), m_state_lims(10,1)), m_state_lims(10,0));
-            // next_state(11,0) = std::max(std::min(next_state(11,0), m_state_lims(11,1)), m_state_lims(11,0));
-
-
+            // todo: artificial state bound 
+            for (int ii = 0; ii < m_state_dim; ii++) {
+                next_state(ii,0) = std::max(std::min(next_state(ii,0), m_state_lims(ii,1)), m_state_lims(ii,0));
+            }
             // std::cout << "next_state " << next_state << std::endl;
-
 
             return next_state;
         }
@@ -149,8 +143,6 @@ class Example4 : public Problem {
 
             x = x / 6.0;
 
-            // std::cout << "x " << x << std::endl;
-
             // pursuer gets points if x is small
             r(0,0) = 1.0 - x;
             // evader gets points if x is large
@@ -160,8 +152,35 @@ class Example4 : public Problem {
             r(0,0) = std::max(std::min(r(0,0), 1.0f), 0.0f);
             r(1,0) = std::max(std::min(r(1,0), 1.0f), 0.0f);
 
-            // std::cout << "r " << r << std::endl;
-            
+
+            // discount purseur if purseur on the boundary 
+            for (int ii = 0; ii < 6; ii++) {
+                if (s1(ii,0) == m_state_lims(ii,0)) {
+                    r(0,0) = 0.8 * r(0,0);
+                    break;
+                }
+            }
+
+            // discount evader if evader on the boundary 
+            for (int ii = 0; ii < 6; ii++) {
+                if (s2(ii,0) == m_state_lims(ii+6,0)) {
+                    r(1,0) = 0.8 * r(1,0);
+                    break;
+                }
+            }
+
+            // discount purseur if evader is outside of heading cone
+            // # from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
+            Eigen::Matrix<float,3,1> u = s1.block(3,0,3,0) / s1.norm();
+            Eigen::Matrix<float,3,1> v = s1.block(0,0,3,0);
+            Eigen::Matrix<float,3,1> p = s2.block(0,0,3,0);
+            Eigen::Matrix<float,3,1> vp = (v - p) / (v - p).norm();
+            float angle = std::acos(vp.dot(u));
+            float heading = 35.0f * 3.14f / 180.0f;
+            if (angle > heading) {
+                r(0,0) = 0.8 * r(0,0);
+            }
+
             return r;
         }
 
@@ -195,6 +214,16 @@ class Example4 : public Problem {
         bool is_terminal(Eigen::Matrix<float,-1,1> state) override 
         {
             return !is_valid(state);
+        }
+
+        Eigen::Matrix<float,-1,1> policy_encoding(Eigen::Matrix<float,-1,1> state, int robot) override 
+        {
+            return state.block(0,0,6,1) - state.block(6,0,6,1);
+        }
+
+        Eigen::Matrix<float,-1,1> value_encoding(Eigen::Matrix<float,-1,1> state) override 
+        {
+            return state.block(0,0,6,1) - state.block(6,0,6,1);
         }
 
 };

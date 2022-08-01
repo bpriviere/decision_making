@@ -27,8 +27,10 @@ class Example4(Problem):
 
 		# new
 		self.t0 = 0
-		self.tf = 100
-		self.dt = 1.0
+		self.tf = 50
+		# self.tf = 3
+		# self.dt = 1.0
+		self.dt = 0.5
 		self.gamma = 1.0
 		# self.desired_distance = 2.0 # 0.5
 		self.desired_distance = 10.0 # 0.5
@@ -50,8 +52,10 @@ class Example4(Problem):
 		self.action_idxs = [np.arange(action_dim_per_robot),action_dim_per_robot+np.arange(action_dim_per_robot)]
 
 		self.times = np.arange(self.t0,self.tf,self.dt)
-		self.policy_encoding_dim = self.state_dim
-		self.value_encoding_dim = self.state_dim
+		# self.policy_encoding_dim = self.state_dim
+		# self.value_encoding_dim = self.state_dim
+		self.policy_encoding_dim = 6
+		self.value_encoding_dim = 6
 
 		# x, y, z, vx, vy, vz
 		state_box = np.array((
@@ -62,13 +66,21 @@ class Example4(Problem):
 			# (-1,1), 
 			# (-1,1), 
 			# (-1,1)
+			# # new 
+			# (-150,150), 
+			# (-150,150), 
+			# (-150,150), 
+			# (-15,15), 
+			# (-15,15), 
+			# (-15,15),
 			# new 
-			(-150,150), 
-			(-150,150), 
+			(-500,500), 
+			(-500,500), 
+			# (-500,500), 
 			(-150,150), 
 			(-15,15), 
 			(-15,15), 
-			(-15,15),
+			(-15,15), 
 		)) 
 
 		# x1, y1, z1, vx1, vy1, vz1, x2, y2, z2, vx2, vy2, vz2
@@ -189,7 +201,7 @@ class Example4(Problem):
 		self.Ru = self.state_control_weight * np.eye(3)
 
 	def reward(self,s,a):
-		s_1 = s[self.state_idxs[0]]
+		s_1 = s[self.state_idxs[0]] # n x 1
 		s_2 = s[self.state_idxs[1]]
 		a_1 = a[self.action_idxs[0]]
 
@@ -204,11 +216,36 @@ class Example4(Problem):
 			Q[i,i] = 1 / (self.state_lims[i,1] - self.state_lims[i,0]) ** 2.0
 
 		x = (s_1 - s_2).T @ Q @ (s_1 - s_2)
-		x = x / 6
+		# x = x / 6
 
 		reward = np.zeros((2,1))
+		# pursuer gets reward if x is small
 		reward[0,0] = 1 - x 
+        # evader gets reward if x is large
 		reward[1,0] = x
+
+		# 
+		reward[0,0] = np.min((np.max((reward[0,0],0.0)),1.0))
+		reward[1,0] = np.min((np.max((reward[1,0],0.0)),1.0))
+
+		# discount purseur if purseur on the boundary 
+		if np.any(s_1 == self.state_lims[0:6,:]):
+			reward[0,0] = 0.8 * reward[0,0]
+		
+		# discount evader if evader on the boundary 
+		if np.any(s_1 == self.state_lims[6:,:]):
+			reward[1,0] = 0.8 * reward[1,0]
+
+		# discount purseur if evader is outside of heading cone
+		# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
+		heading_angle = 35 * np.pi / 180 # rad
+		u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
+		v = s_1[0:3,:]  
+		r = s_2[0:3,:]  
+		uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
+		angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
+		if angle > heading_angle:
+			reward[0,0] = 0.8 * reward[0,0]
 
 		return reward
 
@@ -232,6 +269,9 @@ class Example4(Problem):
 			Fd = np.eye(len(self.state_idxs[robot])) +  dt * self.Fc 
 			Bd = dt * self.Bc 
 			s_tp1[self.state_idxs[robot],:] = np.dot(Fd,s[self.state_idxs[robot],:]) + np.dot(Bd,a[self.action_idxs[robot],:])
+		# apply state constraint bounds 
+		for i in range(12):
+			s_tp1[i,0] = np.min((np.max((s_tp1[i,0],self.state_lims[i,0])),self.state_lims[i,1]))
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):
@@ -240,55 +280,85 @@ class Example4(Problem):
 		if fig == None or ax == None:
 			fig,ax = plotter.make_3d_fig()
 
+		colors = ["orange", "purple"]
+
+		lims = self.state_lims
+
 		if states is not None:
+			nt = states.shape[0]
+			p1 = states[:,0:3,0] # nt x 3
+			v1 = states[:,3:6,0] # nt x 3
+			p2 = states[:,6:,0]  # nt x 3
 
-			lims = self.state_lims
-			colors = plotter.get_n_colors(self.num_robots)
-			for robot in range(self.num_robots):
-				robot_state_idxs = self.state_idxs[robot] 
+			# labels
+			ax.plot(np.nan, np.nan, marker="o", color=colors[0], alpha=0.5, label="Pursuer")
+			ax.plot(np.nan, np.nan, marker="o", color=colors[1], alpha=0.5, label="Evader")
 
-				ax.plot(states[:,robot_state_idxs[0]].squeeze(axis=1), 
-					states[:,robot_state_idxs[1]].squeeze(axis=1),states[:,robot_state_idxs[2]].squeeze(axis=1),color=colors[robot])
-				ax.plot(states[0,robot_state_idxs[0]], 
-					states[0,robot_state_idxs[1]], states[0,robot_state_idxs[2]], color=colors[robot],marker='o')
-				ax.plot(states[-1,robot_state_idxs[0]], 
-					states[-1,robot_state_idxs[1]], states[-1,robot_state_idxs[2]], color=colors[robot],marker='s')
-				
-				# projections 
-				ax.plot(lims[0,0]*np.ones(states.shape[0]),states[:,robot_state_idxs[1]].squeeze(),states[:,robot_state_idxs[2]].squeeze(),\
-					color=colors[robot],linewidth=1,linestyle="--")
-				ax.plot(states[:,robot_state_idxs[0]].squeeze(),lims[1,1]*np.ones(states.shape[0]),states[:,robot_state_idxs[2]].squeeze(),\
-					color=colors[robot],linewidth=1,linestyle="--")
-				ax.plot(states[:,robot_state_idxs[0]].squeeze(),states[:,robot_state_idxs[1]].squeeze(),lims[2,0]*np.ones(states.shape[0]),\
-					color=colors[robot],linewidth=1,linestyle="--")
+			# traj
+			ax.plot(p1[:,0],p1[:,1],p1[:,2],
+				color=colors[0], marker="o", markersize=2, alpha=0.5, linewidth=1)
+			ax.plot(p2[:,0],p2[:,1],p2[:,2],
+				color=colors[1], marker="o", markersize=2, alpha=0.5, linewidth=1)
+
+			# line segments
+			from mpl_toolkits.mplot3d.art3d import Line3DCollection
+			segments = []
+			for k in range(states.shape[0]):
+				line = [(p1[k,0],p1[k,1],p1[k,2]), (p2[k,0],p2[k,1],p2[k,2])]
+				segments.append(line)
+			ln_coll = Line3DCollection(segments, 
+				linewidth=0.2, colors='k', alpha=0.2)
+			ax.add_collection(ln_coll)
+
+			# # projections
+			# ax.plot(lims[0,0]*np.ones(nt), p1[:,1], p1[:,2],\
+			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			# ax.plot(p1[:,0], lims[1,1]*np.ones(nt), p1[:,2], \
+			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			# ax.plot(p1[:,0], p1[:,1], lims[2,0]*np.ones(nt), \
+			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+
+			# ax.plot(lims[0,0]*np.ones(nt), p2[:,1], p2[:,2],\
+			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			# ax.plot(p2[:,0], lims[1,1]*np.ones(nt), p2[:,2], \
+			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			# ax.plot(p2[:,0], p2[:,1], lims[2,0]*np.ones(nt), \
+			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+
+			# heading cone 
+			cone_length = 100 
+			cone_angle = 35 * np.pi / 180
+			if int(nt/5) > 1:
+				cone_time_idxs = list(np.arange(0, nt, int(nt/5)))
+				cone_time_idxs.append(-1)
+			else:
+				cone_time_idxs = [i for i in range(nt)]
+			for idx in cone_time_idxs:
+				A0 = p1[idx]
+				R0 = 1.0
+				A1 = p1[idx] + v1[idx] / np.linalg.norm(v1[idx]) * cone_length
+				R1 = np.tan(cone_angle) * cone_length
+				fig, ax = plotter.truncated_cone(A0, A1, R0, R1, fig, ax, color="gray", alpha=0.5)
+			ax.plot(np.nan, np.nan, marker="o", color="gray", alpha=0.5, label="Heading Cone")
+
+			# init space and full space
+			fig, ax = plotter.plot_cube(self.init_lims[0:3,:], fig, ax, "red", 0.1)
+			fig, ax = plotter.plot_cube(self.state_lims[0:3,:], fig, ax, "green", 0.1)
+			ax.plot(np.nan, np.nan, marker="o", color="red", alpha=0.1, label=r"$X_0$")
+			ax.plot(np.nan, np.nan, marker="o", color="green", alpha=0.1, label=r"$X$")
 
 			ax.set_xlim((lims[0,0],lims[0,1]))
 			ax.set_ylim((lims[1,0],lims[1,1]))
-			ax.set_zlim((lims[2,0],lims[2,1]))
-			ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
+			ax.set_zlim((lims[1,0],lims[1,1]))
+			ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[1,1]-lims[1,0]))  
+			# ax.set_zlim((lims[2,0],lims[2,1]))
+			# ax.set_box_aspect((lims[0,1]-lims[0,0], lims[1,1]-lims[1,0], lims[2,1]-lims[2,0]))  
 
-			for robot in range(self.num_robots):
-				if robot == 0:
-					label = "Pursuer"
-				else:
-					label = "Evader"
-				ax.scatter([np.nan,np.nan,np.nan],[np.nan,np.nan,np.nan],color=colors[robot],label=label)
+			ax.set_xlabel("x")
+			ax.set_ylabel("y")
+			ax.set_zlabel("z")
 
-			ax.plot(np.nan,np.nan,marker="o",label="Start",color="black")
-			ax.plot(np.nan,np.nan,marker="s",label="End",color="black")
 			ax.legend(loc='best')
-
-			# plot desired distance sphere from pursuer, from: https://matplotlib.org/2.0.0/examples/mplot3d/surface3d_demo2.html
-			# Make data (no longer makes sense)
-			# sphere_u = np.linspace(0, 2 * np.pi, 100)
-			# sphere_v = np.linspace(0, np.pi, 100)
-			# u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-			# sphere_x = states[-1, 0] + self.desired_distance * np.outer(np.cos(sphere_u), np.sin(sphere_v))
-			# sphere_y = states[-1, 1] + self.desired_distance * np.outer(np.sin(sphere_u), np.sin(sphere_v))
-			# sphere_z = states[-1, 2] + self.desired_distance * np.outer(np.ones(np.size(sphere_u)), np.cos(sphere_v))
-			# # Plot the surface
-			# # ax.plot_surface(sphere_x, sphere_y, sphere_z, color='green', alpha=0.5)
-			# ax.plot_surface(sphere_x, sphere_y, sphere_z, rstride=1, cstride=1, color='green', alpha=0.5)
 
 		return fig,ax 
 
@@ -299,10 +369,12 @@ class Example4(Problem):
 		return contains(state,self.state_lims)
 
 	def policy_encoding(self,state,robot):
-		return state 
+		return state[0:6,:] - state[6:,:] 
+		# return state 
 
 	def value_encoding(self,state):
-		return state 
+		return state[0:6,:] - state[6:,:]
+		# return state 
 
 	def plot_value_dataset(self, dataset, title):
 		pass
