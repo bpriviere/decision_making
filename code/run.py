@@ -65,7 +65,7 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 		print('   running sim with... \n\t{} \n\t{} \n\t{}'.format(\
 			instance["problem"],
 			instance["solver"],
-			instance["initial_state"]
+			instance["initial_state"],
 			))
 
 	problem = instance["problem"] 
@@ -89,7 +89,8 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 			dt = action[-1,0]
 			action = action[0:-1,:]
 
-		reward = problem.reward(curr_state,action)
+		# reward = problem.reward(curr_state,action)
+		reward = problem.normalized_reward(curr_state,action)
 		next_state = problem.step(curr_state,action,dt)
 		done = problem.is_terminal(next_state)
 
@@ -118,10 +119,12 @@ def run_instance(rank,queue,total,instance,verbose=False,tqdm_on=True):
 	return sim_result
 
 def worker_run_instance(rank,queue,num_trials,param,seed):
+	print("seed",seed)
 	np.random.seed(seed)
 	instance = make_instance(param)
 	total = num_trials * len(instance["problem"].times)
-	sim_result = run_instance(rank,queue,total,instance)
+	# sim_result = run_instance(rank,queue,total,instance,verbose=False)
+	sim_result = run_instance(rank,queue,total,instance,verbose=True)
 	del sim_result["instance"]["solver"] # can't pickle bindings 
 	return sim_result
 
@@ -137,7 +140,7 @@ if __name__ == '__main__':
 	if param.parallel_on:
 		pool = mp.Pool(mp.cpu_count() - 1)
 		params = [Param() for _ in range(param.num_trials)]
-		seeds = [np.random.randint(10000) for _ in range(param.num_trials)]
+		seeds = [i for i in range(param.num_trials)]
 		args = list(zip(
 			itertools.count(), 
 			itertools.repeat(mp.Manager().Queue()),
@@ -148,8 +151,12 @@ if __name__ == '__main__':
 		pool.close()
 		pool.join()
 	else:
-		instance = make_instance(param)
-		sim_results = [run_instance(0,Queue(),len(instance["problem"].times),instance,verbose=True)]
+		seeds = [i for i in range(param.num_trials)]
+		params = [Param() for _ in range(param.num_trials)]
+		sim_results = []
+		for (seed, param) in zip(seeds, params):
+			sim_results.append(worker_run_instance(0,Queue(),1,param,seed))
+
 
 	if param.movie_on: 
 		print('making movie...')
