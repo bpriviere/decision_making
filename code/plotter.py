@@ -391,3 +391,93 @@ def make_movie(sim_result,instance,filename):
 	ln = ax.plot([],[],[])
 	anim = animation.FuncAnimation(fig, animate, frames=len(times)+1, interval=1)
 	anim.save(filename, fps=10, extra_args=['-vcodec', 'libx264'], dpi=1000)
+
+# adapted from: https://stackoverflow.com/questions/33540109/plot-surfaces-on-a-cube
+def plot_cube(points, fig, ax, color, alpha):
+	# points in 3 x 2
+	xlims = points[0,:]
+	ylims = points[1,:]
+	zlims = points[2,:]
+
+	# surface 1
+	xx, yy = np.meshgrid(xlims, ylims)
+	zz = zlims[0] * np.ones((2,2))
+	ax.plot_surface(xx, yy, zz, alpha=alpha, color=color)
+
+	# surface 2
+	xx, yy = np.meshgrid(xlims, ylims)
+	zz = zlims[1] * np.ones((2,2))
+	ax.plot_surface(xx, yy, zz, alpha=alpha, color=color)
+
+	# surface 3
+	xx, zz = np.meshgrid(xlims, zlims)
+	yy = ylims[0] * np.ones((2,2))
+	ax.plot_surface(xx, yy, zz, alpha=alpha, color=color)
+
+	# surface 4
+	xx, zz = np.meshgrid(xlims, zlims)
+	yy = ylims[1] * np.ones((2,2))
+	ax.plot_surface(xx, yy, zz, alpha=alpha, color=color)
+
+	# surface 5
+	yy, zz = np.meshgrid(ylims, zlims)
+	xx = xlims[0] * np.ones((2,2))
+	ax.plot_surface(xx, yy, zz, alpha=alpha, color=color)
+
+	# surface 6
+	yy, zz = np.meshgrid(ylims, zlims)
+	xx = xlims[1] * np.ones((2,2))
+	ax.plot_surface(xx, yy, zz, alpha=alpha, color=color)
+
+	return fig, ax
+
+# # adapted from XX
+# def plot_cone_3d(cone_vertex, cone_axis, cone_angle, cone_length, fig, ax, color, alpha):
+# 	# vertex is np array in (3,)
+# 	# axis is np array in (3,)
+# 	# angle is float
+# 	# length is float
+
+# 	# unit cone in body frame 
+# 	num_surfaces = 10
+# 	uc_x = np.linspace(-np.pi, np.pi, num_surfaces)
+# 	uc_y = np.linspace(-np.pi, np.pi, num_surfaces)
+# 	uc_xx, uc_yy = np.meshgrid(uc_x, uc_y)
+# 	uc_zz = 
+
+
+def truncated_cone(p0, p1, R0, R1, fig, ax, color, alpha):
+    """
+    Based on https://stackoverflow.com/a/39823124/190597 (astrokeat)
+    """
+    # vector in direction of axis
+    v = p1 - p0
+    # find magnitude of vector
+    mag = np.linalg.norm(v)
+    # unit vector in direction of axis
+    v = v / mag
+    # make some vector not in the same direction as v
+    not_v = np.array([1, 1, 0])
+    if (v == not_v).all():
+        not_v = np.array([0, 1, 0])
+    # make vector perpendicular to v
+    n1 = np.cross(v, not_v)
+    # print n1,'\t',np.linalg.norm(n1)
+    # np.linalg.normalize n1
+    n1 /= np.linalg.norm(n1)
+    # make unit vector perpendicular to v and n1
+    n2 = np.cross(v, n1)
+    # surface ranges over t from 0 to length of axis and 0 to 2*pi
+    n = 80
+    t = np.linspace(0, mag, n)
+    theta = np.linspace(0, 2 * np.pi, n)
+    # use meshgrid to make 2d arrays
+    t, theta = np.meshgrid(t, theta)
+    R = np.linspace(R0, R1, n)
+    # generate coordinates for surface
+    X, Y, Z = [p0[i] + v[i] * t + R *
+               np.sin(theta) * n1[i] + R * np.cos(theta) * n2[i] for i in [0, 1, 2]]
+    ax.plot_surface(X, Y, Z, color=color, linewidth=0, antialiased=False, alpha=alpha)
+
+    return fig, ax
+
