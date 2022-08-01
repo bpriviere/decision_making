@@ -24,8 +24,10 @@ from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_t
 
 # solver 
 
-num_simulations = 2000
-search_depth = 100
+num_simulations = 5000
+# num_simulations = 10000
+# search_depth = 100
+search_depth = 30
 
 # num_simulations = 200
 # search_depth = 100
@@ -42,16 +44,17 @@ solver_name = "C_PUCT_V1"
 problem_name = "example4"
 policy_oracle_name = "gaussian"
 value_oracle_name = "deterministic"
+# value_oracle_name = "gaussian"
 
 dirname = "../current/models"
 
 # learning 
-L = 10  # num learning iterations
+L = 1  # num learning iterations
 mode = 1 # 0: weighted sum, 1: best child, 2: subsamples 
 
-num_D_pi = 2000
-num_pi_eval = 2000
-num_D_v = 10000
+num_D_pi = 100000
+num_D_v = 100000
+num_pi_eval = 5000
 num_v_eval = 5000
 
 # num_D_pi = 200
@@ -118,7 +121,10 @@ def worker_edp(rank,queue,seed,fn,problem,robot,num_per_pool,policy_oracle,value
 	count = 0
 	while count < num_per_pool:
 		state = problem.initialize()
-		root_node = solver.search(problem,state,turn=robot)
+		try:
+			root_node = solver.search(problem,state,turn=robot)
+		except:
+			pass
 		# print('rank: {}, completion: {}, success: {}'.format(rank,len(datapoints)/num_per_pool,root_node.success))
 		if root_node.success:
 			encoding = problem.policy_encoding(state,robot).squeeze()
@@ -510,7 +516,9 @@ def self_play(problem,policy_oracle,value_oracle,l):
 if __name__ == '__main__':
 
 	problem = get_problem(problem_name) 
-	format_dir(clean_dirnames=["data","models"]) 
+	make_data_on = False
+	if make_data_on:
+		format_dir(clean_dirnames=["data","models"]) 
 
 	num_D_pi_samples = num_D_pi
 	if mode == 2:
@@ -539,17 +547,32 @@ if __name__ == '__main__':
 			print('\t self play l/L: {}/{}...'.format(l,L))
 			sim_results = self_play(problem,policy_oracle,value_oracle,l-1)
 
-
 		for robot in range(problem.num_robots): 
 			print('\t policy training iteration l/L, i/N: {}/{} {}/{}...'.format(\
 				l,L,robot,problem.num_robots))
-			train_dataset_pi, test_dataset_pi = make_expert_demonstration_pi(\
-				problem,robot,policy_oracle,value_oracle)
+			if make_data_on:
+				train_dataset_pi, test_dataset_pi = make_expert_demonstration_pi(\
+					problem,robot,policy_oracle,value_oracle)
+			else:
+				train_dataset_fn = get_dataset_fn("train_policy",l,robot=robot)
+				test_dataset_fn = get_dataset_fn("test_policy",l,robot=robot)
+				encoding_dim = problem.policy_encoding_dim
+				target_dim = len(problem.action_idxs[robot]) 
+				train_dataset_pi = Dataset(train_dataset_fn,encoding_dim,target_dim)
+				test_dataset_pi = Dataset(test_dataset_fn,encoding_dim,target_dim)
 			train_model(problem,train_dataset_pi,test_dataset_pi,l,"policy",robot=robot)
 			eval_policy(problem,l,robot) 
 
 		print('\t value training l/L: {}/{}'.format(l,L))
-		train_dataset_v, test_dataset_v = make_expert_demonstration_v(problem, l) 
+		if make_data_on:
+			train_dataset_v, test_dataset_v = make_expert_demonstration_v(problem, l) 
+		else:
+			train_dataset_fn = get_dataset_fn("train_value",l,robot=0)
+			test_dataset_fn = get_dataset_fn("test_value",l,robot=0)
+			encoding_dim = problem.policy_encoding_dim
+			target_dim = problem.num_robots
+			train_dataset_v = Dataset(train_dataset_fn,encoding_dim,target_dim)
+			test_dataset_v = Dataset(test_dataset_fn,encoding_dim,target_dim)
 		train_model(problem,train_dataset_v,test_dataset_v,l,"value") 
 		eval_value(problem,l)
 		print('complete learning iteration: {}/{} in {}s'.format(l,L,time.time()-start_time))
