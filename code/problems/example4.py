@@ -28,7 +28,8 @@ class Example4(Problem):
 		# new
 		self.t0 = 0
 		# self.tf = 25
-		self.tf = 200
+		self.tf = 100
+		# self.tf = 50
 		# self.tf = 3
 		# self.dt = 1.0
 		self.dt = 0.5
@@ -36,6 +37,8 @@ class Example4(Problem):
 		# self.desired_distance = 2.0 # 0.5
 		self.desired_distance = 10.0 # 0.5
 		self.normalized_desired_distance = 0.10
+
+		self.cone_on = False
 
 		self.mass = 1
 		self.num_robots = 2 
@@ -67,13 +70,38 @@ class Example4(Problem):
 			# (-1,1), 
 			# (-1,1), 
 			# (-1,1)
-			# # new eval
+			# # new eval 7/30
 			(-1000,1000), 
 			(-1000,1000), 
 			(-1000,1000), 
 			(-15,15), 
 			(-15,15), 
 			(-15,15),
+			(-1000,1000), 
+			(-1000,1000), 
+			(-1000,1000), 
+			(-15,15), 
+			(-15,15), 
+			(-15,15),
+			# (-10,10), 
+			# (-10,10), 
+			# (-10,10),
+			# (-12.5,12.5), 
+			# (-12.5,12.5), 
+			# (-12.5,12.5),
+			# # new eval 8/8
+			# (-1000,1000), 
+			# (-1000,1000), 
+			# (-1000,1000), 
+			# (-20,20), 
+			# (-20,20), 
+			# (-20,20),
+			# (-1000,1000), 
+			# (-1000,1000), 
+			# (-1000,1000), 
+			# (-10,10), 
+			# (-10,10), 
+			# (-10,10),
 			# # # new training
 			# (-500,500), 
 			# (-500,500), 
@@ -83,10 +111,13 @@ class Example4(Problem):
 			# (-15,15), 
 		)) 
 
-		# x1, y1, z1, vx1, vy1, vz1, x2, y2, z2, vx2, vy2, vz2
-		self.state_lims = np.zeros((self.num_robots*state_dim_per_robot,2))
-		self.state_lims[0:state_dim_per_robot,:] = state_box
-		self.state_lims[state_dim_per_robot:,:] = state_box
+		# # x1, y1, z1, vx1, vy1, vz1, x2, y2, z2, vx2, vy2, vz2
+		# self.state_lims = np.zeros((self.num_robots*state_dim_per_robot,2))
+		# self.state_lims[0:state_dim_per_robot,:] = state_box
+		# self.state_lims[state_dim_per_robot:,:] = state_box
+
+		self.state_lims = state_box
+
 
 		self.init_lims = np.array((
 			# old
@@ -106,19 +137,45 @@ class Example4(Problem):
 			# # ( 0.5,0.5),
 			# ( 0.0,0.0),
 			# ( 0,0),
-			# new
-			(-150,150), 
-			(-150,150), 
-			(-150,150), 
-			(-15,15), 
-			(-15,15), 
-			(-15,15),
-			(-150,150), 
-			(-150,150), 
-			(-150,150), 
-			(-15,15), 
-			(-15,15), 
-			(-15,15),
+			# # new 07/30
+			# (-150,150), 
+			# (-150,150), 
+			# (-150,150), 
+			# (-15,15), 
+			# (-15,15), 
+			# (-15,15),
+			# (-150,150), 
+			# (-150,150), 
+			# (-150,150), 
+			# (-15,15), 
+			# (-15,15), 
+			# (-15,15),
+			# # 08/10
+			(-25,25), 
+			(-25,25), 
+			(-25,25), 
+			(-1.0,1.0), 
+			(-1.0,1.0), 
+			(-1.0,1.0),
+			(-25,25), 
+			(-25,25), 
+			(-25,25), 
+			(-1.0,1.0), 
+			(-1.0,1.0), 
+			(-1.0,1.0),
+			# # new 08/08
+			# (-30,30), 
+			# (-30,30), 
+			# (-30,30), 
+			# (-10,10), 
+			# (-10,10), 
+			# (-10,10),
+			# (-30,30), 
+			# (-30,30), 
+			# (-30,30), 
+			# (-10,10), 
+			# (-10,10), 
+			# (-10,10),
 			# # test
 			# (-20,20), # px_p
 			# (-20,20), # py_p
@@ -143,13 +200,23 @@ class Example4(Problem):
 			# (-1,1),
 			# (-1,1),
 			# (-1,1),
-			# new 
+			# new 07/30
 			(-2,2), # ax_p
 			(-2,2), # ay_p
 			(-2,2), # az_p
 			(-2,2), # ax_e
 			(-2,2), # ay_e
 			(-2,2), # az_e
+			# (-1.75,1.75), # ax_e
+			# (-1.75,1.75), # ay_e
+			# (-1.75,1.75), # az_e
+			# # new 08/8
+			# (-2.0,2.0), # ax_p
+			# (-2.0,2.0), # ay_p
+			# (-2.0,2.0), # az_p
+			# (-0.5,0.5), # ax_e
+			# (-0.5,0.5), # ay_e
+			# (-0.5,0.5), # az_e
 			))
 
 
@@ -186,8 +253,11 @@ class Example4(Problem):
 
 		# new
 		Q = np.zeros((6,6))
-		for i in range(6):
-			Q[i,i] = 1 / (self.state_lims[i,1] - self.state_lims[i,0]) ** 2.0
+		for i in range(3):
+		# for i in range(6):
+			# Q[i,i] = 1 / (self.state_lims[i,1] - self.state_lims[i,0]) ** 2.0
+			# Q[i,i] = 1 / (self.init_lims[i,1] - self.init_lims[i,0]) ** 2.0
+			Q[i,i] = 1 / (100) ** 2.0
 
 		x = (s_1 - s_2).T @ Q @ (s_1 - s_2)
 		# x = x / 6
@@ -202,24 +272,25 @@ class Example4(Problem):
 		reward[0,0] = np.min((np.max((reward[0,0],0.0)),1.0))
 		reward[1,0] = np.min((np.max((reward[1,0],0.0)),1.0))
 
-		# discount purseur if purseur on the boundary 
-		if np.any(s_1 == self.state_lims[0:6,:]):
-			reward[0,0] = 0.8 * reward[0,0]
+		# # discount purseur if purseur on the boundary 
+		# if np.any(s_1 == self.state_lims[0:6,:]):
+		# 	reward[0,0] = 0.8 * reward[0,0]
 		
-		# discount evader if evader on the boundary 
-		if np.any(s_1 == self.state_lims[6:,:]):
-			reward[1,0] = 0.8 * reward[1,0]
+		# # discount evader if evader on the boundary 
+		# if np.any(s_1 == self.state_lims[6:,:]):
+		# 	reward[1,0] = 0.8 * reward[1,0]
 
-		# discount purseur if evader is outside of heading cone
-		# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
-		heading_angle = 35 * np.pi / 180 # rad
-		u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
-		v = s_1[0:3,:]  
-		r = s_2[0:3,:]  
-		uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
-		angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
-		if angle > heading_angle:
-			reward[0,0] = 0.8 * reward[0,0]
+		if self.cone_on:
+			# discount purseur if evader is outside of heading cone
+			# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
+			heading_angle = 35 * np.pi / 180 # rad
+			u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
+			v = s_1[0:3,:]  
+			r = s_2[0:3,:]  
+			uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
+			angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
+			if angle > heading_angle:
+				reward[0,0] = 0.8 * reward[0,0]
 
 		return reward
 
@@ -299,21 +370,22 @@ class Example4(Problem):
 			# ax.plot(p2[:,0], p2[:,1], lims[2,0]*np.ones(nt), \
 			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
 
-			# heading cone 
-			cone_length = 100 
-			cone_angle = 35 * np.pi / 180
-			if int(nt/5) > 1:
-				cone_time_idxs = list(np.arange(0, nt, int(nt/5)))
-				cone_time_idxs.append(-1)
-			else:
-				cone_time_idxs = [i for i in range(nt)]
-			for idx in cone_time_idxs:
-				A0 = p1[idx]
-				R0 = 1.0
-				A1 = p1[idx] + v1[idx] / np.linalg.norm(v1[idx]) * cone_length
-				R1 = np.tan(cone_angle) * cone_length
-				fig, ax = plotter.truncated_cone(A0, A1, R0, R1, fig, ax, color="gray", alpha=0.5)
-			ax.plot(np.nan, np.nan, marker="o", color="gray", alpha=0.5, label="Heading Cone")
+			if self.cone_on:
+				# heading cone 
+				cone_length = 100 
+				cone_angle = 35 * np.pi / 180
+				if int(nt/5) > 1:
+					cone_time_idxs = list(np.arange(0, nt, int(nt/5)))
+					cone_time_idxs.append(-1)
+				else:
+					cone_time_idxs = [i for i in range(nt)]
+				for idx in cone_time_idxs:
+					A0 = p1[idx]
+					R0 = 1.0
+					A1 = p1[idx] + v1[idx] / np.linalg.norm(v1[idx]) * cone_length
+					R1 = np.tan(cone_angle) * cone_length
+					fig, ax = plotter.truncated_cone(A0, A1, R0, R1, fig, ax, color="gray", alpha=0.5)
+				ax.plot(np.nan, np.nan, marker="o", color="gray", alpha=0.5, label="Heading Cone")
 
 			# init space and full space
 			fig, ax = plotter.plot_cube(self.init_lims[0:3,:], fig, ax, "red", 0.1)
@@ -333,6 +405,16 @@ class Example4(Problem):
 			ax.set_zlabel("z")
 
 			ax.legend(loc='best')
+
+		# make a second fig:
+		if states is not None:
+			fig2, ax2 = plotter.make_fig()
+			p1 = states[:,0:3,0] # nt x 3
+			p2 = states[:,6:9,0]  # nt x 3
+			d = np.linalg.norm(p1-p2, axis=1)
+			ax2.plot(d)
+			ax2.set_xlabel("time")
+			ax2.set_ylabel("distance")
 
 		return fig,ax 
 
