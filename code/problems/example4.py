@@ -28,8 +28,9 @@ class Example4(Problem):
 		# new
 		self.t0 = 0
 		# self.tf = 25
-		self.tf = 100
-		# self.tf = 50
+		# self.tf = 100
+		self.tf = 50
+		# self.tf = 1
 		# self.tf = 3
 		# self.dt = 1.0
 		self.dt = 0.5
@@ -38,7 +39,7 @@ class Example4(Problem):
 		self.desired_distance = 10.0 # 0.5
 		self.normalized_desired_distance = 0.10
 
-		self.cone_on = False
+		self.cone_on = True
 
 		self.mass = 1
 		self.num_robots = 2 
@@ -74,15 +75,15 @@ class Example4(Problem):
 			(-1000,1000), 
 			(-1000,1000), 
 			(-1000,1000), 
-			(-15,15), 
-			(-15,15), 
-			(-15,15),
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
 			(-1000,1000), 
 			(-1000,1000), 
 			(-1000,1000), 
-			(-15,15), 
-			(-15,15), 
-			(-15,15),
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
 			# (-10,10), 
 			# (-10,10), 
 			# (-10,10),
@@ -150,6 +151,19 @@ class Example4(Problem):
 			# (-15,15), 
 			# (-15,15), 
 			# (-15,15),
+			# # # 08/10
+			# (-25,25), 
+			# (-25,25), 
+			# (-25,25), 
+			# (-11,11), 
+			# (-11,11), 
+			# (-11,11),
+			# (-25,25), 
+			# (-25,25), 
+			# (-25,25), 
+			# (-11,11), 
+			# (-11,11), 
+			# (-11,11),
 			# # 08/10
 			(-25,25), 
 			(-25,25), 
@@ -201,9 +215,9 @@ class Example4(Problem):
 			# (-1,1),
 			# (-1,1),
 			# new 07/30
-			(-2,2), # ax_p
-			(-2,2), # ay_p
-			(-2,2), # az_p
+			(-3,3), # ax_p
+			(-3,3), # ay_p
+			(-3,3), # az_p
 			(-2,2), # ax_e
 			(-2,2), # ay_e
 			(-2,2), # az_e
@@ -240,6 +254,16 @@ class Example4(Problem):
 
 		self.Q = np.eye(6)
 		self.Ru = self.state_control_weight * np.eye(3)
+
+	def initialize(self):
+		valid = False
+		while not valid:
+			state = sample_vector(self.init_lims)
+			# state = self.scale_evader_velocity(state)
+			# noise = 0.01 * np.random.normal(size=(3,))
+			# state[3:6,0] = state[6:9,0] + noise
+			valid = not self.is_terminal(state) and self.in_cone(state)
+		return state
 
 	def reward(self,s,a):
 		s_1 = s[self.state_idxs[0]] # n x 1
@@ -283,16 +307,41 @@ class Example4(Problem):
 		if self.cone_on:
 			# discount purseur if evader is outside of heading cone
 			# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
-			heading_angle = 35 * np.pi / 180 # rad
-			u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
-			v = s_1[0:3,:]  
-			r = s_2[0:3,:]  
-			uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
-			angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
-			if angle > heading_angle:
+			# heading_angle = 35 * np.pi / 180 # rad
+			# u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
+			# v = s_1[0:3,:]  
+			# r = s_2[0:3,:]  
+			# uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
+			# angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
+			# if angle > heading_angle:
+			# 	reward[0,0] = 0.8 * reward[0,0]
+			if self.in_cone(s):
 				reward[0,0] = 0.8 * reward[0,0]
 
 		return reward
+
+	def in_cone(self, s):
+		s_1 = s[0:6,:]
+		s_2 = s[6:,:]
+		cone_angle = 35 * np.pi / 180 # rad
+		u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
+		v = s_1[0:3,:]  
+		r = s_2[0:3,:]  
+		uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
+		rel_angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
+		if rel_angle < cone_angle:
+			return True
+		else:
+			return False
+
+	def scale_evader_velocity(self, s):
+		min_speed = 7
+		ratio = np.linalg.norm(s[9:12,:]) / min_speed
+		if ratio < 1:
+			s[9,0] = s[9,0] / ratio
+			s[10,0] = s[10,0] / ratio
+			s[11,0] = s[11,0] / ratio
+		return s
 
 	def normalized_reward(self,s,a): 
 		reward = self.reward(s,a)
@@ -355,20 +404,26 @@ class Example4(Problem):
 				linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
 
-			# # projections
-			# ax.plot(lims[0,0]*np.ones(nt), p1[:,1], p1[:,2],\
-			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p1[:,0], lims[1,1]*np.ones(nt), p1[:,2], \
-			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p1[:,0], p1[:,1], lims[2,0]*np.ones(nt), \
-			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			# projections
+			ax.plot(lims[0,0]*np.ones(nt), p1[:,1], p1[:,2],\
+				# color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+				color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--") 
+			ax.plot(p1[:,0], lims[1,1]*np.ones(nt), p1[:,2], \
+				# color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+				color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--") 
+			ax.plot(p1[:,0], p1[:,1], lims[2,0]*np.ones(nt), \
+				# color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+				color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--") 
 
-			# ax.plot(lims[0,0]*np.ones(nt), p2[:,1], p2[:,2],\
-			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p2[:,0], lims[1,1]*np.ones(nt), p2[:,2], \
-			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p2[:,0], p2[:,1], lims[2,0]*np.ones(nt), \
-			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			ax.plot(lims[0,0]*np.ones(nt), p2[:,1], p2[:,2],\
+				# color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+				color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--")
+			ax.plot(p2[:,0], lims[1,1]*np.ones(nt), p2[:,2], \
+				# color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+				color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--")
+			ax.plot(p2[:,0], p2[:,1], lims[2,0]*np.ones(nt), \
+				# color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+				color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--")
 
 			if self.cone_on:
 				# heading cone 
@@ -415,6 +470,26 @@ class Example4(Problem):
 			ax2.plot(d)
 			ax2.set_xlabel("time")
 			ax2.set_ylabel("distance")
+			ax2.set_title("metrics")
+
+			bs = []
+			for t in range(states.shape[0]):
+				# s_1 = states[t,0:6,:]
+				# s_2 = states[t,6:,:]
+				# cone_angle = 35 * np.pi / 180 # rad
+				# u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
+				# v = s_1[0:3,:]  
+				# r = s_2[0:3,:]  
+				# uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
+				# rel_angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
+				# if rel_angle < cone_angle:
+				if self.in_cone(states[t,:,:]):
+					bs.append(1)
+				else:
+					bs.append(0)
+			ax3 = ax2.twinx()
+			ax3.plot(bs, color="orange")
+			ax3.set_ylabel("in cone")
 
 		return fig,ax 
 

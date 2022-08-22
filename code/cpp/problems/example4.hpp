@@ -183,15 +183,15 @@ class Example4 : public Problem {
 
             // // discount purseur if evader is outside of heading cone
             // # from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
-            // Eigen::Matrix<float,3,1> u = s1.block(3,0,3,0) / s1.norm();
-            // Eigen::Matrix<float,3,1> v = s1.block(0,0,3,0);
-            // Eigen::Matrix<float,3,1> p = s2.block(0,0,3,0);
-            // Eigen::Matrix<float,3,1> vp = (v - p) / (v - p).norm();
-            // float angle = std::acos(vp.dot(u));
-            // float heading = 35.0f * 3.14f / 180.0f;
-            // if (angle > heading) {
-            //     r(0,0) = 0.8 * r(0,0);
-            // }
+            Eigen::Matrix<float,3,1> u = s1.block(3,0,3,1) / s1.norm();
+            Eigen::Matrix<float,3,1> v = s1.block(0,0,3,1);
+            Eigen::Matrix<float,3,1> p = s2.block(0,0,3,1);
+            Eigen::Matrix<float,3,1> vp = (v - p) / (v - p).norm();
+            float angle = std::acos(vp.dot(u));
+            float heading = 35.0f * 3.14f / 180.0f;
+            if (angle > heading) {
+                r(0,0) = 0.8 * r(0,0);
+            }
 
             return r;
         }
