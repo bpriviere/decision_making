@@ -151,32 +151,32 @@ class Example4(Problem):
 			# (-15,15), 
 			# (-15,15), 
 			# (-15,15),
+			# # # 08/22
+			(-25,25), 
+			(-25,25), 
+			(-25,25), 
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
+			(-25,25), 
+			(-25,25), 
+			(-25,25), 
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
 			# # # 08/10
 			# (-25,25), 
 			# (-25,25), 
 			# (-25,25), 
-			# (-11,11), 
-			# (-11,11), 
-			# (-11,11),
+			# (-1.0,1.0), 
+			# (-1.0,1.0), 
+			# (-1.0,1.0),
 			# (-25,25), 
 			# (-25,25), 
 			# (-25,25), 
-			# (-11,11), 
-			# (-11,11), 
-			# (-11,11),
-			# # 08/10
-			(-25,25), 
-			(-25,25), 
-			(-25,25), 
-			(-1.0,1.0), 
-			(-1.0,1.0), 
-			(-1.0,1.0),
-			(-25,25), 
-			(-25,25), 
-			(-25,25), 
-			(-1.0,1.0), 
-			(-1.0,1.0), 
-			(-1.0,1.0),
+			# (-1.0,1.0), 
+			# (-1.0,1.0), 
+			# (-1.0,1.0),
 			# # new 08/08
 			# (-30,30), 
 			# (-30,30), 
@@ -218,9 +218,9 @@ class Example4(Problem):
 			(-3,3), # ax_p
 			(-3,3), # ay_p
 			(-3,3), # az_p
-			(-2,2), # ax_e
-			(-2,2), # ay_e
-			(-2,2), # az_e
+			(-0.01,0.01), # ax_e
+			(-0.01,0.01), # ay_e
+			(-0.01,0.01), # az_e
 			# (-1.75,1.75), # ax_e
 			# (-1.75,1.75), # ay_e
 			# (-1.75,1.75), # az_e
@@ -259,9 +259,9 @@ class Example4(Problem):
 		valid = False
 		while not valid:
 			state = sample_vector(self.init_lims)
-			# state = self.scale_evader_velocity(state)
-			# noise = 0.01 * np.random.normal(size=(3,))
-			# state[3:6,0] = state[6:9,0] + noise
+			state = self.scale_evader_velocity(state)
+			noise = 0.01 * np.random.normal(size=(3,))
+			state[3:6,0] = state[9:12,0] + noise
 			valid = not self.is_terminal(state) and self.in_cone(state)
 		return state
 
@@ -282,6 +282,8 @@ class Example4(Problem):
 			# Q[i,i] = 1 / (self.state_lims[i,1] - self.state_lims[i,0]) ** 2.0
 			# Q[i,i] = 1 / (self.init_lims[i,1] - self.init_lims[i,0]) ** 2.0
 			Q[i,i] = 1 / (100) ** 2.0
+		for i in range(3,6):
+			Q[i,i] = 1 / (200) ** 2.0
 
 		x = (s_1 - s_2).T @ Q @ (s_1 - s_2)
 		# x = x / 6
@@ -315,8 +317,8 @@ class Example4(Problem):
 			# angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
 			# if angle > heading_angle:
 			# 	reward[0,0] = 0.8 * reward[0,0]
-			if self.in_cone(s):
-				reward[0,0] = 0.8 * reward[0,0]
+			if not self.in_cone(s):
+				reward[0,0] = 0.2 * reward[0,0]
 
 		return reward
 
@@ -366,6 +368,7 @@ class Example4(Problem):
 		# apply state constraint bounds 
 		for i in range(12):
 			s_tp1[i,0] = np.min((np.max((s_tp1[i,0],self.state_lims[i,0])),self.state_lims[i,1]))
+		s_tp1 = self.scale_evader_velocity(s_tp1)
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):
