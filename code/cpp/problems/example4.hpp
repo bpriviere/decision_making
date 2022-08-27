@@ -92,11 +92,20 @@ class Example4 : public Problem {
                     Bd * action.block(m_action_idxs[ii][0],0,m_action_idxs[ii].size(),1);
             }   
             
-            // todo: artificial state bound 
+            // artificial state bound 
             for (int ii = 0; ii < m_state_dim; ii++) {
                 next_state(ii,0) = std::max(std::min(next_state(ii,0), m_state_lims(ii,1)), m_state_lims(ii,0));
             }
             // std::cout << "next_state " << next_state << std::endl;
+
+            // min speed bound
+            float min_speed = 7.0;
+            float ratio = state.block(9,0,3,1).norm() / min_speed; 
+            if (ratio < 1) { 
+                next_state(9,0) = next_state(9,0) / ratio; 
+                next_state(10,0) = next_state(10,0) / ratio; 
+                next_state(11,0) = next_state(11,0) / ratio; 
+            }
 
             return next_state;
         }

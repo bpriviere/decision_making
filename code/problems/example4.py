@@ -114,9 +114,9 @@ class Example4(Problem):
 			# (-2,2),
 			# (-2,2),
 			# 08/22
-			(-2,2),
-			(-2,2),
-			(-2,2),
+			(-3,3),
+			(-3,3),
+			(-3,3),
 			(-2,2),
 			(-2,2),
 			(-2,2),
@@ -150,11 +150,24 @@ class Example4(Problem):
 		while not valid:
 			state = sample_vector(self.init_lims)
 
+			# apply min speed bound
+			state = self.apply_min_speed(state)
+
 			v2 = state[9:12,0]
 			v1 = v2 + 2 * np.random.normal(size=(3,))
 			state[3:6,0] = v1
 
 			valid = not self.is_terminal(state)
+		return state
+
+	def apply_min_speed(self, state):
+		min_speed = 7 
+		v2 = state[9:12,0] 
+		ratio = np.linalg.norm(v2) / min_speed 
+		if ratio < 1:
+			state[9,0] = state[9,0] / ratio
+			state[10,0] = state[10,0] / ratio
+			state[11,0] = state[11,0] / ratio
 		return state
 
 	def reward(self,s,a):
@@ -211,6 +224,8 @@ class Example4(Problem):
 		# apply state constraint bounds 
 		for i in range(12):
 			s_tp1[i,0] = np.min((np.max((s_tp1[i,0],self.state_lims[i,0])),self.state_lims[i,1]))
+		# apply min speed bound
+		s_tp1 = self.apply_min_speed(s_tp1)
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):
