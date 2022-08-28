@@ -123,9 +123,6 @@ class Example4 : public Problem {
             // calc error 
             float x = (s1 - s2).transpose() * m_Q * (s1 - s2); // x in [0,1]
 
-            // does it still work if this is commented out? 
-            // x = x / 6.0;
-
             // pursuer gets points if x is small
             r(0,0) = 1.0 - x;
             // evader gets points if x is large
@@ -163,6 +160,15 @@ class Example4 : public Problem {
             // if (angle > heading) {
             //     r(0,0) = 0.8 * r(0,0);
             // }
+
+            // discount purseur if evader outside of elevation cone 
+            float cone_angle = 35.0f * 3.14 / 180; 
+            float dxy = (s1.block(0,0,2,0) - s2.block(0,0,2,0)).norm();
+            float dz = s1(2,0) - s2(2,0);
+            float rel_angle = std::atan2(dz, dxy);
+            if (rel_angle > cone_angle) {
+                r(0,0) = 0.8 * r(0,0);
+            }
 
             return r;
         }

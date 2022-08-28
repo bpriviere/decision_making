@@ -153,11 +153,12 @@ class Example4(Problem):
 			# apply min speed bound
 			state = self.apply_min_speed(state)
 
+			# align relative velocities 
 			v2 = state[9:12,0]
 			v1 = v2 + 2 * np.random.normal(size=(3,))
 			state[3:6,0] = v1
 
-			valid = not self.is_terminal(state)
+			valid = not self.is_terminal(state) and self.in_elevation_cone(state)
 		return state
 
 	def apply_min_speed(self, state):
@@ -169,6 +170,16 @@ class Example4(Problem):
 			state[10,0] = state[10,0] / ratio
 			state[11,0] = state[11,0] / ratio
 		return state
+
+	def in_elevation_cone(self, state):
+		cone_angle = 35 * np.pi / 180
+		dxy = np.linalg.norm(state[0:2,0] - state[6:8,0])
+		dz = np.abs(state[2,0] - state[8,0])
+		rel_angle = np.arctan2(dz, dxy)
+		if rel_angle < cone_angle:
+			return True
+		else:
+			return False
 
 	def reward(self,s,a):
 		s_1 = s[self.state_idxs[0]] # n x 1
@@ -197,17 +208,20 @@ class Example4(Problem):
 		# if np.any(s_1 == self.state_lims[6:,:]):
 		# 	reward[1,0] = 0.8 * reward[1,0]
 
-		if False:
-			# discount purseur if evader is outside of heading cone
-			# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
-			heading_angle = 35 * np.pi / 180 # rad
-			u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
-			v = s_1[0:3,:]  
-			r = s_2[0:3,:]  
-			uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
-			angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
-			if angle > heading_angle:
-				reward[0,0] = 0.8 * reward[0,0]
+		# if False:
+		# 	# discount purseur if evader is outside of heading cone
+		# 	# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
+		# 	heading_angle = 35 * np.pi / 180 # rad
+		# 	u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
+		# 	v = s_1[0:3,:]  
+		# 	r = s_2[0:3,:]  
+		# 	uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
+		# 	angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
+		# 	if angle > heading_angle:
+		# 		reward[0,0] = 0.8 * reward[0,0]
+
+		if not self.in_elevation_cone(s):
+			reward[0,0] = 0.8 * reward[0,0]
 
 		return reward
 
@@ -320,15 +334,17 @@ class Example4(Problem):
 			fig2, ax2 = plotter.make_fig()
 			p1 = states[:,0:3,0] # nt x 3
 			p2 = states[:,6:9,0]  # nt x 3
-			d = np.linalg.norm(p1-p2, axis=1)
+			ds = np.linalg.norm(p1-p2, axis=1)
 
-			ax2.plot(d)
+			bs = [self.in_elevation_cone(s) for s in states]
+
+			ax2.plot(ds, color="blue")
 			ax2.set_xlabel("time")
 			ax2.set_ylabel("distance")
 
-			# ax3 = ax3.twinx()
-			# ax3.plot()
-			# ax2.set_ylabel("in elevation cone")
+			ax3 = ax2.twinx()
+			ax3.plot(bs, color="orange")
+			ax3.set_ylabel("in elevation cone")
 
 		return fig,ax 
 
