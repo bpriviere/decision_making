@@ -17,38 +17,24 @@ class Example4(Problem):
 	def __init__(self): 
 		super(Example4,self).__init__()
 
-		# old
-		# self.t0 = 0
-		# self.tf = 10
-		# self.dt = 0.1
-		# self.gamma = 1.0
-		# # self.desired_distance = 2.0 # 0.5
-		# self.desired_distance = 0.5 # 0.5
-
-		# new
 		self.t0 = 0
-		# self.tf = 25
-		self.tf = 100
-		# self.tf = 50
-		# self.tf = 3
-		# self.dt = 1.0
+		self.tf = 50
 		self.dt = 0.5
 		self.gamma = 1.0
-		# self.desired_distance = 2.0 # 0.5
-		self.desired_distance = 10.0 # 0.5
-		self.normalized_desired_distance = 0.10
-
-		self.cone_on = False
-
 		self.mass = 1
 		self.num_robots = 2 
 		self.state_dim = 12
 		self.action_dim = 6
-		self.r_max = 1000
-		self.r_min = -1 * self.r_max
 		self.name = "example4"
 		self.position_idx = np.arange(3) 
+
+		# unused parameters 
+		self.desired_distance = 10.0 # 0.5
+		self.normalized_desired_distance = 0.10
+		self.r_max = 1000
+		self.r_min = -1 * self.r_max
 		self.state_control_weight = 1e-5 
+
 
 		state_dim_per_robot = 6 
 		action_dim_per_robot = 3 
@@ -56,167 +42,84 @@ class Example4(Problem):
 		self.action_idxs = [np.arange(action_dim_per_robot),action_dim_per_robot+np.arange(action_dim_per_robot)]
 
 		self.times = np.arange(self.t0,self.tf,self.dt)
-		# self.policy_encoding_dim = self.state_dim
-		# self.value_encoding_dim = self.state_dim
 		self.policy_encoding_dim = 6
 		self.value_encoding_dim = 6
 
 		# x, y, z, vx, vy, vz
-		state_box = np.array((
-			# old 
-			# (-2,2), 
-			# (-5,20), 
-			# (-2,2), 
-			# (-1,1), 
-			# (-1,1), 
-			# (-1,1)
-			# # new eval 7/30
-			(-1000,1000), 
-			(-1000,1000), 
-			(-1000,1000), 
-			(-15,15), 
-			(-15,15), 
-			(-15,15),
-			(-1000,1000), 
-			(-1000,1000), 
-			(-1000,1000), 
-			(-15,15), 
-			(-15,15), 
-			(-15,15),
-			# (-10,10), 
-			# (-10,10), 
-			# (-10,10),
-			# (-12.5,12.5), 
-			# (-12.5,12.5), 
-			# (-12.5,12.5),
-			# # new eval 8/8
+		self.state_lims = np.array((
+			# # 7/30
 			# (-1000,1000), 
 			# (-1000,1000), 
 			# (-1000,1000), 
-			# (-20,20), 
-			# (-20,20), 
-			# (-20,20),
-			# (-1000,1000), 
-			# (-1000,1000), 
-			# (-1000,1000), 
-			# (-10,10), 
-			# (-10,10), 
-			# (-10,10),
-			# # # new training
-			# (-500,500), 
-			# (-500,500), 
-			# (-150,150), 
 			# (-15,15), 
 			# (-15,15), 
+			# (-15,15),
+			# (-1000,1000), 
+			# (-1000,1000), 
+			# (-1000,1000), 
 			# (-15,15), 
+			# (-15,15), 
+			# (-15,15),
+			# 8/22
+			(-1000,1000), 
+			(-1000,1000), 
+			(-1000,1000), 
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
+			(-1000,1000), 
+			(-1000,1000), 
+			(-1000,1000), 
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
 		)) 
 
-		# # x1, y1, z1, vx1, vy1, vz1, x2, y2, z2, vx2, vy2, vz2
-		# self.state_lims = np.zeros((self.num_robots*state_dim_per_robot,2))
-		# self.state_lims[0:state_dim_per_robot,:] = state_box
-		# self.state_lims[state_dim_per_robot:,:] = state_box
-
-		self.state_lims = state_box
-
-
 		self.init_lims = np.array((
-			# old
-			# (-1,1),
-			# # (-4,-4), 
-			# (-4,-1), 
-			# (-1,1),
-			# ( 0,0),
-			# # ( 0,0), #( 0.5,0.5),
-			# # ( 0.5,0.5),
-			# ( 0,0),
-			# ( 0,0),
-			# (-1,1),
-			# ( 0,0),
-			# (-1,1),
-			# ( 0,0),
-			# # ( 0.5,0.5),
-			# ( 0.0,0.0),
-			# ( 0,0),
-			# # new 07/30
-			# (-150,150), 
-			# (-150,150), 
-			# (-150,150), 
-			# (-15,15), 
-			# (-15,15), 
-			# (-15,15),
-			# (-150,150), 
-			# (-150,150), 
-			# (-150,150), 
-			# (-15,15), 
-			# (-15,15), 
-			# (-15,15),
-			# # 08/10
-			(-25,25), 
-			(-25,25), 
-			(-25,25), 
-			(-1.0,1.0), 
-			(-1.0,1.0), 
-			(-1.0,1.0),
-			(-25,25), 
-			(-25,25), 
-			(-25,25), 
-			(-1.0,1.0), 
-			(-1.0,1.0), 
-			(-1.0,1.0),
-			# # new 08/08
-			# (-30,30), 
-			# (-30,30), 
-			# (-30,30), 
-			# (-10,10), 
-			# (-10,10), 
-			# (-10,10),
-			# (-30,30), 
-			# (-30,30), 
-			# (-30,30), 
-			# (-10,10), 
-			# (-10,10), 
-			# (-10,10),
-			# # test
-			# (-20,20), # px_p
-			# (-20,20), # py_p
-			# (-20,20), # pz_p
-			# (-5,5), # vx_p
-			# (-5,5), # vy_p
-			# (-5,5), # vz_p
-			# (-20,20), # px_e
-			# (-20,20), # py_e
-			# (-20,20), # pz_e
-			# (-5,5), # vx_e
-			# (-5,5), # vy_e
-			# (-5,5), # vz_e
+			# 08/10
+			# (-25,25), 
+			# (-25,25), 
+			# (-25,25), 
+			# (-1.0,1.0), 
+			# (-1.0,1.0), 
+			# (-1.0,1.0),
+			# (-25,25), 
+			# (-25,25), 
+			# (-25,25), 
+			# (-1.0,1.0), 
+			# (-1.0,1.0), 
+			# (-1.0,1.0),
+			# 8/22
+			(0,0), 
+			(0,0), 
+			(0,0), 
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
+			(-100, 100), # (loop in init until in elevation cone)
+			(-100, 100),
+			(-100, 100),
+			(-11,11), 
+			(-11,11), 
+			(-11,11),
 			))
 
 		# ax1, ay1, az1, ax2, ay2, az2
 		self.action_lims = np.array((
-			# old
-			# (-1,1),
-			# (-1,1),
-			# (-1,1),
-			# (-1,1),
-			# (-1,1),
-			# (-1,1),
-			# new 07/30
-			(-2,2), # ax_p
-			(-2,2), # ay_p
-			(-2,2), # az_p
-			(-2,2), # ax_e
-			(-2,2), # ay_e
-			(-2,2), # az_e
-			# (-1.75,1.75), # ax_e
-			# (-1.75,1.75), # ay_e
-			# (-1.75,1.75), # az_e
-			# # new 08/8
-			# (-2.0,2.0), # ax_p
-			# (-2.0,2.0), # ay_p
-			# (-2.0,2.0), # az_p
-			# (-0.5,0.5), # ax_e
-			# (-0.5,0.5), # ay_e
-			# (-0.5,0.5), # az_e
+			# 07/30
+			# (-2,2),
+			# (-2,2),
+			# (-2,2),
+			# (-2,2),
+			# (-2,2),
+			# (-2,2),
+			# 08/22
+			(-3,3),
+			(-3,3),
+			(-3,3),
+			(-2,2),
+			(-2,2),
+			(-2,2),
 			))
 
 
@@ -241,34 +144,59 @@ class Example4(Problem):
 		self.Q = np.eye(6)
 		self.Ru = self.state_control_weight * np.eye(3)
 
+	# overwrite
+	def initialize(self):
+		valid = False
+		while not valid:
+			state = sample_vector(self.init_lims)
+
+			# apply min speed bound
+			state = self.apply_min_speed(state)
+
+			# align relative velocities 
+			v2 = state[9:12,0]
+			v1 = v2 + 2 * np.random.normal(size=(3,))
+			state[3:6,0] = v1
+
+			valid = not self.is_terminal(state) and self.in_elevation_cone(state)
+		return state
+
+	def apply_min_speed(self, state):
+		min_speed = 7 
+		v2 = state[9:12,0] 
+		ratio = np.linalg.norm(v2) / min_speed 
+		if ratio < 1:
+			state[9,0] = state[9,0] / ratio
+			state[10,0] = state[10,0] / ratio
+			state[11,0] = state[11,0] / ratio
+		return state
+
+	def in_elevation_cone(self, state):
+		cone_angle = 35 * np.pi / 180
+		dxy = np.linalg.norm(state[0:2,0] - state[6:8,0])
+		dz = np.abs(state[2,0] - state[8,0])
+		rel_angle = np.arctan2(dz, dxy)
+		if rel_angle < cone_angle:
+			return True
+		else:
+			return False
+
 	def reward(self,s,a):
 		s_1 = s[self.state_idxs[0]] # n x 1
 		s_2 = s[self.state_idxs[1]]
 		a_1 = a[self.action_idxs[0]]
 
-		# old 
-		# r = -1 * (
-		# 	np.abs((s_1-s_2).T @ self.Q @ (s_1 - s_2) - self.desired_distance) + \
-		# 	a_1.T @ self.Ru @ a_1).squeeze()
-
 		# new
 		Q = np.zeros((6,6))
 		for i in range(3):
-		# for i in range(6):
-			# Q[i,i] = 1 / (self.state_lims[i,1] - self.state_lims[i,0]) ** 2.0
-			# Q[i,i] = 1 / (self.init_lims[i,1] - self.init_lims[i,0]) ** 2.0
 			Q[i,i] = 1 / (100) ** 2.0
 
 		x = (s_1 - s_2).T @ Q @ (s_1 - s_2)
-		# x = x / 6
 
 		reward = np.zeros((2,1))
-		# pursuer gets reward if x is small
 		reward[0,0] = 1 - x 
-        # evader gets reward if x is large
 		reward[1,0] = x
 
-		# 
 		reward[0,0] = np.min((np.max((reward[0,0],0.0)),1.0))
 		reward[1,0] = np.min((np.max((reward[1,0],0.0)),1.0))
 
@@ -280,34 +208,27 @@ class Example4(Problem):
 		# if np.any(s_1 == self.state_lims[6:,:]):
 		# 	reward[1,0] = 0.8 * reward[1,0]
 
-		if self.cone_on:
-			# discount purseur if evader is outside of heading cone
-			# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
-			heading_angle = 35 * np.pi / 180 # rad
-			u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
-			v = s_1[0:3,:]  
-			r = s_2[0:3,:]  
-			uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
-			angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
-			if angle > heading_angle:
-				reward[0,0] = 0.8 * reward[0,0]
+		# if False:
+		# 	# discount purseur if evader is outside of heading cone
+		# 	# from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
+		# 	heading_angle = 35 * np.pi / 180 # rad
+		# 	u = s_1[3:6,:] / np.linalg.norm(s_1[3:6,0]) 
+		# 	v = s_1[0:3,:]  
+		# 	r = s_2[0:3,:]  
+		# 	uvr = (r - v) / np.linalg.norm(r[:,0]-v[:,0])
+		# 	angle = np.arccos(np.dot(uvr[:,0], u[:,0]))
+		# 	if angle > heading_angle:
+		# 		reward[0,0] = 0.8 * reward[0,0]
+
+		if not self.in_elevation_cone(s):
+			reward[0,0] = 0.8 * reward[0,0]
 
 		return reward
 
 	def normalized_reward(self,s,a): 
 		reward = self.reward(s,a)
-		# print("reward",reward)
 		return reward
 
-		# reward = np.clip(reward,self.r_min,self.r_max)
-		# reward = (reward - self.r_min) / (self.r_max - self.r_min)
-		# reward = np.array([[reward[0,0]],[1-reward[0,0]]])
-		# normalized_reward = np.zeros((2,1))
-		# normalized_reward[0,0] = np.exp(-1 * reward[0,0])
-		# normalized_reward[1,0] = np.exp(-1 * reward[1,0])
-		# print("normalized_reward",normalized_reward)
-		# return reward
-		
 	def step(self,s,a,dt):
 		s_tp1 = np.zeros(s.shape)
 		for robot in range(self.num_robots):
@@ -317,6 +238,8 @@ class Example4(Problem):
 		# apply state constraint bounds 
 		for i in range(12):
 			s_tp1[i,0] = np.min((np.max((s_tp1[i,0],self.state_lims[i,0])),self.state_lims[i,1]))
+		# apply min speed bound
+		s_tp1 = self.apply_min_speed(s_tp1)
 		return s_tp1 
 
 	def render(self,states=None,fig=None,ax=None):
@@ -355,22 +278,22 @@ class Example4(Problem):
 				linewidth=0.2, colors='k', alpha=0.2)
 			ax.add_collection(ln_coll)
 
-			# # projections
-			# ax.plot(lims[0,0]*np.ones(nt), p1[:,1], p1[:,2],\
-			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p1[:,0], lims[1,1]*np.ones(nt), p1[:,2], \
-			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p1[:,0], p1[:,1], lims[2,0]*np.ones(nt), \
-			# 	color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			# projections
+			ax.plot(lims[0,0]*np.ones(nt), p1[:,1], p1[:,2],\
+				color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--")
+			ax.plot(p1[:,0], lims[1,1]*np.ones(nt), p1[:,2], \
+				color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--")
+			ax.plot(p1[:,0], p1[:,1], lims[2,0]*np.ones(nt), \
+				color=colors[0], alpha=0.5, linewidth=0.2, linestyle="--")
 
-			# ax.plot(lims[0,0]*np.ones(nt), p2[:,1], p2[:,2],\
-			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p2[:,0], lims[1,1]*np.ones(nt), p2[:,2], \
-			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
-			# ax.plot(p2[:,0], p2[:,1], lims[2,0]*np.ones(nt), \
-			# 	color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--", marker="o", markersize=1)
+			ax.plot(lims[0,0]*np.ones(nt), p2[:,1], p2[:,2],\
+				color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--")
+			ax.plot(p2[:,0], lims[1,1]*np.ones(nt), p2[:,2], \
+				color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--")
+			ax.plot(p2[:,0], p2[:,1], lims[2,0]*np.ones(nt), \
+				color=colors[1], alpha=0.5, linewidth=0.2, linestyle="--")
 
-			if self.cone_on:
+			if False:
 				# heading cone 
 				cone_length = 100 
 				cone_angle = 35 * np.pi / 180
@@ -411,10 +334,17 @@ class Example4(Problem):
 			fig2, ax2 = plotter.make_fig()
 			p1 = states[:,0:3,0] # nt x 3
 			p2 = states[:,6:9,0]  # nt x 3
-			d = np.linalg.norm(p1-p2, axis=1)
-			ax2.plot(d)
+			ds = np.linalg.norm(p1-p2, axis=1)
+
+			bs = [self.in_elevation_cone(s) for s in states]
+
+			ax2.plot(ds, color="blue")
 			ax2.set_xlabel("time")
 			ax2.set_ylabel("distance")
+
+			ax3 = ax2.twinx()
+			ax3.plot(bs, color="orange")
+			ax3.set_ylabel("in elevation cone")
 
 		return fig,ax 
 
@@ -426,11 +356,9 @@ class Example4(Problem):
 
 	def policy_encoding(self,state,robot):
 		return state[0:6,:] - state[6:,:] 
-		# return state 
 
 	def value_encoding(self,state):
 		return state[0:6,:] - state[6:,:]
-		# return state 
 
 	def plot_value_dataset(self, dataset, title):
 		pass
