@@ -87,9 +87,6 @@ class Example4 : public Problem {
             m_Q(0,0) = 1.0 / pow(100.0, 2.0);
             m_Q(1,1) = 1.0 / pow(100.0, 2.0);
             m_Q(2,2) = 1.0 / pow(100.0, 2.0);
-            m_Q(3,3) = 1.0 / pow(300.0, 2.0);
-            m_Q(4,4) = 1.0 / pow(300.0, 2.0);
-            m_Q(5,5) = 1.0 / pow(300.0, 2.0);
             // m_Q(3,3) = 1.0 / pow(m_init_lims(3,1) - m_init_lims(3,0), 2.0);
             // m_Q(4,4) = 1.0 / pow(m_init_lims(4,1) - m_init_lims(4,0), 2.0);
             // m_Q(5,5) = 1.0 / pow(m_init_lims(5,1) - m_init_lims(5,0), 2.0);
@@ -124,13 +121,6 @@ class Example4 : public Problem {
                 next_state(ii,0) = std::max(std::min(next_state(ii,0), m_state_lims(ii,1)), m_state_lims(ii,0));
             }
             // std::cout << "next_state " << next_state << std::endl;
-
-            float ratio = next_state.block(9,0,3,0).norm() / 7.0f;
-            if (ratio < 1.0f) {
-                next_state(9,0) = next_state(9,0) / ratio;
-                next_state(10,0) = next_state(10,0) / ratio;
-                next_state(11,0) = next_state(11,0) / ratio;
-            }
 
             return next_state;
         }
@@ -193,15 +183,15 @@ class Example4 : public Problem {
 
             // // discount purseur if evader is outside of heading cone
             // # from: https://www.mathworks.com/matlabcentral/answers/408012-how-to-check-if-a-3d-point-is-inside-a-3d-cone
-            Eigen::Matrix<float,3,1> u = s1.block(3,0,3,1) / s1.norm();
-            Eigen::Matrix<float,3,1> v = s1.block(0,0,3,1);
-            Eigen::Matrix<float,3,1> p = s2.block(0,0,3,1);
-            Eigen::Matrix<float,3,1> vp = (v - p) / (v - p).norm();
-            float angle = std::acos(vp.dot(u));
-            float heading = 35.0f * 3.14f / 180.0f;
-            if (angle > heading) {
-                r(0,0) = 0.2 * r(0,0);
-            }
+            // Eigen::Matrix<float,3,1> u = s1.block(3,0,3,0) / s1.norm();
+            // Eigen::Matrix<float,3,1> v = s1.block(0,0,3,0);
+            // Eigen::Matrix<float,3,1> p = s2.block(0,0,3,0);
+            // Eigen::Matrix<float,3,1> vp = (v - p) / (v - p).norm();
+            // float angle = std::acos(vp.dot(u));
+            // float heading = 35.0f * 3.14f / 180.0f;
+            // if (angle > heading) {
+            //     r(0,0) = 0.8 * r(0,0);
+            // }
 
             return r;
         }
