@@ -24,8 +24,9 @@ from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_t
 
 # solver 
 
-num_simulations = 5000
-# num_simulations = 10000
+# num_simulations = 50
+# num_simulations = 5000
+num_simulations = 10000
 # search_depth = 100
 search_depth = 30
 
@@ -336,8 +337,8 @@ def train_model(problem,train_dataset,test_dataset,l,oracle_name,robot=0):
 	start_time = time.time()
 	print('training model...')
 
-	# device = "cpu"
-	device = "cuda"
+	device = "cpu"
+	# device = "cuda"
 	value_oracle_path, policy_oracle_paths = get_oracle_fn(l,problem.num_robots)
 
 	if oracle_name == "policy":
@@ -516,7 +517,7 @@ def self_play(problem,policy_oracle,value_oracle,l):
 if __name__ == '__main__':
 
 	problem = get_problem(problem_name) 
-	make_data_on = False
+	make_data_on = True
 	if make_data_on:
 		format_dir(clean_dirnames=["data","models"]) 
 
