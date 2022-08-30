@@ -38,8 +38,8 @@ class Param:
 
 		# solver settings 
 		self.number_simulations = 500
-		# self.number_simulations = 10000
-		self.search_depth = 30
+		# self.number_simulations = 30000
+		self.search_depth = 10
 		self.C_pw = 2.0
 		self.alpha_pw = 0.5
 		self.C_exp = 1.0

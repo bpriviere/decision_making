@@ -26,9 +26,9 @@ from util import write_dataset, get_dataset_fn, get_oracle_fn, format_dir, get_t
 
 # num_simulations = 50
 # num_simulations = 5000
-num_simulations = 10000
+num_simulations = 30000
 # search_depth = 100
-search_depth = 30
+search_depth = 10
 
 # num_simulations = 200
 # search_depth = 100
