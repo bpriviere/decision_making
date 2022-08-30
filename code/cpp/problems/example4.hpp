@@ -66,6 +66,9 @@ class Example4 : public Problem {
             m_Q(0,0) = 1.0 / pow(100.0, 2.0);
             m_Q(1,1) = 1.0 / pow(100.0, 2.0);
             m_Q(2,2) = 1.0 / pow(100.0, 2.0);
+            // m_Q(3,3) = 1.0 / pow(200.0, 2.0);
+            // m_Q(4,4) = 1.0 / pow(200.0, 2.0);
+            // m_Q(5,5) = 1.0 / pow(200.0, 2.0);
 
             m_R.setIdentity();
             m_R = m_R * m_state_control_weight;
@@ -121,12 +124,10 @@ class Example4 : public Problem {
             Eigen::Matrix<float,-1,1> s2 = state.block(m_state_idxs[1][0],0,m_state_idxs[1].size(),1);
 
             // calc error 
-            float x = (s1 - s2).transpose() * m_Q * (s1 - s2); // x in [0,1]
+            float x = std::exp( -1.0f * (s1 - s2).transpose() * m_Q * (s1 - s2) ); // x in [0,1]
 
-            // pursuer gets points if x is small
-            r(0,0) = 1.0 - x;
-            // evader gets points if x is large
-            r(1,0) = x;
+            r(0,0) = x;
+            r(1,0) = 1 - x;
 
             // make sure we are within 0,1 range
             r(0,0) = std::max(std::min(r(0,0), 1.0f), 0.0f);
@@ -167,7 +168,7 @@ class Example4 : public Problem {
             float dz = s1(2,0) - s2(2,0);
             float rel_angle = std::atan2(dz, dxy);
             if (rel_angle > cone_angle) {
-                r(0,0) = 0.8 * r(0,0);
+                r(0,0) = 0.0 * r(0,0);
             }
 
             return r;

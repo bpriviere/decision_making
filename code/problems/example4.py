@@ -155,10 +155,11 @@ class Example4(Problem):
 
 			# align relative velocities 
 			v2 = state[9:12,0]
-			v1 = v2 + 2 * np.random.normal(size=(3,))
+			# v1 = v2 + 2 * np.random.normal(size=(3,))
+			v1 = v2 + 5 * np.random.uniform(low=-1,high=1,size=(3,))
 			state[3:6,0] = v1
 
-			valid = not self.is_terminal(state) and self.in_elevation_cone(state)
+			valid = not self.is_terminal(state) and self.in_elevation_cone(state) and np.linalg.norm(state[0:3,0]-state[6:9,0]) > 50
 		return state
 
 	def apply_min_speed(self, state):
@@ -174,7 +175,7 @@ class Example4(Problem):
 	def in_elevation_cone(self, state):
 		cone_angle = 35 * np.pi / 180
 		dxy = np.linalg.norm(state[0:2,0] - state[6:8,0])
-		dz = np.abs(state[2,0] - state[8,0])
+		dz = state[2,0] - state[8,0]
 		rel_angle = np.arctan2(dz, dxy)
 		if rel_angle < cone_angle:
 			return True
@@ -191,11 +192,11 @@ class Example4(Problem):
 		for i in range(3):
 			Q[i,i] = 1 / (100) ** 2.0
 
-		x = (s_1 - s_2).T @ Q @ (s_1 - s_2)
+		x = np.exp(-1 * (s_1 - s_2).T @ Q @ (s_1 - s_2)) # in [0,1] and =1 when s1=s2
 
 		reward = np.zeros((2,1))
-		reward[0,0] = 1 - x 
-		reward[1,0] = x
+		reward[0,0] = x 
+		reward[1,0] = 1 - x
 
 		reward[0,0] = np.min((np.max((reward[0,0],0.0)),1.0))
 		reward[1,0] = np.min((np.max((reward[1,0],0.0)),1.0))
@@ -221,7 +222,7 @@ class Example4(Problem):
 		# 		reward[0,0] = 0.8 * reward[0,0]
 
 		if not self.in_elevation_cone(s):
-			reward[0,0] = 0.8 * reward[0,0]
+			reward[0,0] = 0.0 * reward[0,0]
 
 		return reward
 
